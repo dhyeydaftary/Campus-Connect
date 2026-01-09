@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login - CampusConnect</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <style>
+            /* Custom theme mapping from your React components */
+            :root {
+                --primary: #6366f1;
+                --primary-foreground: #ffffff;
+                --muted: #f8fafc;
+                --muted-foreground: #64748b;
+                --border: #e2e8f0;
+                --input: #e2e8f0;
+                --ring: #6366f1;
+            }
+
+            .gradient-primary {
+                background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            }
+
+            .gradient-soft {
+                background: linear-gradient(to bottom right, #f8fafc, #f1f5f9, #e2e8f0);
+            }
+
+            .shadow-elevated {
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+
+            .shadow-soft {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+
+            /* Animation from Login.tsx */
+            .animate-scale-in {
+                animation: scaleIn 0.3s ease-out forwards;
+            }
+
+            @keyframes scaleIn {
+                from { opacity: 0; transform: scale(0.95); }
+                to { opacity: 1; transform: scale(1); }
+            }
+
+            /* Toast styling from toast.tsx */
+            #toast-container {
+                position: fixed;
+                bottom: 1rem;
+                right: 1rem;
+                z-index: 100;
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .toast {
+                background: white;
+                border: 1px solid var(--border);
+                padding: 1rem;
+                border-radius: 0.5rem;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                min-width: 300px;
+                transform: translateX(120%);
+                transition: all 0.3s ease;
+            }
+
+            .toast.show { transform: translateX(0); }
+            .toast.destructive { border-color: #ef4444; background: #fef2f2; }
+        </style>
+    </head>
+
+    <body class="min-h-screen flex items-center justify-center p-4 gradient-soft text-slate-900">
+
+        <div class="w-full max-w-md animate-scale-in">
+            <div class="bg-white rounded-lg border border-slate-200 shadow-elevated overflow-hidden">
+                <div class="p-8">
+                
+                    <div class="text-center mb-8">
+                        <a href="/" class="inline-flex items-center gap-2 group decoration-none">
+                            <div class="p-2.5 rounded-xl gradient-primary shadow-soft group-hover:shadow-elevated transition-shadow">
+                                <i data-lucide="graduation-cap" class="h-6 w-6 text-white"></i>
+                            </div>
+                            <span class="font-bold text-2xl text-slate-900">
+                                Campus<span class="text-indigo-600">Connect</span>
+                            </span>
+                        </a>
+                        <p class="text-slate-500 mt-3">Welcome back! Login to continue.</p>
+                    </div>
+
+                    <form id="login-form" class="space-y-5">
+                        <div class="space-y-2">
+                            <label for="email" class="text-sm font-medium">College Email</label>
+                            <div class="relative">
+                                <i data-lucide="mail" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                                <input 
+                                    id="email" 
+                                    type="email" 
+                                    placeholder="you@college.edu" 
+                                    required
+                                    class="flex h-11 w-full rounded-md border border-slate-200 bg-slate-50/50 pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label for="password" class="text-sm font-medium">Password</label>
+                            <div class="relative">
+                                <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                                <input 
+                                    id="password" 
+                                    type="password" 
+                                    placeholder="••••••••" 
+                                    required 
+                                    minlength="6"
+                                    class="flex h-11 w-full rounded-md border border-slate-200 bg-slate-50/50 pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all"
+                                >
+                            </div>
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            id="login-btn"
+                            class="w-full h-11 gradient-primary text-white font-medium rounded-md shadow-soft hover:shadow-elevated transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <i data-lucide="log-in" class="h-4 w-4" id="btn-icon"></i>
+                            <span id="btn-text">Login</span>
+                        </button>
+                    </form>
+
+                    <div class="relative my-6">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-slate-200"></div>
+                        </div>
+                        <div class="relative flex justify-center text-xs uppercase">
+                            <span class="bg-white px-2 text-slate-400">or</span>
+                        </div>
+                    </div>
+
+                    <p class="text-center text-slate-500 text-sm">
+                        Don't have an account? 
+                        <a href="/register.html" class="text-indigo-600 font-medium hover:underline">Register</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast-container"></div>
+
+        <script>
+            // Initialize Lucide Icons
+            lucide.createIcons();
+
+            // Mock Authentication Logic from AuthContext.tsx
+            async function mockLogin(email, password) {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                    if (email && password.length >= 6) {
+                        resolve({ success: true });
+                    } else {
+                        resolve({ success: false });
+                    }
+                    }, 500); // 500ms simulation delay
+                });
+            }
+
+            // Toast Logic from use-toast.ts
+            function showToast(title, description, variant = 'default') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${variant === 'destructive' ? 'destructive' : ''}`;
+                
+                toast.innerHTML = `
+                    <div class="font-semibold text-sm">${title}</div>
+                    <div class="text-xs text-slate-500 mt-1">${description}</div>
+                `;
+
+                container.appendChild(toast);
+
+                // Trigger animation
+                setTimeout(() => toast.classList.add('show'), 10);
+
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            // Form Handling
+            const loginForm = document.getElementById('login-form');
+            const loginBtn = document.getElementById('login-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnIcon = document.getElementById('btn-icon');
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                // Loading State
+                loginBtn.disabled = true;
+                btnText.textContent = 'Logging in...';
+                btnIcon.classList.add('hidden');
+
+                const result = await mockLogin(email, password);
+
+                if (result.success) {
+                    showToast('Welcome back!', 'You have successfully logged in.');
+                    // Redirect simulation
+                    setTimeout(() => {
+                    window.location.href = '/feed.html';
+                    }, 1000);
+                } else {
+                    showToast('Login failed', 'Please check your credentials and try again.', 'destructive');
+                    
+                    // Reset state
+                    loginBtn.disabled = false;
+                    btnText.textContent = 'Login';
+                    btnIcon.classList.remove('hidden');
+                }
+            });
+        </script>
+    </body>
+</html>
