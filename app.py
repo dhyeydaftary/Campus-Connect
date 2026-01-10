@@ -14,13 +14,20 @@ def login():
 
 # Signup / Register Page
 @app.route("/signup")
+@app.route("/register")
 def signup():
     return render_template("signup.html")
 
-# Home / Feed (placeholder for now)
-@app.route("/home")
-def home():
-    return "<h1>Home Feed (Coming Soon)</h1>"
+# Feed Page
+@app.route("/feed")
+@app.route("/home")  # alias
+def feed():
+    return render_template("feed.html")
+
+# Profile Page
+@app.route("/profile")
+def profile():
+    return render_template("profile.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
