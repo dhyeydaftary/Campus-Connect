@@ -1,70 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CampusConnect - Connect. Collaborate. Grow.</title>
+
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        /* Custom styles to match your React CSS logic */
-        .gradient-hero {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-        }
-        .gradient-primary {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        }
-        .shadow-elevated {
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.6s ease-out forwards;
-            opacity: 0;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-bounce {
-            animation: bounce 2s infinite;
-        }
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {transform: translateY(0) translateX(-50%);}
-            40% {transform: translateY(-10px) translateX(-50%);}
-            60% {transform: translateY(-5px) translateX(-50%);}
-        }
-    </style>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 </head>
+
+
 <body class="bg-white text-gray-900 overflow-x-hidden">
 
     <div class="min-h-screen">
         <section class="relative min-h-screen flex items-center overflow-hidden gradient-hero">
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+                <div class="absolute inset-0"
+                    style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');">
+                </div>
             </div>
 
             <div class="container mx-auto px-4 relative z-10">
                 <div class="max-w-4xl mx-auto text-center">
-                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 mb-8 animate-fade-in">
+                    <div
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 mb-8 animate-fade-in">
                         <i data-lucide="sparkles" class="h-4 w-4 text-white"></i>
                         <span class="text-white/90 text-sm font-medium">For Students, By Students</span>
                     </div>
 
-                    <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight animate-fade-in" style="animation-delay: 0.1s;">
-                        Connect. Collaborate.<br />
-                        <span class="text-white/90">Grow.</span>
+                    <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight animate-fade-in"
+                        style="animation-delay: 0.1s;">
+                        Campus Connect <br />
+                        <span class="text-white/90">Your College Network</span>
                     </h1>
 
-                    <p class="text-xl md:text-2xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in" style="animation-delay: 0.2s;">
-                        Your Campus Network — Join hackathons, discover clubs, and build meaningful connections with fellow students.
+                    <p class="text-xl md:text-2xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in"
+                        style="animation-delay: 0.2s;">
+                        Connect. Collaborate. Grow.
                     </p>
 
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style="animation-delay: 0.3s;">
-                        <a href="/register" class="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-white/90 shadow-elevated text-lg px-8 py-4 rounded-md font-medium transition-colors">
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in"
+                        style="animation-delay: 0.3s;">
+                        <a href="/signup"
+                            class="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-white/90 shadow-elevated text-lg px-8 py-4 rounded-md font-medium transition-colors">
                             <i data-lucide="graduation-cap" class="h-5 w-5"></i>
                             Get Started
                         </a>
-                        <a href="/login" class="inline-flex items-center justify-center gap-2 border border-white/50 text-white hover:bg-white/10 text-lg px-8 py-4 rounded-md font-medium transition-colors">
+                        <a href="/login"
+                            class="inline-flex items-center justify-center gap-2 border border-white/50 text-white hover:bg-white/10 text-lg px-8 py-4 rounded-md font-medium transition-colors">
                             Login
                             <i data-lucide="arrow-right" class="h-5 w-5"></i>
                         </a>
@@ -91,7 +82,7 @@
                 </div>
 
                 <div id="feature-grid" class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                    </div>
+                </div>
             </div>
         </section>
 
@@ -103,7 +94,8 @@
                 <p class="text-white/70 mb-8 text-lg">
                     Join thousands of students already building their network
                 </p>
-                <a href="/register" class="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-white/90 text-lg px-8 py-4 rounded-md font-medium shadow-elevated transition-colors">
+                <a href="/register"
+                    class="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-white/90 text-lg px-8 py-4 rounded-md font-medium shadow-elevated transition-colors">
                     Create Your Account
                     <i data-lucide="arrow-right" class="h-5 w-5"></i>
                 </a>
@@ -119,47 +111,8 @@
         </footer>
     </div>
 
-    <script>
-        // Feature Data
-        const features = [
-            {
-                icon: 'users',
-                title: 'Campus-Only Network',
-                description: 'Connect exclusively with verified students from your college. Build genuine, meaningful relationships.',
-            },
-            {
-                icon: 'trophy',
-                title: 'Events & Hackathons',
-                description: 'Discover hackathons, clubs, tournaments, and campus events. Never miss an opportunity again.',
-            },
-            {
-                icon: 'zap',
-                title: 'Smart Feed',
-                description: 'A personalized feed that keeps you updated with what matters most in your campus community.',
-            },
-        ];
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 
-        // Render Features
-        const grid = document.getElementById('feature-grid');
-        features.forEach((feature, index) => {
-            const card = `
-                <div class="animate-fade-in" style="animation-delay: ${index * 0.1}s">
-                    <div class="border border-gray-100 shadow-sm hover:shadow-elevated hover:-translate-y-1 transition-all duration-300 h-full rounded-xl bg-white overflow-hidden">
-                        <div class="p-6 text-center">
-                            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 mb-4">
-                                <i data-lucide="${feature.icon}" class="h-7 w-7 text-indigo-600"></i>
-                            </div>
-                            <h3 class="font-semibold text-lg text-gray-900 mb-2">${feature.title}</h3>
-                            <p class="text-gray-500 text-sm leading-relaxed">${feature.description}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            grid.innerHTML += card;
-        });
-
-        // Initialize Lucide Icons
-        lucide.createIcons();
-    </script>
 </body>
+
 </html>
