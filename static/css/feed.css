@@ -1,0 +1,90 @@
+.gradient-primary {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+}
+
+.shadow-card {
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1),
+                0 2px 4px -1px rgba(0,0,0,0.06);
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+}
+
+.nav-btn:hover { background: #f1f5f9; }
+.nav-btn.active { background: #e0e7ff; color: #4338ca; }
+.nav-btn.logout:hover { color: #dc2626; }
+
+.avatar {
+    height: 40px;
+    width: 40px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.post-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    resize: none;
+    background: #f8fafc;
+    border-radius: 12px;
+    outline: none;
+}
+
+.btn-post {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+    font-weight: 500;
+}
+
+.btn-post:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.post-card {
+    background: white;
+    padding: 1.25rem;
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.like-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    color: #475569;
+}
+
+.like-btn:hover { background: #f1f5f9; }
+.like-btn.liked { color: #e11d48; }
