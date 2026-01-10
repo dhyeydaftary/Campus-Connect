@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | CampusConnect</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Shared Auth Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4 gradient-soft text-slate-900">
+
+    <div class="w-full max-w-md animate-scale-in">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-elevated overflow-hidden">
+            <div class="p-8">
+
+                <!-- HEADER -->
+                <div class="text-center mb-8">
+                    <a href="/" class="inline-flex items-center gap-2">
+                        <div class="p-2.5 rounded-xl gradient-primary shadow-soft">
+                            <i data-lucide="graduation-cap" class="h-6 w-6 text-white"></i>
+                        </div>
+                        <span class="font-bold text-2xl text-slate-900">
+                            Campus<span class="text-indigo-600">Connect</span>
+                        </span>
+                    </a>
+                    <p class="text-slate-500 mt-3 text-sm">
+                        Update your profile details
+                    </p>
+                </div>
+
+                <!-- PROFILE FORM -->
+                <form id="profile-form" class="space-y-4" novalidate>
+
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">Full Name</label>
+                        <div class="relative">
+                            <i data-lucide="user"
+                                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                            <input id="name" type="text" placeholder="John Doe" class="input-field" required>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">College Email</label>
+                        <div class="relative">
+                            <i data-lucide="mail"
+                                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                            <input id="email" type="email" placeholder="you@college.edu" class="input-field" required>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">New Password</label>
+                        <div class="relative">
+                            <i data-lucide="lock"
+                                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                            <input id="password" type="password" placeholder="••••••••" class="input-field"
+                                minlength="6">
+                        </div>
+                        <p class="text-[10px] text-slate-500">
+                            Leave blank to keep current password
+                        </p>
+                    </div>
+
+                    <button type="submit" id="profile-btn" class="btn-primary">
+                        <i data-lucide="save" class="h-4 w-4" id="btn-icon"></i>
+                        <span id="btn-text">Save Changes</span>
+                    </button>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast-container"></div>
+
+    <!-- External JS -->
+    <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+
+</body>
+
+</html>
