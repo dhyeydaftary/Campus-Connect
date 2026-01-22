@@ -6,13 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register | CampusConnect</title>
 
-    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
 
-    <!-- External CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
 
@@ -22,7 +19,6 @@
         <div class="bg-white rounded-lg border border-slate-200 shadow-elevated overflow-hidden">
             <div class="p-8">
 
-                <!-- LOGO -->
                 <div class="text-center mb-8">
                     <a href="/" class="inline-flex items-center gap-2">
                         <div class="p-2.5 rounded-xl gradient-primary shadow-soft">
@@ -37,51 +33,57 @@
                     </p>
                 </div>
 
-                <!-- FORM -->
-                <form id="register-form" class="space-y-4" novalidate>
+                <form id="signupForm" class="space-y-4" novalidate>
 
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Full Name</label>
                         <div class="relative">
-                            <i data-lucide="user"
-                                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="name" type="text" placeholder="John Doe" class="input-field" required>
+                            <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                            <input id="fullName" type="text" placeholder="Your name" class="input-field" required>
                         </div>
                     </div>
 
                     <div class="space-y-2">
-                        <label class="text-sm font-medium">College Email</label>
+                        <label class="text-sm font-medium">Email</label>
                         <div class="relative">
-                            <i data-lucide="mail"
-                                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="email" type="email" placeholder="you@college.edu" class="input-field" required>
+                            <i data-lucide="mail" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                            <input id="email" type="email" placeholder="erno@mail.ljku.edu.in" class="input-field" required>
                         </div>
-                        <p class="text-[10px] text-slate-500">
-                            Use your .edu or .ac.in email
-                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">Branch</label>
+                        <div class="relative">
+                            <i data-lucide="book-open" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                            <input id="branch" type="text" placeholder="IT / CSE / ME" class="input-field" required>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">Batch</label>
+                        <div class="relative">
+                            <i data-lucide="calendar" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                            <input id="batch" type="text" placeholder="2028" class="input-field" required>
+                        </div>
                     </div>
 
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Password</label>
                         <div class="relative">
-                            <i data-lucide="lock"
-                                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="password" type="password" placeholder="••••••••" class="input-field"
-                                minlength="6" required>
+                            <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                            <input id="password" type="password" placeholder="••••••••" class="input-field" minlength="6" required>
                         </div>
                     </div>
 
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Confirm Password</label>
                         <div class="relative">
-                            <i data-lucide="lock"
-                                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="confirm-password" type="password" placeholder="••••••••" class="input-field"
-                                minlength="6" required>
+                            <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                            <input id="confirm-password" type="password" placeholder="••••••••" class="input-field" minlength="6" required>
                         </div>
                     </div>
 
-                    <button type="submit" id="register-btn" class="btn-primary">
+                    <button type="submit" id="register-btn" class="btn-primary w-full">
                         <i data-lucide="user-plus" class="h-4 w-4" id="btn-icon"></i>
                         <span id="btn-text">Create Account</span>
                     </button>
@@ -99,12 +101,13 @@
         </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast-container"></div>
 
-    <!-- External JS -->
     <script src="{{ url_for('static', filename='js/signup.js') }}"></script>
-
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
 </body>
 
 </html>
