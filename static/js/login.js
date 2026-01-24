@@ -1,20 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    // Lucide Icons
+    // Icons
     if (window.lucide) {
         lucide.createIcons();
     }
 
-    // Mock login (frontend only)
-    async function mockLogin(email, password) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(email && password.length >= 6);
-            }, 500);
-        });
-    }
-
-    // Toast
+    // Toast utility
     function showToast(title, description, destructive = false) {
         const container = document.getElementById("toast-container");
         const toast = document.createElement("div");
@@ -34,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 3000);
     }
 
-    // Form
+    // Form handling
     const form = document.getElementById("login-form");
     const btn = document.getElementById("login-btn");
     const btnText = document.getElementById("btn-text");
@@ -46,19 +37,39 @@ document.addEventListener("DOMContentLoaded", () => {
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value;
 
+        if (!email || !password) {
+            showToast("Missing fields", "Email and password are required.", true);
+            return;
+        }
+
+        // Button loading state
         btn.disabled = true;
         btnText.textContent = "Logging in...";
         btnIcon.classList.add("hidden");
 
-        const success = await mockLogin(email, password);
+        try {
+            const response = await fetch("/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
 
-        if (success) {
-            showToast("Welcome back!", "Login successful.");
-            setTimeout(() => {
-                window.location.href = "/home";
-            }, 1000);
-        } else {
-            showToast("Login failed", "Invalid email or password.", true);
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast("Welcome back!", "Login successful.");
+                setTimeout(() => {
+                    window.location.href = "/feed";
+                }, 800);
+            } else {
+                showToast("Login failed", result.error || "Invalid credentials.", true);
+                btn.disabled = false;
+                btnText.textContent = "Login";
+                btnIcon.classList.remove("hidden");
+            }
+
+        } catch (error) {
+            showToast("Error", "Server not reachable. Try again.", true);
             btn.disabled = false;
             btnText.textContent = "Login";
             btnIcon.classList.remove("hidden");
