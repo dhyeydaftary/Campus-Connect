@@ -1,90 +1,93 @@
-.gradient-primary {
-    background: linear-gradient(135deg, #6366f1, #a855f7);
+.gradient-text {
+    background: linear-gradient(to right, #6366f1, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.shadow-card {
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1),
-                0 2px 4px -1px rgba(0,0,0,0.06);
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
 }
 
-.animate-fade-in {
-    animation: fadeIn 0.4s ease-out forwards;
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+body {
+    background: #f8fafc;
 }
 
-.nav-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #475569;
-}
-
-.nav-btn:hover { background: #f1f5f9; }
-.nav-btn.active { background: #e0e7ff; color: #4338ca; }
-.nav-btn.logout:hover { color: #dc2626; }
-
-.avatar {
-    height: 40px;
-    width: 40px;
-    border-radius: 9999px;
-    background: linear-gradient(135deg, #6366f1, #a855f7);
+.connect-btn {
+    background: #2563eb;
     color: white;
-    font-weight: bold;
-    display: flex;
+    border: none;
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.connect-btn.connected {
+    background: #1f2937;
+}
+
+.connect-btn:hover {
+    opacity: 0.9;
+}
+
+#posts {
+    margin-top: 32px;
+}
+
+#posts article {
+    max-width: 520px;
+    margin: 0 auto 24px auto;
+}
+
+#posts img {
+    max-height: 480px;
+    object-fit: cover;
+}
+
+.post-card {
+    max-width: 520px;
+    margin: 0 auto 28px auto;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.post-card:hover {
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08), 0 6px 14px rgba(0, 0, 0, 0.05);
+}
+
+.post-card img {
+    max-height: 420px;
+}
+
+.post-card header {
+    padding: 14px 16px;
+}
+
+.post-card .p-4 {
+    padding: 14px 16px;
+}
+
+/* Modal Styling */
+#comment-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 100;
     align-items: center;
     justify-content: center;
 }
 
-.post-textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 12px;
-    resize: none;
-    background: #f8fafc;
-    border-radius: 12px;
-    outline: none;
+/* Carousel Controls Visibility - Instant Toggle */
+.group:hover button {
+    opacity: 1;
 }
-
-.btn-post {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    background: linear-gradient(135deg, #6366f1, #a855f7);
-    color: white;
-    font-weight: 500;
+.group button {
+    opacity: 0;
 }
-
-.btn-post:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.post-card {
-    background: white;
-    padding: 1.25rem;
-    border-radius: 1rem;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-
-.like-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.5rem;
-    color: #475569;
-}
-
-.like-btn:hover { background: #f1f5f9; }
-.like-btn.liked { color: #e11d48; }
