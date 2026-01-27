@@ -3,7 +3,31 @@ let currentPage = 1;
 let loading = false;
 let viewer = null;
 
-// Helper for dynamic account badges
+
+// Helper: Time Ago Formatter
+function timeAgo(dateString) {
+    const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+
+    const intervals = [
+        { label: "year", seconds: 31536000 },
+        { label: "month", seconds: 2592000 },
+        { label: "week", seconds: 604800 },
+        { label: "day", seconds: 86400 },
+        { label: "hour", seconds: 3600 },
+        { label: "minute", seconds: 60 }
+    ];
+
+    for (const interval of intervals) {
+        const count = Math.floor(seconds / interval.seconds);
+        if (count >= 1) {
+            return `${count} ${interval.label}${count > 1 ? "s" : ""} ago`;
+        }
+    }
+    return "Just now";
+}
+
+
+// Helper: Dynamic account badges
 function getBadge(type) {
     const styles = {
         club: 'bg-purple-100 text-purple-600',
@@ -13,6 +37,8 @@ function getBadge(type) {
     return `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${styles[type] || 'bg-slate-100'}">${type}</span>`;
 }
 
+
+// Fetch Posts from API
 async function loadPosts() {
     if (loading) return;
     loading = true;
@@ -37,6 +63,7 @@ async function loadPosts() {
         loading = false;
     }
 }
+
 
 // Main Render Function
 function renderPosts() {
@@ -118,7 +145,10 @@ function renderPosts() {
 
                 <button onclick="openComments(${index})" class="text-slate-400 text-xs mt-3 block">View all ${post.commentsCount} comments</button>
                 
-                <p class="text-[10px] text-slate-400 mt-3 uppercase tracking-wider">${post.timestamp}</p>
+                <p class="text-[10px] text-slate-400 mt-3 uppercase tracking-wider">
+                    ${timeAgo(post.createdAt)}
+                </p>
+
             </div>
         `;
         container.appendChild(article);
@@ -127,6 +157,7 @@ function renderPosts() {
         lucide.createIcons();
     }
 }
+
 
 // Logic: Toggle Like
 async function toggleLike(index) {
@@ -153,6 +184,7 @@ async function toggleLike(index) {
     }
 }
 
+
 // Logic: Image Carousel Navigation
 function changeImage(postIndex, direction) {
     const post = posts[postIndex];
@@ -163,35 +195,91 @@ function changeImage(postIndex, direction) {
     }
 }
 
-// Logic: Comments Modal
-function openComments(index) {
-    const post = posts[index];
-    const modal = document.getElementById('comment-modal');
-    const list = document.getElementById('modal-comments-list');
-    
-    if (!modal || !list) return;
 
-    list.innerHTML = post.comments.map(c => `
+// Logic: Comments Modal
+async function openComments(index) {
+    const post = posts[index];
+
+    if (!post.id) {
+        alert("Comments disabled for demo posts");
+        return;
+    }
+
+    const modal = document.getElementById("comment-modal");
+    const list = document.getElementById("modal-comments-list");
+    const input = document.getElementById("comment-input");
+
+    modal.style.display = "flex";
+    input.dataset.postId = post.id;
+    input.value = "";
+
+    list.innerHTML = "<p class='text-xs text-slate-400'>Loading...</p>";
+
+    const res = await fetch(`/api/posts/${post.id}/comments`);
+    const comments = await res.json();
+
+    list.innerHTML = comments.map(c => `
         <div class="flex gap-3 mb-4">
-            <div class="w-8 h-8 rounded-full bg-slate-100 shrink-0 flex items-center justify-center font-bold text-[10px] text-indigo-600 uppercase">
+            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-indigo-600">
                 ${c.username.charAt(0)}
             </div>
             <div>
-                <p class="text-xs"><span class="font-bold mr-2">${c.username}</span> ${c.text}</p>
-                <p class="text-[10px] text-slate-400 mt-1">Just now</p>
+                <p class="text-xs"><span class="font-bold">${c.username}</span> ${c.text}</p>
+                <p class="text-[10px] text-slate-400">${timeAgo(c.createdAt)}</p>
             </div>
         </div>
-    `).join('');
-    
-    modal.style.display = 'flex';
+    `).join("");
 }
 
-function closeComments(event) {
-    const modal = document.getElementById('comment-modal');
-    if (event.target === modal || event.target.closest('.close-modal')) {
-        modal.style.display = 'none';
+
+// Logic: Submit Comment
+async function submitComment() {
+    const input = document.getElementById("comment-input");
+    const postId = input.dataset.postId;
+    const text = input.value.trim();
+
+    if (!text) return;
+
+    const res = await fetch(`/api/posts/${postId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+    });
+
+    if (!res.ok) {
+        alert("Failed to post comment");
+        return;
     }
+
+    input.value = "";
+
+    // Reload comments
+    const post = posts.find(p => p.id == postId);
+    if (post) {
+        post.commentsCount += 1;
+    }
+
+    const commentsRes = await fetch(`/api/posts/${postId}/comments`);
+    const comments = await commentsRes.json();
+
+    const list = document.getElementById("modal-comments-list");
+    list.innerHTML = comments.map(c => `
+        <div class="flex gap-3 mb-4">
+            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-indigo-600">
+                ${c.username.charAt(0)}
+            </div>
+            <div>
+                <p class="text-xs">
+                    <span class="font-bold">${c.username}</span> ${c.text}
+                </p>
+                <p class="text-[10px] text-slate-400">
+                    ${timeAgo(c.createdAt)}
+                </p>
+            </div>
+        </div>
+    `).join("");
 }
+
 
 // Initialize on Load
 document.addEventListener("DOMContentLoaded", () => {
@@ -204,14 +292,19 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+// Logic: Open Create Post Modal
 function openCreatePost() {
     document.getElementById("create-post-modal").style.display = "flex";
 }
 
+
+// Logic: Close Comments Modal
 function closeCreatePost() {
     document.getElementById("create-post-modal").style.display = "none";
 }
 
+
+// Logic: Create Post
 async function submitPost() {
     const caption = document.getElementById("post-caption").value.trim();
     const imageUrl = document.getElementById("post-image").value.trim();
