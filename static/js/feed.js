@@ -1,6 +1,7 @@
 let posts = [];
 let currentPage = 1;
 let loading = false;
+let viewer = null;
 
 // Helper for dynamic account badges
 function getBadge(type) {
@@ -21,9 +22,15 @@ async function loadPosts() {
         if (!res.ok) return;
 
         const data = await res.json();
-        posts = [...posts, ...data];
+
+        if (!viewer) {
+            viewer = data.viewer;   // save once
+        }
+
+        posts = [...posts, ...data.posts];
         renderPosts();
         currentPage++;
+        
     } catch (err) {
         console.error("Failed to load posts", err);
     } finally {
@@ -122,11 +129,28 @@ function renderPosts() {
 }
 
 // Logic: Toggle Like
-function toggleLike(index) {
+async function toggleLike(index) {
     const post = posts[index];
-    post.isLiked = !post.isLiked;
-    post.likesCount += post.isLiked ? 1 : -1;
-    renderPosts();
+
+    if (!post.id) {
+        console.warn("Fake post — likes disabled");
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/posts/${post.id}/like`, {
+            method: "POST"
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        post.isLiked = data.liked;
+        post.likesCount = data.likesCount;
+        renderPosts();
+    } catch (err) {
+        console.error("Like failed", err);
+    }
 }
 
 // Logic: Image Carousel Navigation
