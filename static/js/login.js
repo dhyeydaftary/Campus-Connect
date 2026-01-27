@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const result = await response.json();
 
             if (response.ok) {
-                showToast("Welcome back!", "Login successful.");
+                showToast(`Welcome back, ${result.user_name}!`, "Login successful.");
                 setTimeout(() => {
                     window.location.href = "/feed";
                 }, 800);

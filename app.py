@@ -157,7 +157,10 @@ def login():
     session["user_id"] = user.id
     session["user_name"] = user.full_name
 
-    return jsonify({"message": "Login successful"}), 200
+    return jsonify({
+        "message": "Login successful",
+        "user_name": user.full_name
+    }), 200
 
 
 @app.route("/api/posts")
@@ -196,7 +199,14 @@ def api_posts():
     # Shuffle the entire list so DB posts don't always appear first
     random.shuffle(combined)
 
-    return jsonify(combined)
+    return jsonify({
+        "viewer": {
+            "id": session.get("user_id"),
+            "name": session.get("user_name")
+        },
+        "posts": combined
+    })
+
 
 
 

@@ -1,6 +1,7 @@
 let posts = [];
 let currentPage = 1;
 let loading = false;
+let viewer = null;
 
 // Helper for dynamic account badges
 function getBadge(type) {
@@ -21,9 +22,15 @@ async function loadPosts() {
         if (!res.ok) return;
 
         const data = await res.json();
-        posts = [...posts, ...data];
+
+        if (!viewer) {
+            viewer = data.viewer;   // save once
+        }
+
+        posts = [...posts, ...data.posts];
         renderPosts();
         currentPage++;
+        
     } catch (err) {
         console.error("Failed to load posts", err);
     } finally {
