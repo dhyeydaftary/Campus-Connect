@@ -54,7 +54,7 @@ async function loadPosts() {
         }
 
         posts = [...posts, ...data.posts];
-        renderPosts();
+        renderPosts(true);
         currentPage++;
         
     } catch (err) {
@@ -66,10 +66,13 @@ async function loadPosts() {
 
 
 // Main Render Function
-function renderPosts() {
+function renderPosts(append=false) {
     const container = document.getElementById("posts");
     if (!container) return;
-    container.innerHTML = "";
+
+    if (!append) {
+        container.innerHTML = "";
+    }
 
     posts.forEach((post, index) => {
         const article = document.createElement("article");
@@ -337,3 +340,15 @@ async function submitPost() {
     currentPage = 1;
     loadPosts();
 }
+
+
+// Infinite Scroll
+window.addEventListener("scroll", () => {
+    const nearBottom =
+        window.innerHeight + window.scrollY >=
+        document.body.offsetHeight - 300;
+
+    if (nearBottom) {
+        loadPosts();
+    }
+});
