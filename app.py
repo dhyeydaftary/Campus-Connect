@@ -9,7 +9,7 @@ from flask import (
 )
 
 from config import Config
-from models import db, bcrypt, User, Post, Like
+from models import db, bcrypt, User, Post, Like, Comment
 import random
 
 app = Flask(__name__)
@@ -193,6 +193,8 @@ def api_posts():
             user_id=session["user_id"]
         ).first() is not None
 
+        comments_count = Comment.query.filter_by(post_id=post.id).count()
+
         formatted_db_posts.append({
             "id": post.id,
             "username": user.full_name,
@@ -203,10 +205,10 @@ def api_posts():
             "accountType": "student",
             "collegeName": user.branch,
             "likesCount": likes_count,
-            "commentsCount": 0,
+            "commentsCount": comments_count,
             "comments": [],
             "isLiked": is_liked,
-            "timestamp": post.created_at.strftime("%I:%M %p")
+            "createdAt": post.created_at.isoformat() + "Z"
         })
 
     # Combine DB posts with ALL Fake posts
@@ -249,6 +251,7 @@ def create_post():
     return jsonify({"message": "Post created"}), 201
 
 
+
 @app.route("/api/posts/<int:post_id>/like", methods=["POST"])
 def toggle_like(post_id):
     if "user_id" not in session:
@@ -277,6 +280,49 @@ def toggle_like(post_id):
         "liked": liked,
         "likesCount": likes_count
     })
+
+
+
+@app.route("/api/posts/<int:post_id>/comments")
+def get_comments(post_id):
+    comments = (
+        db.session.query(Comment, User)
+        .join(User, Comment.user_id == User.id)
+        .filter(Comment.post_id == post_id)
+        .order_by(Comment.created_at.asc())
+        .all()
+    )
+
+    return jsonify([
+        {
+            "username": user.full_name,
+            "text": comment.text,
+            "createdAt": comment.created_at.isoformat() + "Z"
+        }
+        for comment, user in comments
+    ])
+
+
+
+@app.route("/api/posts/<int:post_id>/comments", methods=["POST"])
+def add_comment(post_id):
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    text = request.json.get("text")
+    if not text:
+        return jsonify({"error": "Empty comment"}), 400
+
+    comment = Comment(
+        user_id=session["user_id"],
+        post_id=post_id,
+        text=text
+    )
+
+    db.session.add(comment)
+    db.session.commit()
+
+    return jsonify({"message": "Comment added"}), 201
 
 
 

@@ -106,3 +106,26 @@ class Like(db.Model):
     __table_args__ = (
         db.UniqueConstraint("user_id", "post_id", name="unique_user_post_like"),
     )
+
+
+class Comment(db.Model):
+    __tablename__ = "comments"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    post_id = db.Column(
+        db.Integer,
+        db.ForeignKey("posts.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User")
