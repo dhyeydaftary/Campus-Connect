@@ -1,49 +1,6 @@
-const posts = [
-    {
-        postId: '1',
-        username: 'techclub_mit',
-        profileImage: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=150&h=150&fit=crop',
-        accountType: 'club', 
-        collegeName: 'MIT Campus',
-        postImages: [
-            'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800',
-            'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800',
-            'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800'
-        ],
-        currentImageIndex: 0,
-        caption: 'Hackathon 2025 is HERE! 🚀 48 hours of pure innovation, coding, and creativity. Over $10,000 in prizes!',
-        hashtags: ['Hackathon2025', 'TechClub', 'Innovation', 'Coding'],
-        likesCount: 847,
-        commentsCount: 56,
-        timestamp: '2 hours ago',
-        isLiked: false,
-        postTag: 'event',
-        eventDetails: { date: 'March 15-17, 2025', location: 'Engineering Building Hall A' },
-        comments: [
-            { id: 'c1', username: 'sarah_codes', text: 'So excited for this! Already forming my team 🔥' },
-            { id: 'c2', username: 'dev_john', text: 'Can first-years participate?' }
-        ]
-    },
-    {
-        postId: '2',
-        username: 'maya.chen',
-        profileImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop',
-        accountType: 'student',
-        collegeName: 'Stanford University',
-        postImages: ['https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800'],
-        currentImageIndex: 0,
-        caption: 'Officially done with finals! 📚✨ Time to celebrate and recharge.',
-        hashtags: ['FinalsWeek', 'CollegeLife', 'Achievement'],
-        likesCount: 342,
-        commentsCount: 28,
-        timestamp: '4 hours ago',
-        isLiked: true,
-        postTag: 'achievement',
-        comments: [
-            { id: 'c3', username: 'alex_study', text: 'Congrats Maya! You killed it! 🎉' }
-        ]
-    }
-];
+let posts = [];
+let currentPage = 1;
+let loading = false;
 
 // Helper for dynamic account badges
 function getBadge(type) {
@@ -53,6 +10,25 @@ function getBadge(type) {
         official: 'bg-amber-100 text-amber-600'
     };
     return `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${styles[type] || 'bg-slate-100'}">${type}</span>`;
+}
+
+async function loadPosts() {
+    if (loading) return;
+    loading = true;
+
+    try {
+        const res = await fetch(`/api/posts?page=${currentPage}&limit=5`);
+        if (!res.ok) return;
+
+        const data = await res.json();
+        posts = [...posts, ...data];
+        renderPosts();
+        currentPage++;
+    } catch (err) {
+        console.error("Failed to load posts", err);
+    } finally {
+        loading = false;
+    }
 }
 
 // Main Render Function
@@ -140,7 +116,9 @@ function renderPosts() {
         `;
         container.appendChild(article);
     });
-    lucide.createIcons();
+    if (window.lucide) {
+        lucide.createIcons();
+    }
 }
 
 // Logic: Toggle Like
@@ -193,10 +171,52 @@ function closeComments(event) {
 
 // Initialize on Load
 document.addEventListener("DOMContentLoaded", () => {
-    renderPosts();
+    loadPosts();
     
     const modal = document.getElementById('comment-modal');
     if (modal) {
         modal.addEventListener('click', closeComments);
     }
 });
+
+
+function openCreatePost() {
+    document.getElementById("create-post-modal").style.display = "flex";
+}
+
+function closeCreatePost() {
+    document.getElementById("create-post-modal").style.display = "none";
+}
+
+async function submitPost() {
+    const caption = document.getElementById("post-caption").value.trim();
+    const imageUrl = document.getElementById("post-image").value.trim();
+
+    if (!caption || !imageUrl) {
+        alert("Caption and image are required");
+        return;
+    }
+
+    const res = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            caption: caption,
+            image_url: imageUrl
+        })
+    });
+
+    if (!res.ok) {
+        alert("Failed to create post");
+        return;
+    }
+
+    // Reset + reload feed
+    closeCreatePost();
+    document.getElementById("post-caption").value = "";
+    document.getElementById("post-image").value = "";
+
+    posts = [];
+    currentPage = 1;
+    loadPosts();
+}

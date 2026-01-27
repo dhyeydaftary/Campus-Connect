@@ -64,3 +64,21 @@ class Event(db.Model):
     )
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Post(db.Model):
+    __tablename__ = "posts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    caption = db.Column(db.Text, nullable=False)
+    image_url = db.Column(db.String(500), nullable=False)
+    post_type = db.Column(db.String(20), default="normal")  # normal / event
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User", backref="posts")
