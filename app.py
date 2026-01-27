@@ -9,7 +9,7 @@ from flask import (
 )
 
 from config import Config
-from models import db, bcrypt, User, Post
+from models import db, bcrypt, User, Post, Like
 import random
 
 app = Flask(__name__)
@@ -18,6 +18,8 @@ app.config.from_object(Config)
 
 FAKE_POSTS = [
     {
+        "id": None,
+        "isFake": True,
         "username": "Campus Club",
         "profileImage": "https://ui-avatars.com/api/?name=Campus+Club",
         "postImages": [f"https://picsum.photos/600?seed={random.randint(1,9999)}"],
@@ -32,6 +34,8 @@ FAKE_POSTS = [
         "timestamp": "Just now"
     },
     {
+        "id": None,
+        "isFake": True,
         "username": "Dhruv Patel",
         "profileImage": "https://ui-avatars.com/api/?name=Dhruv+Patel",
         "postImages": [f"https://picsum.photos/600?seed={random.randint(1,9999)}"],
@@ -46,6 +50,8 @@ FAKE_POSTS = [
         "timestamp": "5 min ago"
     },
     {
+        "id": None,
+        "isFake": True,
         "username": "Placement Cell",
         "profileImage": "https://ui-avatars.com/api/?name=Placement+Cell",
         "postImages": [f"https://picsum.photos/600?seed={random.randint(1,9999)}"],
@@ -135,6 +141,7 @@ def signup():
         return jsonify({"error": "Internal server error"}), 500
 
 
+
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.json
@@ -163,6 +170,7 @@ def login():
     }), 200
 
 
+
 @app.route("/api/posts")
 def api_posts():
     if "user_id" not in session:
@@ -176,7 +184,15 @@ def api_posts():
     )
 
     formatted_db_posts = []
+
     for post, user in db_posts:
+
+        likes_count = Like.query.filter_by(post_id=post.id).count()
+        is_liked = Like.query.filter_by(
+            post_id=post.id,
+            user_id=session["user_id"]
+        ).first() is not None
+
         formatted_db_posts.append({
             "id": post.id,
             "username": user.full_name,
@@ -186,10 +202,10 @@ def api_posts():
             "caption": post.caption,
             "accountType": "student",
             "collegeName": user.branch,
-            "likesCount": random.randint(5, 100), # Randomized for demo
+            "likesCount": likes_count,
             "commentsCount": 0,
             "comments": [],
-            "isLiked": False,
+            "isLiked": is_liked,
             "timestamp": post.created_at.strftime("%I:%M %p")
         })
 
@@ -206,7 +222,6 @@ def api_posts():
         },
         "posts": combined
     })
-
 
 
 
@@ -232,6 +247,37 @@ def create_post():
     db.session.commit()
 
     return jsonify({"message": "Post created"}), 201
+
+
+@app.route("/api/posts/<int:post_id>/like", methods=["POST"])
+def toggle_like(post_id):
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+
+    existing = Like.query.filter_by(
+        user_id=user_id,
+        post_id=post_id
+    ).first()
+
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        liked = False
+    else:
+        like = Like(user_id=user_id, post_id=post_id)
+        db.session.add(like)
+        db.session.commit()
+        liked = True
+
+    likes_count = Like.query.filter_by(post_id=post_id).count()
+
+    return jsonify({
+        "liked": liked,
+        "likesCount": likes_count
+    })
+
 
 
 @app.route("/dev/seed-post")

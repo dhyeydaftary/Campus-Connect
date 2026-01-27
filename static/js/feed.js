@@ -129,11 +129,28 @@ function renderPosts() {
 }
 
 // Logic: Toggle Like
-function toggleLike(index) {
+async function toggleLike(index) {
     const post = posts[index];
-    post.isLiked = !post.isLiked;
-    post.likesCount += post.isLiked ? 1 : -1;
-    renderPosts();
+
+    if (!post.id) {
+        console.warn("Fake post — likes disabled");
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/posts/${post.id}/like`, {
+            method: "POST"
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        post.isLiked = data.liked;
+        post.likesCount = data.likesCount;
+        renderPosts();
+    } catch (err) {
+        console.error("Like failed", err);
+    }
 }
 
 // Logic: Image Carousel Navigation
