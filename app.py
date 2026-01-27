@@ -9,10 +9,57 @@ from flask import (
 )
 
 from config import Config
-from models import db, bcrypt, User
+from models import db, bcrypt, User, Post
+import random
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+
+FAKE_POSTS = [
+    {
+        "username": "Campus Club",
+        "profileImage": "https://ui-avatars.com/api/?name=Campus+Club",
+        "postImages": [f"https://picsum.photos/600?seed={random.randint(1,9999)}"],
+        "currentImageIndex": 0,
+        "caption": "Hackathon registrations open 🚀",
+        "accountType": "club",
+        "collegeName": "CSE",
+        "likesCount": random.randint(10, 500),
+        "commentsCount": random.randint(1, 20),
+        "comments": [],
+        "isLiked": False,
+        "timestamp": "Just now"
+    },
+    {
+        "username": "Dhruv Patel",
+        "profileImage": "https://ui-avatars.com/api/?name=Dhruv+Patel",
+        "postImages": [f"https://picsum.photos/600?seed={random.randint(1,9999)}"],
+        "currentImageIndex": 0,
+        "caption": "Late night coding hits different 💻",
+        "accountType": "student",
+        "collegeName": "IT",
+        "likesCount": random.randint(10, 500),
+        "commentsCount": random.randint(1, 20),
+        "comments": [],
+        "isLiked": False,
+        "timestamp": "5 min ago"
+    },
+    {
+        "username": "Placement Cell",
+        "profileImage": "https://ui-avatars.com/api/?name=Placement+Cell",
+        "postImages": [f"https://picsum.photos/600?seed={random.randint(1,9999)}"],
+        "currentImageIndex": 0,
+        "caption": "Amazon internship shortlist released",
+        "accountType": "official",
+        "collegeName": "Admin",
+        "likesCount": random.randint(100, 1000),
+        "commentsCount": random.randint(10, 50),
+        "comments": [],
+        "isLiked": False,
+        "timestamp": "1 hr ago"
+    }
+]
 
 # --------------------------------------------------
 # CONFIG
@@ -111,6 +158,89 @@ def login():
     session["user_name"] = user.full_name
 
     return jsonify({"message": "Login successful"}), 200
+
+
+@app.route("/api/posts")
+def api_posts():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    # Fetch all posts from DB
+    db_posts = (
+        db.session.query(Post, User)
+        .join(User, Post.user_id == User.id)
+        .all()
+    )
+
+    formatted_db_posts = []
+    for post, user in db_posts:
+        formatted_db_posts.append({
+            "id": post.id,
+            "username": user.full_name,
+            "profileImage": f"https://ui-avatars.com/api/?name={user.full_name}",
+            "postImages": [post.image_url],
+            "currentImageIndex": 0,
+            "caption": post.caption,
+            "accountType": "student",
+            "collegeName": user.branch,
+            "likesCount": random.randint(5, 100), # Randomized for demo
+            "commentsCount": 0,
+            "comments": [],
+            "isLiked": False,
+            "timestamp": post.created_at.strftime("%I:%M %p")
+        })
+
+    # Combine DB posts with ALL Fake posts
+    combined = formatted_db_posts + FAKE_POSTS
+    
+    # Shuffle the entire list so DB posts don't always appear first
+    random.shuffle(combined)
+
+    return jsonify(combined)
+
+
+
+@app.route("/api/posts", methods=["POST"])
+def create_post():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json
+    caption = data.get("caption")
+    image_url = data.get("image_url")
+
+    if not caption or not image_url:
+        return jsonify({"error": "Caption and image required"}), 400
+
+    post = Post(
+        user_id=session["user_id"],
+        caption=caption,
+        image_url=image_url
+    )
+
+    db.session.add(post)
+    db.session.commit()
+
+    return jsonify({"message": "Post created"}), 201
+
+
+@app.route("/dev/seed-post")
+def seed_post():
+    user = User.query.first()
+
+    if not user:
+        return "No users found. Signup first.", 400
+
+    post = Post(
+        user_id=user.id,
+        caption="First post on Campus Connect 🚀",
+        image_url="https://picsum.photos/600"
+    )
+
+    db.session.add(post)
+    db.session.commit()
+
+    return "Post created successfully"
 
 # --------------------------------------------------
 # APP ENTRY POINT

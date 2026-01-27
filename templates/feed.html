@@ -32,6 +32,11 @@
                 <i data-lucide="search"></i>
                 <span class="hidden xl:block">Search</span>
             </div>
+            <div onclick="openCreatePost()" class="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 cursor-pointer">
+                <i data-lucide="plus-square"></i>
+                <span class="hidden xl:block">Create</span>
+            </div>
+
             <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50">
                 <i data-lucide="message-circle"></i>
                 <span class="hidden xl:block">Messages</span>
@@ -50,6 +55,7 @@
         </main>
     </div>
 </div>
+
 <div id="comment-modal" onclick="closeComments(event)">
     <div class="bg-white w-full max-w-lg rounded-2xl overflow-hidden max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
         <header class="p-4 border-b flex justify-between items-center">
@@ -64,6 +70,35 @@
         </div>
     </div>
 </div>
+
+<!-- CREATE POST MODAL -->
+<div id="create-post-modal"
+    class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+
+    <div class="bg-white w-full max-w-md rounded-2xl p-4">
+        <header class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-lg">Create Post</h3>
+            <button onclick="closeCreatePost()">
+                <i data-lucide="x"></i>
+            </button>
+        </header>
+
+        <input id="post-image"
+            type="text"
+            placeholder="Image URL"
+            class="w-full mb-3 px-4 py-2 border rounded-lg text-sm"/>
+
+        <textarea id="post-caption"
+                placeholder="Write a caption..."
+                class="w-full h-28 px-4 py-2 border rounded-lg text-sm resize-none"></textarea>
+
+        <button onclick="submitPost()"
+                class="w-full mt-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">
+            Post
+        </button>
+    </div>
+</div>
+
 
 </body>
 </html>
