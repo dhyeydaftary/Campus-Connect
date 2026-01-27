@@ -38,10 +38,22 @@ function getBadge(type) {
 }
 
 
+const loader = document.getElementById("feed-loader");
+
+function showLoader() {
+    if (loader) loader.classList.remove("hidden");
+}
+
+function hideLoader() {
+    if (loader) loader.classList.add("hidden");
+}
+
+
 // Fetch Posts from API
 async function loadPosts() {
     if (loading) return;
     loading = true;
+    showLoader();
 
     try {
         const res = await fetch(`/api/posts?page=${currentPage}&limit=5`);
@@ -50,7 +62,13 @@ async function loadPosts() {
         const data = await res.json();
 
         if (!viewer) {
-            viewer = data.viewer;   // save once
+            viewer = data.viewer;
+        }
+
+        if (data.posts.length === 0) {
+            window.removeEventListener("scroll", handleScroll);
+            hideLoader();
+            return;
         }
 
         posts = [...posts, ...data.posts];
@@ -61,6 +79,7 @@ async function loadPosts() {
         console.error("Failed to load posts", err);
     } finally {
         loading = false;
+        hideLoader();
     }
 }
 
@@ -352,3 +371,16 @@ window.addEventListener("scroll", () => {
         loadPosts();
     }
 });
+
+
+// Infinite Scroll Handler
+function handleScroll() {
+    const nearBottom =
+        window.innerHeight + window.scrollY >=
+        document.body.offsetHeight - 300;
+
+    if (nearBottom) {
+        loadPosts();
+    }
+}
+window.addEventListener("scroll", handleScroll);

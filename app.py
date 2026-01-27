@@ -177,11 +177,19 @@ def api_posts():
         return jsonify({"error": "Unauthorized"}), 401
 
     # Fetch all posts from DB
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 5))
+    offset = (page - 1) * limit
+
     db_posts = (
         db.session.query(Post, User)
         .join(User, Post.user_id == User.id)
+        .order_by(Post.created_at.desc())
+        .offset(offset)
+        .limit(limit)
         .all()
     )
+
 
     formatted_db_posts = []
 
@@ -215,7 +223,13 @@ def api_posts():
     combined = formatted_db_posts + FAKE_POSTS
     
     # Shuffle the entire list so DB posts don't always appear first
-    random.shuffle(combined)
+    if page == 1:
+        random.shuffle(combined)
+
+    # if page == 1:
+    #     combined = formatted_db_posts + FAKE_POSTS
+    # else:
+    #     combined = formatted_db_posts
 
     return jsonify({
         "viewer": {
