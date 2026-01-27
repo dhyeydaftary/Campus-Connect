@@ -223,13 +223,13 @@ def api_posts():
     combined = formatted_db_posts + FAKE_POSTS
     
     # Shuffle the entire list so DB posts don't always appear first
-    if page == 1:
-        random.shuffle(combined)
-
     # if page == 1:
-    #     combined = formatted_db_posts + FAKE_POSTS
-    # else:
-    #     combined = formatted_db_posts
+    #     random.shuffle(combined)
+
+    if page == 1:
+        combined = formatted_db_posts + FAKE_POSTS
+    else:
+        combined = formatted_db_posts
 
     return jsonify({
         "viewer": {

@@ -2,6 +2,7 @@ let posts = [];
 let currentPage = 1;
 let loading = false;
 let viewer = null;
+let hasMore = true;
 
 
 // Helper: Time Ago Formatter
@@ -38,6 +39,7 @@ function getBadge(type) {
 }
 
 
+// Loader Control
 const loader = document.getElementById("feed-loader");
 
 function showLoader() {
@@ -49,11 +51,24 @@ function hideLoader() {
 }
 
 
+// Skeleton Control
+const skeleton = document.getElementById("skeleton-container");
+
+function showSkeleton() {
+    if (skeleton) skeleton.classList.remove("hidden");
+}
+
+function hideSkeleton() {
+    if (skeleton) skeleton.classList.add("hidden");
+}
+
+
 // Fetch Posts from API
 async function loadPosts() {
-    if (loading) return;
+    if (loading || !hasMore) return;
+
     loading = true;
-    showLoader();
+    showSkeleton();
 
     try {
         const res = await fetch(`/api/posts?page=${currentPage}&limit=5`);
@@ -61,27 +76,25 @@ async function loadPosts() {
 
         const data = await res.json();
 
-        if (!viewer) {
-            viewer = data.viewer;
-        }
-
+        // NO MORE POSTS — STOP EVERYTHING
         if (data.posts.length === 0) {
-            window.removeEventListener("scroll", handleScroll);
-            hideLoader();
+            hasMore = false;
+            hideSkeleton();
             return;
         }
 
         posts = [...posts, ...data.posts];
         renderPosts(true);
         currentPage++;
-        
+
     } catch (err) {
         console.error("Failed to load posts", err);
     } finally {
         loading = false;
-        hideLoader();
+        hideSkeleton();
     }
 }
+
 
 
 // Main Render Function
@@ -375,6 +388,8 @@ window.addEventListener("scroll", () => {
 
 // Infinite Scroll Handler
 function handleScroll() {
+    if (!hasMore) return;
+
     const nearBottom =
         window.innerHeight + window.scrollY >=
         document.body.offsetHeight - 300;
@@ -383,4 +398,5 @@ function handleScroll() {
         loadPosts();
     }
 }
+
 window.addEventListener("scroll", handleScroll);
