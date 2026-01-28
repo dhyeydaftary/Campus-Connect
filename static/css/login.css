@@ -1,0 +1,47 @@
+:root {
+    --primary: #6366f1;
+    --border: #e2e8f0;
+}
+
+.gradient-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+}
+
+.gradient-soft {
+    background: linear-gradient(to bottom right, #f8fafc, #f1f5f9, #e2e8f0);
+}
+
+.shadow-elevated {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Toast */
+#toast-container {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.toast {
+    background: white;
+    border: 1px solid var(--border);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    min-width: 300px;
+    transform: translateX(120%);
+    transition: all 0.3s ease;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast.destructive {
+    border-color: #ef4444;
+    background: #fef2f2;
+}

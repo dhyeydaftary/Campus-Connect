@@ -6,14 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile | CampusConnect</title>
 
-    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Shared Auth Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+    <script defer src="{{ url_for('static', filename='js/profile.js') }}"></script>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-4 gradient-soft text-slate-900">
@@ -84,9 +81,6 @@
 
     <!-- Toast -->
     <div id="toast-container"></div>
-
-    <!-- External JS -->
-    <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
 
 </body>
 

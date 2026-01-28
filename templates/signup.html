@@ -10,7 +10,8 @@
 
     <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
+    <script defer src="{{ url_for('static', filename='js/signup.js') }}"></script>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-4 gradient-soft text-slate-900">
@@ -19,43 +20,56 @@
         <div class="bg-white rounded-lg border border-slate-200 shadow-elevated overflow-hidden">
             <div class="p-8">
 
-                <div class="text-center mb-8">
-                    <a href="/" class="inline-flex items-center gap-2">
-                        <div class="p-2.5 rounded-xl gradient-primary shadow-soft">
-                            <i data-lucide="graduation-cap" class="h-6 w-6 text-white"></i>
-                        </div>
-                        <span class="font-bold text-2xl text-slate-900">
-                            Campus<span class="text-indigo-600">Connect</span>
-                        </span>
-                    </a>
-                    <p class="text-slate-500 mt-3 text-sm">
-                        Create your account to get started.
-                    </p>
+                <div class="text-center mb-4">
+                    <h1 class="text-3xl font-bold mb-2">
+                        <i data-lucide="graduation-cap" class="inline-block h-8 w-8 text-indigo-600"></i>
+                        Campus Connect
+                    </h1>
+                    <p class="text-slate-500">Create your account and start connecting!</p>
                 </div>
 
                 <form id="signupForm" class="space-y-4" novalidate>
 
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium">Full Name</label>
-                        <div class="relative">
-                            <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="fullName" type="text" placeholder="Your name" class="input-field" required>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium">First Name</label>
+                            <input id="firstName" type="text" placeholder="John" class="input-field" required>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium">Last Name</label>
+                            <input id="lastName" type="text" placeholder="Doe" class="input-field" required>
                         </div>
                     </div>
 
                     <div class="space-y-2">
-                        <label class="text-sm font-medium">Email</label>
+                        <label class="text-sm font-medium">University Email</label>
                         <div class="relative">
                             <i data-lucide="mail" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="email" type="email" placeholder="erno@mail.ljku.edu.in" class="input-field" required>
+                            <input id="email" type="email" placeholder="your.email@university.edu" class="input-field" required>
                         </div>
                     </div>
 
                     <div class="space-y-2">
-                        <label class="text-sm font-medium">Branch</label>
+                        <label class="text-sm font-medium">University</label>
+                        <div class="relative">
+                            <i data-lucide="school" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+                            <select id="university" class="input-field appearance-none" required>
+                                <option value="">Select your university</option>
+                                <option value="mit">Massachusetts Institute of Technology</option>
+                                <option value="stanford">Stanford University</option>
+                                <option value="harvard">Harvard University</option>
+                                <option value="berkeley">UC Berkeley</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">Major / Field of Study</label>
                         <div class="relative">
                             <i data-lucide="book-open" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="branch" type="text" placeholder="IT / CSE / ME" class="input-field" required>
+                            <input id="major" type="text" placeholder="Computer Science" class="input-field" required>
                         </div>
                     </div>
 
@@ -71,7 +85,7 @@
                         <label class="text-sm font-medium">Password</label>
                         <div class="relative">
                             <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="password" type="password" placeholder="••••••••" class="input-field" minlength="6" required>
+                            <input id="password" type="password" placeholder="Create a strong password" class="input-field" minlength="6" required>
                         </div>
                     </div>
 
@@ -79,7 +93,7 @@
                         <label class="text-sm font-medium">Confirm Password</label>
                         <div class="relative">
                             <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="confirm-password" type="password" placeholder="••••••••" class="input-field" minlength="6" required>
+                            <input id="confirm-password" type="password" placeholder="Re-enter your password" class="input-field" minlength="6" required>
                         </div>
                     </div>
 
@@ -88,14 +102,16 @@
                         <span id="btn-text">Create Account</span>
                     </button>
 
-                </form>
+                    <hr class="my-6 border-slate-200">
+                    
+                    <div class="text-center">
+                        <p class="text-slate-500 text-sm">
+                            Already have an account? 
+                            <a href="/login" class="text-indigo-600 font-semibold hover:underline">Login</a>
+                        </p>
+                    </div>
 
-                <p class="text-center text-slate-500 text-sm mt-6">
-                    Already have an account?
-                    <a href="/login" class="text-indigo-600 font-medium hover:underline">
-                        Login
-                    </a>
-                </p>
+                </form>
 
             </div>
         </div>
@@ -103,7 +119,7 @@
 
     <div id="toast-container"></div>
 
-    <script src="{{ url_for('static', filename='js/signup.js') }}"></script>
+    
     <script>
         // Initialize Lucide icons
         lucide.createIcons();

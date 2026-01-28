@@ -35,14 +35,32 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
 
         // 1. DATA EXTRACTION
-        const fullName = document.getElementById("fullName").value.trim();
+        const firstName = document.getElementById("firstName").value.trim();
+        const lastName = document.getElementById("lastName").value.trim();
         const email = document.getElementById("email").value.trim();
-        const branch = document.getElementById("branch").value.trim();
+        const university = document.getElementById("university").value.trim();
+        const major = document.getElementById("major").value.trim();
         const batch = document.getElementById("batch").value.trim();
         const password = document.getElementById("password").value;
         const confirm = document.getElementById("confirm-password").value;
 
+
         // 2. FRONTEND VALIDATION
+        if (!university) {
+            showToast("University required", "Please select your university.", true);
+            return;
+        }
+
+        if (!major) {
+            showToast("Major required", "Please select your major.", true);
+            return;
+        }
+
+        if (!batch) {
+            showToast("Batch required", "Please select your batch.", true);
+            return;
+        }
+
         if (password !== confirm) {
             showToast("Passwords do not match", "Please check again.", true);
             return;
@@ -65,10 +83,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: {
                     "Content-Type": "application/json"
                 },
+
                 body: JSON.stringify({
-                    full_name: fullName,
+                    first_name: firstName,
+                    last_name: lastName,
                     email: email,
-                    branch: branch,
+                    university: university,
+                    major: major,
                     batch: batch,
                     password: password
                 })

@@ -43,6 +43,10 @@
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
+select.input-field {
+    padding-right: 40px;
+    cursor: pointer;
+}
 /* Button */
 .btn-primary {
     width: 100%;
