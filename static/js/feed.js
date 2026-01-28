@@ -373,19 +373,6 @@ async function submitPost() {
     loadPosts();
 }
 
-
-// Infinite Scroll
-window.addEventListener("scroll", () => {
-    const nearBottom =
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 300;
-
-    if (nearBottom) {
-        loadPosts();
-    }
-});
-
-
 // Infinite Scroll Handler
 function handleScroll() {
     if (!hasMore) return;
@@ -399,4 +386,6 @@ function handleScroll() {
     }
 }
 
+
+// Attach Scroll Event
 window.addEventListener("scroll", handleScroll);
