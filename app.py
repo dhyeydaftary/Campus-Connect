@@ -10,6 +10,7 @@ from flask import (
 
 from config import Config
 from models import db, bcrypt, User, Post, Like, Comment
+from sqlalchemy import func
 import random
 
 app = Flask(__name__)
@@ -181,27 +182,56 @@ def api_posts():
     limit = int(request.args.get("limit", 5))
     offset = (page - 1) * limit
 
+    likes_subq = (
+        db.session.query(
+            Like.post_id,
+            func.count(Like.id).label("likes")
+        )
+        .group_by(Like.post_id)
+        .subquery()
+    )
+
+    comments_subq = (
+        db.session.query(
+            Comment.post_id,
+            func.count(Comment.id).label("comments")
+        )
+        .group_by(Comment.post_id)
+        .subquery()
+    )
+
     db_posts = (
-        db.session.query(Post, User)
+        db.session.query(
+            Post,
+            User,
+            func.coalesce(likes_subq.c.likes, 0).label("likes"),
+            func.coalesce(comments_subq.c.comments, 0).label("comments")
+        )
         .join(User, Post.user_id == User.id)
-        .order_by(Post.created_at.desc())
+        .outerjoin(likes_subq, likes_subq.c.post_id == Post.id)
+        .outerjoin(comments_subq, comments_subq.c.post_id == Post.id)
+        .order_by(
+            (
+                func.coalesce(likes_subq.c.likes, 0) * 3 +
+                func.coalesce(comments_subq.c.comments, 0) * 5 -
+                func.extract("epoch", func.now() - Post.created_at) / 3600
+            ).desc()
+        )
         .offset(offset)
         .limit(limit)
         .all()
     )
 
 
+
     formatted_db_posts = []
 
-    for post, user in db_posts:
+    for post, user, likes_count, comments_count in db_posts:
 
-        likes_count = Like.query.filter_by(post_id=post.id).count()
         is_liked = Like.query.filter_by(
             post_id=post.id,
             user_id=session["user_id"]
         ).first() is not None
-
-        comments_count = Comment.query.filter_by(post_id=post.id).count()
 
         formatted_db_posts.append({
             "id": post.id,
