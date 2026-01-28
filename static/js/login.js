@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.ok) {
                 showToast(`Welcome back, ${result.user_name}!`, "Login successful.");
                 setTimeout(() => {
-                    window.location.href = "/feed";
+                    window.location.href = "/home";
                 }, 800);
             } else {
                 showToast("Login failed", result.error || "Invalid credentials.", true);

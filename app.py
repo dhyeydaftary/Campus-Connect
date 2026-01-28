@@ -97,14 +97,14 @@ def signup_page():
     return render_template("signup.html")
 
 
-@app.route("/feed")
-def feed_page():
-    # Protect feed route
+@app.route("/home")
+def home_page():
+    # Protect home route
     if "user_id" not in session:
         return redirect(url_for("login_page"))
 
     return render_template(
-        "feed.html",
+        "home.html",
         user_name=session.get("user_name")
     )
 
