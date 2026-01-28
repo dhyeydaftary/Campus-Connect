@@ -83,7 +83,7 @@ bcrypt.init_app(app)
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("landing.html")
 
 
 @app.route("/login")
@@ -121,7 +121,7 @@ def logout():
 def signup():
     data = request.json
 
-    required_fields = ["full_name", "email", "password", "branch", "batch"]
+    required_fields = ["first_name", "last_name", "email", "password", "university", "major", "batch"]
     if not data or not all(k in data for k in required_fields):
         return jsonify({"error": "Missing required fields"}), 400
 

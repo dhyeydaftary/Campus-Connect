@@ -5,55 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - CampusConnect</title>
 
-    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <style>
-        :root {
-            --primary: #6366f1;
-            --border: #e2e8f0;
-        }
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <script defer src="{{ url_for('static', filename='js/login.js') }}"></script>
 
-        .gradient-primary {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-        }
-
-        .gradient-soft {
-            background: linear-gradient(to bottom right, #f8fafc, #f1f5f9, #e2e8f0);
-        }
-
-        .shadow-elevated {
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-                        0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        /* Toast */
-        #toast-container {
-            position: fixed;
-            bottom: 1rem;
-            right: 1rem;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .toast {
-            background: white;
-            border: 1px solid var(--border);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            min-width: 300px;
-            transform: translateX(120%);
-            transition: all 0.3s ease;
-        }
-
-        .toast.show { transform: translateX(0); }
-        .toast.destructive { border-color: #ef4444; background: #fef2f2; }
-    </style>
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-4 gradient-soft text-slate-900">
@@ -63,23 +20,19 @@
         <div class="p-8">
 
             <!-- Header -->
-            <div class="text-center mb-8">
-                <a href="/" class="inline-flex items-center gap-2">
-                    <div class="p-2.5 rounded-xl gradient-primary">
-                        <i data-lucide="graduation-cap" class="h-6 w-6 text-white"></i>
-                    </div>
-                    <span class="font-bold text-2xl">
-                        Campus<span class="text-indigo-600">Connect</span>
-                    </span>
-                </a>
-                <p class="text-slate-500 mt-3">Welcome back! Login to continue.</p>
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-bold mb-2">
+                    <i data-lucide="graduation-cap" class="inline-block h-8 w-8 text-indigo-600"></i>
+                    Campus Connect
+                </h1>
+                <p class="text-slate-500">Welcome back! Please login to your account.</p>
             </div>
 
             <!-- Login Form -->
-            <form id="login-form" class="space-y-5">
+            <form id="login-form" class="space-y-4">
 
                 <div>
-                    <label for="email" class="text-sm font-medium">College Email</label>
+                    <label for="email" class="text-sm font-medium">Email Address</label>
                     <div class="relative mt-1">
                         <i data-lucide="mail"
                             class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
@@ -88,7 +41,7 @@
                             type="email"
                             required
                             class="h-11 w-full rounded-md border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm focus:ring-2 focus:ring-indigo-500/30"
-                            placeholder="you@mail.ljku.edu.in"
+                            placeholder="your.erno@mail.ljku.edu.in"
                         >
                     </div>
                 </div>
@@ -103,7 +56,7 @@
                             type="password"
                             required
                             class="h-11 w-full rounded-md border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm focus:ring-2 focus:ring-indigo-500/30"
-                            placeholder="••••••••"
+                            placeholder="Enter your password"
                         >
                     </div>
                 </div>
@@ -117,21 +70,26 @@
                     <span id="btn-text">Login</span>
                 </button>
 
-            </form>
+                <div class="text-center">
+                    <a href="#" class="text-sm text-indigo-600 hover:underline">Forgot Password?</a>
+                </div>
 
-            <p class="text-center text-slate-500 text-sm mt-6">
-                Don’t have an account?
-                <a href="/signup" class="text-indigo-600 font-medium hover:underline">Sign up</a>
-            </p>
+                <hr class="my-6 border-slate-200">
+
+                <div class="text-center">
+                    <p class="text-slate-500 text-sm">
+                        Don't have an account? 
+                        <a href="/signup" class="text-indigo-600 font-semibold hover:underline">Sign Up</a>
+                    </p>
+                </div>
+
+            </form>
 
         </div>
     </div>
 </div>
 
 <div id="toast-container"></div>
-
-<!-- Real Login Logic -->
-<script src="/static/js/login.js"></script>
 
 <script>
     lucide.createIcons();

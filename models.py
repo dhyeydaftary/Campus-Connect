@@ -10,15 +10,21 @@ class User(db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
-    full_name = db.Column(db.String(100), nullable=False)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    branch = db.Column(db.String(50), nullable=False)
+    university = db.Column(db.String(100), nullable=False)
+    major = db.Column(db.String(100), nullable=False)
     batch = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # One-to-many relationship
     events = db.relationship("Event", backref="author", lazy="select")
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
 
     def set_password(self, password: str):
         if not password:
@@ -39,9 +45,11 @@ class User(db.Model):
             raise ValueError("Password is required")
 
         user = cls(
-            full_name=data.get("full_name"),
+            first_name=data.get("first_name"),
+            last_name=data.get("last_name"),
             email=email,
-            branch=data.get("branch"),
+            university=data.get("university"),
+            major=data.get("major"),
             batch=data.get("batch")
         )
         user.set_password(password)
