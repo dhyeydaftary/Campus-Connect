@@ -876,3 +876,259 @@ function handleScroll() {
 
 // Attach Scroll Event
 window.addEventListener("scroll", handleScroll);
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUGGESTED FOR YOU - DYNAMIC LOADING
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadSuggestions() {
+    try {
+        const response = await fetch('/api/suggestions');
+        
+        if (!response.ok) {
+            console.error('Failed to load suggestions');
+            return;
+        }
+        
+        const data = await response.json();
+        const container = document.getElementById('suggestions-container');
+        
+        if (!container) {
+            console.error('Suggestions container not found');
+            return;
+        }
+        
+        // Clear existing content
+        container.innerHTML = '';
+        
+        if (data.suggestions.length === 0) {
+            container.innerHTML = `
+                <p class="text-gray-500 text-sm text-center py-4">
+                    No suggestions available
+                </p>
+            `;
+            return;
+        }
+        
+        // Add each suggestion
+        data.suggestions.forEach(user => {
+            const suggestionCard = `
+                <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition duration-200">
+                    <div class="flex items-center gap-3">
+                        <img src="${user.profile_picture}" 
+                             class="w-10 h-10 rounded-full object-cover"
+                             alt="${user.name}"
+                             onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}'">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">${user.name}</p>
+                            <p class="text-xs text-gray-500">${user.major}</p>
+                        </div>
+                    </div>
+                    <button onclick="sendConnectionRequest(${user.id})"
+                            class="px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition duration-200">
+                        Connect
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', suggestionCard);
+        });
+        
+    } catch (error) {
+        console.error('Error loading suggestions:', error);
+    }
+}
+
+// Placeholder function for connection request (implement later)
+async function sendConnectionRequest(userId) {
+    try {
+        const response = await fetch('/api/connections/request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ receiver_id: userId })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Success - show message and refresh suggestions
+            alert('Connection request sent successfully!');
+            loadSuggestions(); // Refresh suggestions to remove this user
+        } else {
+            // Error - show error message
+            alert(data.error || 'Failed to send connection request');
+        }
+        
+    } catch (error) {
+        console.error('Error sending connection request:', error);
+        alert('Error sending connection request. Please try again.');
+    }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DYNAMIC PROFILE CARD
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadProfileCard() {
+    try {
+        const response = await fetch('/api/profile/me');
+        
+        if (!response.ok) {
+            console.error('Failed to load profile');
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // Update posts count
+        const postsCount = document.getElementById('profile-posts-count');
+        if (postsCount) {
+            postsCount.textContent = data.stats.posts;
+        }
+        
+        // Update connections count
+        const connectionsCount = document.getElementById('profile-connections-count');
+        if (connectionsCount) {
+            connectionsCount.textContent = data.stats.connections;
+        }
+        
+    } catch (error) {
+        console.error('Error loading profile:', error);
+    }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTO-LOAD ON PAGE LOAD
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Load suggestions when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadSuggestions();
+    loadProfileCard();
+    loadPendingRequests();
+});
+
+
+async function acceptConnectionRequest(requestId) {
+    try {
+        const response = await fetch(`/api/connections/accept/${requestId}`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Connection request accepted!');
+            loadPendingRequests(); // Refresh pending requests
+            loadSuggestions(); // Refresh suggestions
+            loadProfileCard(); // Refresh connection count
+        } else {
+            alert(data.error || 'Failed to accept request');
+        }
+        
+    } catch (error) {
+        console.error('Error accepting request:', error);
+        alert('Error accepting request. Please try again.');
+    }
+}
+
+
+async function rejectConnectionRequest(requestId) {
+    try {
+        const response = await fetch(`/api/connections/reject/${requestId}`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Connection request rejected');
+            loadPendingRequests(); // Refresh pending requests
+        } else {
+            alert(data.error || 'Failed to reject request');
+        }
+        
+    } catch (error) {
+        console.error('Error rejecting request:', error);
+        alert('Error rejecting request. Please try again.');
+    }
+}
+
+
+async function loadPendingRequests() {
+    try {
+        const response = await fetch('/api/connections/pending');
+        
+        if (!response.ok) {
+            console.error('Failed to load pending requests');
+            return;
+        }
+        
+        const data = await response.json();
+        const container = document.getElementById('pending-requests-container');
+        
+        if (!container) {
+            // Container doesn't exist yet, that's okay
+            return;
+        }
+        
+        // Update count badge if it exists
+        const badge = document.getElementById('pending-requests-badge');
+        if (badge) {
+            if (data.count > 0) {
+                badge.textContent = data.count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+        
+        // Clear existing content
+        container.innerHTML = '';
+        
+        if (data.requests.length === 0) {
+            container.innerHTML = `
+                <p class="text-gray-500 text-sm text-center py-4">
+                    No pending connection requests
+                </p>
+            `;
+            return;
+        }
+        
+        // Add each request
+        data.requests.forEach(req => {
+            const requestCard = `
+                <div class="bg-white p-4 rounded-lg border border-gray-200 mb-3">
+                    <div class="flex items-center gap-3 mb-3">
+                        <img src="${req.sender.profile_picture}" 
+                                class="w-12 h-12 rounded-full object-cover"
+                                alt="${req.sender.name}">
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-900">${req.sender.name}</p>
+                            <p class="text-xs text-gray-500">${req.sender.major}</p>
+                            <p class="text-xs text-gray-400">${req.sender.university}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="acceptConnectionRequest(${req.request_id})"
+                                class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                            Accept
+                        </button>
+                        <button onclick="rejectConnectionRequest(${req.request_id})"
+                                class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition">
+                            Reject
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', requestCard);
+        });
+        
+    } catch (error) {
+        console.error('Error loading pending requests:', error);
+    }
+}

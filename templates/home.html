@@ -118,11 +118,11 @@
                         <!-- Stats -->
                         <div class="flex justify-around mt-4 pt-4 border-t border-gray-100">
                             <div class="text-center">
-                                <div class="font-bold text-gray-900">245</div>
+                                <div id="profile-connections-count" class="text-3xl font-bold">0</div>
                                 <div class="text-xs text-gray-500">Connections</div>
                             </div>
                             <div class="text-center">
-                                <div class="font-bold text-gray-900">89</div>
+                                <div id="profile-posts-count" class="text-3xl font-bold">0</div>
                                 <div class="text-xs text-gray-500">Posts</div>
                             </div>
                         </div>
@@ -283,79 +283,21 @@
             <!-- RIGHT SIDEBAR (25%) -->
             <aside class="hidden lg:block lg:col-span-3">
                 
-                <!-- SUGGESTED CONNECTIONS CARD -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-                    <h3 class="font-bold text-gray-900 mb-4 flex items-center justify-between">
-                        <span class="flex items-center">
-                            <i class="fas fa-user-friends text-indigo-600 mr-2"></i>
-                            Suggested for you
+                <div class="bg-white rounded-lg shadow p-4 mb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-gray-900">Connection Requests</h3>
+                        <span id="pending-requests-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                            0
                         </span>
-                        <a href="#" class="text-xs text-indigo-600 hover:text-indigo-700">See All</a>
-                    </h3>
-                    
-                    <!-- Connection 1 -->
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <img src="https://ui-avatars.com/api/?name=Sarah+Johnson&background=random&size=40" 
-                                alt="Sarah Johnson" 
-                                class="w-10 h-10 rounded-full">
-                            <div>
-                                <div class="font-semibold text-sm text-gray-900">Sarah Johnson</div>
-                                <div class="text-xs text-gray-500">Computer Science</div>
-                            </div>
-                        </div>
-                        <button class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition">
-                            Connect
-                        </button>
                     </div>
-                    
-                    <!-- Connection 2 -->
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <img src="https://ui-avatars.com/api/?name=Mike+Chen&background=random&size=40" 
-                                alt="Mike Chen" 
-                                class="w-10 h-10 rounded-full">
-                            <div>
-                                <div class="font-semibold text-sm text-gray-900">Mike Chen</div>
-                                <div class="text-xs text-gray-500">Mechanical Engineering</div>
-                            </div>
-                        </div>
-                        <button class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition">
-                            Connect
-                        </button>
+                    <div id="pending-requests-container">
+                        <!-- Pending requests will load here -->
                     </div>
-                    
-                    <!-- Connection 3 -->
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <img src="https://ui-avatars.com/api/?name=Emma+Wilson&background=random&size=40" 
-                                alt="Emma Wilson" 
-                                class="w-10 h-10 rounded-full">
-                            <div>
-                                <div class="font-semibold text-sm text-gray-900">Emma Wilson</div>
-                                <div class="text-xs text-gray-500">Business Administration</div>
-                            </div>
-                        </div>
-                        <button class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition">
-                            Connect
-                        </button>
-                    </div>
-                    
-                    <!-- Connection 4 -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <img src="https://ui-avatars.com/api/?name=Alex+Kumar&background=random&size=40" 
-                                alt="Alex Kumar" 
-                                class="w-10 h-10 rounded-full">
-                            <div>
-                                <div class="font-semibold text-sm text-gray-900">Alex Kumar</div>
-                                <div class="text-xs text-gray-500">Data Science</div>
-                            </div>
-                        </div>
-                        <button class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition">
-                            Connect
-                        </button>
-                    </div>
+                </div>
+
+                <!-- SUGGESTED CONNECTIONS CARD -->
+                <div id="suggestions-container">
+                    <!-- JavaScript will fill this dynamically -->
                 </div>
                 
                 <!-- UPCOMING EVENTS CARD -->
