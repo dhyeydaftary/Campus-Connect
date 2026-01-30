@@ -9,8 +9,8 @@ from flask import (
 )
 
 from config import Config
-from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration
-from sqlalchemy import func
+from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration, Connection, ConnectionRequest, Notification
+from sqlalchemy import func, or_, and_
 import random
 from werkzeug.utils import secure_filename
 import os
@@ -692,6 +692,328 @@ def reset_registrations():
     EventRegistration.query.delete()
     db.session.commit()
     return "All event registrations have been reset!"
+
+
+@app.route("/api/suggestions", methods=["GET"])
+def get_suggestions():
+    """Get user suggestions - exclude connected users and pending requests"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    current_user_id = session["user_id"]
+    current_user = User.query.get(current_user_id)
+    
+    if not current_user:
+        return jsonify({"error": "User not found"}), 404
+    
+    # Step 1: Get connected user IDs (bidirectional check)
+    connected_ids = []
+    connections = Connection.query.filter(
+        or_(
+            Connection.user_id == current_user_id,
+            Connection.connected_user_id == current_user_id
+        )
+    ).all()
+    
+    for conn in connections:
+        if conn.user_id == current_user_id:
+            connected_ids.append(conn.connected_user_id)
+        else:
+            connected_ids.append(conn.user_id)
+    
+    # Step 2: Get pending request user IDs (both sent and received)
+    pending_sent = [r.receiver_id for r in ConnectionRequest.query.filter_by(
+        sender_id=current_user_id, 
+        status='pending'
+    ).all()]
+    
+    pending_received = [r.sender_id for r in ConnectionRequest.query.filter_by(
+        receiver_id=current_user_id, 
+        status='pending'
+    ).all()]
+    
+    # Step 3: Combine all exclusions
+    exclude_ids = set(connected_ids + pending_sent + pending_received + [current_user_id])
+    
+    # Step 4: Query suggestions (prioritize same university/major)
+    suggestions = []
+    
+    # Priority 1: Same university + same major
+    suggestions = User.query.filter(
+        User.id.notin_(exclude_ids),
+        User.university == current_user.university,
+        User.major == current_user.major
+    ).limit(5).all()
+    
+    # Priority 2: If not enough, add same university (any major)
+    if len(suggestions) < 5:
+        additional = User.query.filter(
+            User.id.notin_(exclude_ids),
+            User.id.notin_([s.id for s in suggestions]),
+            User.university == current_user.university
+        ).limit(5 - len(suggestions)).all()
+        suggestions.extend(additional)
+    
+    # Priority 3: If still not enough, add anyone else
+    if len(suggestions) < 5:
+        additional = User.query.filter(
+            User.id.notin_(exclude_ids),
+            User.id.notin_([s.id for s in suggestions])
+        ).limit(5 - len(suggestions)).all()
+        suggestions.extend(additional)
+    
+    # Step 5: Format response
+    result = []
+    for user in suggestions:
+        result.append({
+            "id": user.id,
+            "name": user.full_name,
+            "university": user.university,
+            "major": user.major,
+            "batch": user.batch,
+            "profile_picture": getattr(user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={user.full_name}"
+        })
+    
+    return jsonify({"suggestions": result})
+
+
+@app.route("/api/connections/request", methods=["POST"])
+def send_connection_request():
+    """Send a connection request to another user"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    receiver_id = data.get("receiver_id")
+    
+    if not receiver_id:
+        return jsonify({"error": "Receiver ID required"}), 400
+    
+    sender_id = session["user_id"]
+    
+    # Can't send request to yourself
+    if sender_id == receiver_id:
+        return jsonify({"error": "Cannot connect with yourself"}), 400
+    
+    # Check if receiver exists
+    receiver = User.query.get(receiver_id)
+    if not receiver:
+        return jsonify({"error": "User not found"}), 404
+    
+    # Check if already connected
+    existing_connection = Connection.query.filter(
+        or_(
+            and_(Connection.user_id == sender_id, Connection.connected_user_id == receiver_id),
+            and_(Connection.user_id == receiver_id, Connection.connected_user_id == sender_id)
+        )
+    ).first()
+    
+    if existing_connection:
+        return jsonify({"error": "Already connected"}), 400
+    
+    # Check if request already exists (in either direction)
+    existing_request = ConnectionRequest.query.filter(
+        or_(
+            and_(ConnectionRequest.sender_id == sender_id, ConnectionRequest.receiver_id == receiver_id),
+            and_(ConnectionRequest.sender_id == receiver_id, ConnectionRequest.receiver_id == sender_id)
+        ),
+        ConnectionRequest.status == 'pending'
+    ).first()
+    
+    if existing_request:
+        if existing_request.sender_id == sender_id:
+            return jsonify({"error": "Request already sent"}), 400
+        else:
+            return jsonify({"error": "This user already sent you a request"}), 400
+    
+    # Create new connection request
+    new_request = ConnectionRequest(
+        sender_id=sender_id,
+        receiver_id=receiver_id,
+        status='pending'
+    )
+    
+    db.session.add(new_request)
+    
+    # Create notification for receiver
+    sender = User.query.get(sender_id)
+    notification = Notification(
+        user_id=receiver_id,
+        type='connection_request',
+        message=f"{sender.full_name} sent you a connection request",
+        reference_id=new_request.id,
+        actor_id=sender_id
+    )
+    
+    db.session.add(notification)
+    db.session.commit()
+    
+    return jsonify({
+        "success": True,
+        "message": "Connection request sent",
+        "request_id": new_request.id
+    })
+
+
+@app.route("/api/connections/accept/<int:request_id>", methods=["POST"])
+def accept_connection_request(request_id):
+    """Accept a connection request"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    current_user_id = session["user_id"]
+    
+    # Get the request
+    conn_request = ConnectionRequest.query.get(request_id)
+    
+    if not conn_request:
+        return jsonify({"error": "Request not found"}), 404
+    
+    # Verify you're the receiver
+    if conn_request.receiver_id != current_user_id:
+        return jsonify({"error": "Not authorized"}), 403
+    
+    # Check if already accepted
+    if conn_request.status == 'accepted':
+        return jsonify({"error": "Already accepted"}), 400
+    
+    # Update request status
+    conn_request.status = 'accepted'
+    conn_request.responded_at = datetime.utcnow()
+    
+    # Create connection (store smaller ID first for consistency)
+    user_a = min(conn_request.sender_id, conn_request.receiver_id)
+    user_b = max(conn_request.sender_id, conn_request.receiver_id)
+    
+    new_connection = Connection(
+        user_id=user_a,
+        connected_user_id=user_b
+    )
+    
+    db.session.add(new_connection)
+    
+    # Create notification for sender
+    receiver = User.query.get(current_user_id)
+    notification = Notification(
+        user_id=conn_request.sender_id,
+        type='connection_accepted',
+        message=f"{receiver.full_name} accepted your connection request",
+        reference_id=new_connection.id,
+        actor_id=current_user_id
+    )
+    
+    db.session.add(notification)
+    db.session.commit()
+    
+    return jsonify({
+        "success": True,
+        "message": "Connection request accepted"
+    })
+
+
+@app.route("/api/connections/reject/<int:request_id>", methods=["POST"])
+def reject_connection_request(request_id):
+    """Reject a connection request"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    current_user_id = session["user_id"]
+    
+    # Get the request
+    conn_request = ConnectionRequest.query.get(request_id)
+    
+    if not conn_request:
+        return jsonify({"error": "Request not found"}), 404
+    
+    # Verify you're the receiver
+    if conn_request.receiver_id != current_user_id:
+        return jsonify({"error": "Not authorized"}), 403
+    
+    # Update request status
+    conn_request.status = 'rejected'
+    conn_request.responded_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    return jsonify({
+        "success": True,
+        "message": "Connection request rejected"
+    })
+
+
+@app.route("/api/connections/pending", methods=["GET"])
+def get_pending_requests():
+    """Get pending connection requests for current user"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    current_user_id = session["user_id"]
+    
+    # Get requests where current user is the receiver
+    pending_requests = ConnectionRequest.query.filter_by(
+        receiver_id=current_user_id,
+        status='pending'
+    ).order_by(ConnectionRequest.created_at.desc()).all()
+    
+    result = []
+    for req in pending_requests:
+        sender = User.query.get(req.sender_id)
+        if sender:
+            result.append({
+                "request_id": req.id,
+                "sender": {
+                    "id": sender.id,
+                    "name": sender.full_name,
+                    "university": sender.university,
+                    "major": sender.major,
+                    "profile_picture": getattr(sender, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={sender.full_name}"
+                },
+                "created_at": req.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            })
+    
+    return jsonify({"requests": result, "count": len(result)})
+
+
+@app.route("/api/profile/me", methods=["GET"])
+def get_my_profile():
+    """Get current user's profile with real counts"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    user = User.query.get(session["user_id"])
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    # Count posts
+    post_count = Post.query.filter_by(user_id=user.id).count()
+    
+    # Count connections (bidirectional)
+    connection_count = Connection.query.filter(
+        or_(
+            Connection.user_id == user.id,
+            Connection.connected_user_id == user.id
+        )
+    ).count()
+    
+    return jsonify({
+        "id": user.id,
+        "name": user.full_name,
+        "email": user.email,
+        "profile_picture": getattr(user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={user.full_name}",
+        "university": user.university,
+        "major": user.major,
+        "batch": user.batch,
+        "stats": {
+            "posts": post_count,
+            "connections": connection_count
+        }
+    })
 
 
 # --------------------------------------------------
