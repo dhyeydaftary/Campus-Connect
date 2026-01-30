@@ -5,10 +5,10 @@ function toggleProfileDropdown() {
 }
 
 // Close dropdown when clicking outside
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
     const dropdown = document.getElementById('profile-dropdown');
     const menu = document.getElementById('dropdown-menu');
-    
+
     if (dropdown && !dropdown.contains(event.target)) {
         menu.classList.add('hidden');
     }
@@ -20,6 +20,7 @@ let currentPage = 1;
 let loading = false;
 let viewer = null;
 let hasMore = true;
+let currentPostType = 'text';
 
 
 // Helper: Time Ago Formatter
@@ -114,7 +115,7 @@ async function loadPosts() {
 
 
 // Main Render Function
-function renderPosts(append=false) {
+function renderPosts(append = false) {
     const container = document.getElementById("posts");
     if (!container) return;
 
@@ -154,27 +155,8 @@ function renderPosts(append=false) {
                 ` : ''}
             </div>
 
-            <!-- Post Image -->
-            ${post.postImages && post.postImages.length > 0 ? `
-                <div class="relative group">
-                    <img src="${post.postImages[post.currentImageIndex]}" 
-                        class="w-full object-cover" 
-                        style="max-height: 600px;">
-                    ${post.postImages.length > 1 ? `
-                        <button onclick="changeImage(${index}, -1)" 
-                                class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition">
-                            <i class="fas fa-chevron-left text-gray-700"></i>
-                        </button>
-                        <button onclick="changeImage(${index}, 1)" 
-                                class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition">
-                            <i class="fas fa-chevron-right text-gray-700"></i>
-                        </button>
-                        <div class="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
-                            ${post.currentImageIndex + 1}/${post.postImages.length}
-                        </div>
-                    ` : ''}
-                </div>
-            ` : ''}
+            <!-- Post Content Based on Type -->
+            ${renderPostContent(post)}
 
             <!-- Post Footer -->
             <div class="p-4">
@@ -214,6 +196,82 @@ function renderPosts(append=false) {
 
         container.appendChild(article);
     });
+}
+
+
+function renderPostContent(post) {
+    // Check file_type FIRST (for new posts with file uploads)
+    if (post.file_type === 'document') {
+        const fileName = post.image_url ? post.image_url.split('/').pop() : 'document';
+        const fileExt = fileName.split('.').pop().toUpperCase();
+        
+        // Choose icon and color based on file type
+        let iconClass = 'fas fa-file-pdf';
+        let iconColor = 'text-red-600';
+        let bgColor = 'bg-red-100';
+        
+        if (fileExt === 'DOC' || fileExt === 'DOCX') {
+            iconClass = 'fas fa-file-word';
+            iconColor = 'text-blue-600';
+            bgColor = 'bg-blue-100';
+        }
+        
+        return `
+            <div class="p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-2xl mx-4 my-4 hover:border-indigo-400 transition-all duration-300 shadow-md hover:shadow-xl">
+                <div class="flex items-center gap-5">
+                    <!-- File Icon -->
+                    <div class="w-16 h-16 ${bgColor} rounded-2xl flex items-center justify-center shadow-md flex-shrink-0">
+                        <i class="${iconClass} ${iconColor} text-3xl"></i>
+                    </div>
+                    
+                    <!-- File Info -->
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-lg text-gray-900 mb-1.5 truncate" title="${fileName}">${fileName}</p>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-200 text-gray-700 text-xs font-semibold">
+                                ${fileExt}
+                            </span>
+                            <span class="text-xs text-gray-500">Document</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Download Button (Right Side) -->
+                    <a href="${post.image_url}" 
+                        download 
+                        class="group flex items-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-base rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 flex-shrink-0">
+                        <i class="fas fa-download text-lg"></i>
+                        <span>Download</span>
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    if (post.file_type === 'image') {
+        return `
+            <div class="relative group">
+                <img src="${post.image_url}" 
+                    class="w-full object-cover" 
+                    style="max-height: 600px;"
+                    alt="Post image">
+            </div>
+        `;
+    }
+
+    // Handle old posts with postImages array (fallback for backward compatibility)
+    // Only use this if file_type is not set
+    if (post.postImages && post.postImages.length > 0 && !post.file_type) {
+        return `
+            <div class="relative group">
+                <img src="${post.postImages[post.currentImageIndex]}" 
+                    class="w-full object-cover" 
+                    style="max-height: 600px;">
+            </div>
+        `;
+    }
+
+    // Text posts have no additional content
+    return '';
 }
 
 
@@ -385,36 +443,311 @@ async function submitComment() {
 // Initialize on Load
 document.addEventListener("DOMContentLoaded", () => {
     loadPosts();
-    
+
     const modal = document.getElementById('comment-modal');
     if (modal) {
         modal.addEventListener('click', closeComments);
     }
+
+    const fileInput = document.getElementById('post-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const preview = document.getElementById('file-preview');
+            if (!preview) return;
+
+            preview.classList.remove('hidden');
+
+            if (currentPostType === 'photo') {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const imgPreview = document.getElementById('image-preview');
+                    const docPreview = document.getElementById('document-preview');
+
+                    if (imgPreview) {
+                        imgPreview.src = e.target.result;
+                        imgPreview.classList.remove('hidden');
+                    }
+                    if (docPreview) {
+                        docPreview.classList.add('hidden');
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else if (currentPostType === 'document') {
+                const imgPreview = document.getElementById('image-preview');
+                const docPreview = document.getElementById('document-preview');
+                const docName = document.getElementById('doc-name');
+
+                if (imgPreview) {
+                    imgPreview.classList.add('hidden');
+                }
+                if (docPreview) {
+                    docPreview.classList.remove('hidden');
+                }
+                if (docName) {
+                    docName.textContent = file.name;
+                }
+            }
+        });
+    }
+
+    // Load events on page load
+    loadEvents();
 });
 
 
 // Logic: Open Create Post Modal
 function openCreatePost() {
-    document.getElementById("create-post-modal").style.display = "flex";
+    const modal = document.getElementById('create-post-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    // Reset form
+    document.getElementById('post-caption').value = '';
+    const fileInput = document.getElementById('post-file');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    const preview = document.getElementById('file-preview');
+    if (preview) {
+        preview.classList.add('hidden');
+    }
+
+    // Default to text type
+    selectPostType('text');
+}
+
+
+function openCreatePostWithType(type) {
+    currentPostType = type;
+    openCreatePost();
+    selectPostType(type);
 }
 
 
 // Logic: Close Comments Modal
 function closeCreatePost() {
-    document.getElementById("create-post-modal").style.display = "none";
+    const modal = document.getElementById('create-post-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+
+function selectPostType(type) {
+    currentPostType = type;
+
+    // Update button styles
+    document.querySelectorAll('.post-type-btn').forEach(btn => {
+        btn.classList.remove('border-indigo-500', 'bg-indigo-50');
+        btn.classList.add('border-gray-200');
+    });
+
+    const selectedBtn = document.getElementById(`btn-${type}`);
+    if (selectedBtn) {
+        selectedBtn.classList.add('border-indigo-500', 'bg-indigo-50');
+        selectedBtn.classList.remove('border-gray-200');
+    }
+
+    // Update file input
+    const fileInput = document.getElementById('post-file');
+    const fileContainer = document.getElementById('file-input-container');
+    const helpText = document.getElementById('file-help-text');
+
+    if (fileContainer) {
+        if (type === 'text') {
+            fileContainer.classList.add('hidden');
+        } else {
+            fileContainer.classList.remove('hidden');
+
+            if (fileInput) {
+                if (type === 'photo') {
+                    fileInput.accept = 'image/*';
+                    if (helpText) {
+                        helpText.textContent = 'Accepts: JPG, PNG, GIF, WEBP (Max 10MB)';
+                    }
+                } else if (type === 'document') {
+                    fileInput.accept = '.pdf,.doc,.docx';
+                    if (helpText) {
+                        helpText.textContent = 'Accepts: PDF, DOC, DOCX (Max 10MB)';
+                    }
+                }
+            }
+        }
+    }
+
+    // Reset preview
+    const preview = document.getElementById('file-preview');
+    if (preview) {
+        preview.classList.add('hidden');
+    }
 }
 
 
 // Logic: Close Comments Modal
 function closeComments(event) {
     const modal = document.getElementById("comment-modal");
-    
+
     // If event is passed and clicked target is the modal backdrop
     if (event && event.target === modal) {
         modal.style.display = "none";
     } else if (!event) {
         // If called directly without event (from close button)
         modal.style.display = "none";
+    }
+}
+
+
+// ============================================
+// EVENTS SYSTEM
+// ============================================
+
+// NEW FUNCTION: Load Events from API
+async function loadEvents() {
+    const container = document.getElementById('events-container');
+    const loading = document.getElementById('events-loading');
+    const empty = document.getElementById('events-empty');
+
+    if (!container) return;
+
+    if (loading) loading.classList.remove('hidden');
+
+    try {
+        const res = await fetch('/api/events');
+        if (!res.ok) throw new Error('Failed to load events');
+
+        const events = await res.json();
+
+        if (loading) loading.classList.add('hidden');
+
+        if (events.length === 0) {
+            if (empty) empty.classList.remove('hidden');
+            return;
+        }
+
+        container.innerHTML = events.map((event, index) => `
+            <div class="pb-4 ${index < events.length - 1 ? 'border-b border-gray-100' : ''}">
+                <div class="flex gap-3">
+                    <!-- Date Box -->
+                    <div class="flex-shrink-0 text-center bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-2 w-14 border border-indigo-100">
+                        <div class="text-xs font-semibold text-indigo-600">${event.month}</div>
+                        <div class="text-xl font-bold text-gray-900">${event.day}</div>
+                    </div>
+                    
+                    <!-- Event Info -->
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-sm text-gray-900 mb-1">${event.title}</h4>
+                        
+                        <!-- Time & Location -->
+                        <div class="flex items-center text-xs text-gray-500 mb-1">
+                            <i class="far fa-clock mr-1"></i>
+                            <span>${event.time}</span>
+                        </div>
+                        <div class="flex items-center text-xs text-gray-500 mb-2">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            <span>${event.location}</span>
+                        </div>
+                        
+                        <!-- Seats Info -->
+                        <div class="flex items-center gap-3 text-xs mb-2">
+                            <span class="text-gray-600">
+                                <i class="fas fa-users mr-1"></i>
+                                ${event.goingCount} going
+                            </span>
+                            <span class="text-gray-600">
+                                <i class="fas fa-star mr-1"></i>
+                                ${event.interestedCount} interested
+                            </span>
+                        </div>
+                        <div class="text-xs ${event.availableSeats > 0 ? 'text-green-600' : 'text-red-600'} mb-2">
+                            <i class="fas fa-chair mr-1"></i>
+                            ${event.availableSeats} of ${event.totalSeats} seats available
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex gap-2 mt-2">
+                            ${renderEventButton(event, 'interested')}
+                            ${renderEventButton(event, 'going')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (error) {
+        console.error('Failed to load events:', error);
+        if (loading) loading.classList.add('hidden');
+        if (container) {
+            container.innerHTML = '<p class="text-red-500 text-sm text-center py-4">Failed to load events</p>';
+        }
+    }
+}
+
+// NEW FUNCTION: Render Event Button
+function renderEventButton(event, type) {
+    const isActive = event.userStatus === type;
+    
+    if (type === 'interested') {
+        return `
+            <button onclick="toggleEventStatus(${event.id}, 'interested')"
+                    class="group flex-1 px-5 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${
+                        isActive 
+                        ? 'bg-purple-100 text-purple-700 ring-2 ring-purple-600' 
+                        : 'bg-gray-50 text-gray-700 hover:bg-purple-50 hover:text-purple-600 hover:ring-2 hover:ring-purple-300'
+                    }">
+                <span class="flex items-center justify-center gap-2">
+                    <i class="fas fa-heart text-sm ${isActive ? '' : 'group-hover:scale-125 transition-transform'}"></i>
+                    <span>Interested</span>
+                </span>
+            </button>
+        `;
+    } else {
+        const disabled = event.availableSeats <= 0 && !isActive;
+        return `
+            <button onclick="toggleEventStatus(${event.id}, 'going')"
+                    ${disabled ? 'disabled' : ''}
+                    class="group flex-1 px-5 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${
+                        isActive 
+                        ? 'bg-green-100 text-green-700 ring-2 ring-green-600' 
+                        : disabled
+                        ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-50 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 hover:ring-2 hover:ring-indigo-300'
+                    }">
+                <span class="flex items-center justify-center gap-2">
+                    <i class="fas ${isActive ? 'fa-check' : disabled ? 'fa-times' : 'fa-plus'} text-sm ${!disabled && !isActive ? 'group-hover:rotate-90 transition-transform' : ''}"></i>
+                    <span>${isActive ? "Going" : disabled ? 'Full' : "Join"}</span>
+                </span>
+            </button>
+        `;
+    }
+}
+
+// NEW FUNCTION: Toggle Event Status
+async function toggleEventStatus(eventId, status) {
+    try {
+        const res = await fetch(`/api/events/${eventId}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error || 'Failed to register for event');
+            return;
+        }
+
+        // Show success message
+        showToast(data.message, 'success');
+
+        // Reload events to reflect changes
+        await loadEvents();
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to register for event. Please try again.');
     }
 }
 
@@ -432,15 +765,14 @@ function scrollToTop() {
 function showToast(message, type = 'success') {
     // Create toast element
     const toast = document.createElement('div');
-    toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white text-sm font-medium z-50 transition-opacity duration-300 ${
-        type === 'success' ? 'bg-green-500' : 
-        type === 'error' ? 'bg-red-500' : 
-        'bg-indigo-500'
-    }`;
+    toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white text-sm font-medium z-50 transition-opacity duration-300 ${type === 'success' ? 'bg-green-500' :
+            type === 'error' ? 'bg-red-500' :
+                'bg-indigo-500'
+        }`;
     toast.textContent = message;
-    
+
     document.body.appendChild(toast);
-    
+
     // Fade out and remove after 3 seconds
     setTimeout(() => {
         toast.style.opacity = '0';
@@ -449,56 +781,81 @@ function showToast(message, type = 'success') {
 }
 
 
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500' :
+            type === 'error' ? 'bg-red-500' :
+                'bg-indigo-500'
+        } text-white font-medium`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+}
+
+
 // Logic: Create Post
 async function submitPost() {
-    const caption = document.getElementById("post-caption").value.trim();
-    const imageUrl = document.getElementById("post-image").value.trim();
+    const caption = document.getElementById('post-caption').value.trim();
+    const fileInput = document.getElementById('post-file');
+    const submitBtn = document.getElementById('submit-post-btn');
 
-    if (!caption || !imageUrl) {
-        showToast("Caption and image are required", "error");
+    // Validation
+    if (currentPostType === 'text' && !caption) {
+        alert('Please enter some text for your post');
         return;
     }
 
-    // Show loading state
-    const submitBtn = event.target;
-    const originalText = submitBtn.textContent;
-    submitBtn.textContent = "Posting...";
+    if (currentPostType !== 'text' && (!fileInput || !fileInput.files[0])) {
+        alert('Please select a file');
+        return;
+    }
+
+    // Disable submit button
     submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Posting...';
 
     try {
-        const res = await fetch("/api/posts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                caption: caption,
-                image_url: imageUrl
-            })
-        });
+        const formData = new FormData();
+        formData.append('post_type', currentPostType);
+        formData.append('caption', caption);
 
-        if (!res.ok) {
-            showToast("Failed to create post", "error");
-            return;
+        if (currentPostType !== 'text' && fileInput && fileInput.files[0]) {
+            formData.append('file', fileInput.files[0]);
         }
 
-        // Success!
-        showToast("Post created successfully!", "success");
-        
-        // Reset + reload feed
-        closeCreatePost();
-        document.getElementById("post-caption").value = "";
-        document.getElementById("post-image").value = "";
+        const res = await fetch('/api/posts/create', {
+            method: 'POST',
+            body: formData
+        });
 
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || 'Failed to create post');
+        }
+
+        // Success - reload posts
+        closeCreatePost();
         posts = [];
         currentPage = 1;
         hasMore = true;
-        loadPosts();
-        
+        document.getElementById('posts').innerHTML = '';
+        await loadPosts();
+
+        // Show success message
+        showToast('Post created successfully!', 'success');
+
     } catch (error) {
-        console.error("Error creating post:", error);
-        showToast("Failed to create post", "error");
+        console.error('Error creating post:', error);
+        alert(error.message || 'Failed to create post. Please try again.');
     } finally {
-        submitBtn.textContent = originalText;
         submitBtn.disabled = false;
+        submitBtn.textContent = 'Post';
     }
 }
 

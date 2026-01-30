@@ -19,8 +19,10 @@ class User(db.Model):
     batch = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # One-to-many relationship
+    # Relationships
+    posts = db.relationship("Post", backref="user", lazy="select")
     events = db.relationship("Event", backref="author", lazy="select")
+    event_registrations = db.relationship("EventRegistration", backref="user", lazy="select")
 
     @property
     def full_name(self):
@@ -64,6 +66,7 @@ class Event(db.Model):
     description = db.Column(db.Text, nullable=False)
     location = db.Column(db.String(100), nullable=False)
     event_date = db.Column(db.DateTime, nullable=False)
+    total_seats = db.Column(db.Integer, nullable=False, default=100)
 
     user_id = db.Column(
         db.Integer,
@@ -72,6 +75,56 @@ class Event(db.Model):
     )
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    registrations = db.relationship("EventRegistration", backref="event", lazy="select", cascade="all, delete-orphan")
+
+    @property
+    def available_seats(self):
+        """Calculate available seats dynamically"""
+        going_count = EventRegistration.query.filter_by(
+            event_id=self.id,
+            status='going'
+        ).count()
+        return max(0, self.total_seats - going_count)
+
+    @property
+    def going_count(self):
+        """Number of users going"""
+        return EventRegistration.query.filter_by(
+            event_id=self.id,
+            status='going'
+        ).count()
+
+    @property
+    def interested_count(self):
+        """Number of interested users"""
+        return EventRegistration.query.filter_by(
+            event_id=self.id,
+            status='interested'
+        ).count()
+
+
+class EventRegistration(db.Model):
+    __tablename__ = "event_registrations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(
+        db.Integer,
+        db.ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    status = db.Column(db.String(20), nullable=False)  # 'going' or 'interested'
+    registered_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("event_id", "user_id", name="unique_event_user"),
+    )
 
 
 class Post(db.Model):
@@ -84,12 +137,12 @@ class Post(db.Model):
         nullable=False
     )
 
-    caption = db.Column(db.Text, nullable=False)
-    image_url = db.Column(db.String(500), nullable=False)
+    caption = db.Column(db.Text, nullable=True)
+    image_url = db.Column(db.String(500), nullable=True)
+    file_path = db.Column(db.String(500), nullable=True)
+    file_type = db.Column(db.String(50), nullable=True)  # 'image', 'document', 'text'
     post_type = db.Column(db.String(20), default="normal")  # normal / event
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    user = db.relationship("User", backref="posts")
 
 
 class Like(db.Model):
