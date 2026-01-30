@@ -979,6 +979,142 @@ def get_pending_requests():
     return jsonify({"requests": result, "count": len(result)})
 
 
+@app.route("/api/notifications", methods=["GET"])
+def get_notifications():
+    """Get notifications for current user"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    user_id = session["user_id"]
+    
+    # Get all notifications, ordered by newest first
+    notifications = Notification.query.filter_by(
+        user_id=user_id
+    ).order_by(Notification.created_at.desc()).limit(20).all()
+    
+    result = []
+    for notif in notifications:
+        # Get actor info if exists
+        actor = None
+        if notif.actor_id:
+            actor_user = User.query.get(notif.actor_id)
+            if actor_user:
+                actor = {
+                    "id": actor_user.id,
+                    "name": actor_user.full_name,
+                    "profile_picture": getattr(actor_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={actor_user.full_name}"
+                }
+        
+        result.append({
+            "id": notif.id,
+            "type": notif.type,
+            "message": notif.message,
+            "reference_id": notif.reference_id,
+            "actor": actor,
+            "is_read": notif.is_read,
+            "created_at": notif.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        })
+    
+    return jsonify({"notifications": result})
+
+
+@app.route("/api/notifications/unread-count", methods=["GET"])
+def get_unread_count():
+    """Get count of unread notifications"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    user_id = session["user_id"]
+    
+    unread_count = Notification.query.filter_by(
+        user_id=user_id,
+        is_read=False
+    ).count()
+    
+    return jsonify({"count": unread_count})
+
+
+@app.route("/api/connections/list", methods=["GET"])
+def get_connections_list():
+    """Get list of all connections for current user"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    current_user_id = session["user_id"]
+    
+    # Get all connections (bidirectional check)
+    connections = Connection.query.filter(
+        or_(
+            Connection.user_id == current_user_id,
+            Connection.connected_user_id == current_user_id
+        )
+    ).order_by(Connection.connected_at.desc()).all()
+    
+    result = []
+    for conn in connections:
+        # Get the OTHER user's ID
+        other_user_id = conn.connected_user_id if conn.user_id == current_user_id else conn.user_id
+        other_user = User.query.get(other_user_id)
+        
+        if other_user:
+            result.append({
+                "id": other_user.id,
+                "name": other_user.full_name,
+                "university": other_user.university,
+                "major": other_user.major,
+                "batch": other_user.batch,
+                "profile_picture": getattr(other_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={other_user.full_name}",
+                "connected_since": conn.connected_at.strftime("%B %Y")
+            })
+    
+    return jsonify({"connections": result, "count": len(result)})
+
+
+@app.route("/api/notifications/mark-read/<int:notification_id>", methods=["POST"])
+def mark_notification_read(notification_id):
+    """Mark a single notification as read"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    user_id = session["user_id"]
+    
+    notification = Notification.query.get(notification_id)
+    
+    if not notification:
+        return jsonify({"error": "Notification not found"}), 404
+    
+    if notification.user_id != user_id:
+        return jsonify({"error": "Not authorized"}), 403
+    
+    notification.is_read = True
+    db.session.commit()
+    
+    return jsonify({"success": True})
+
+
+@app.route("/api/notifications/mark-all-read", methods=["POST"])
+def mark_all_notifications_read():
+    """Mark all notifications as read"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    user_id = session["user_id"]
+    
+    Notification.query.filter_by(
+        user_id=user_id,
+        is_read=False
+    ).update({"is_read": True})
+    
+    db.session.commit()
+    
+    return jsonify({"success": True})
+
+
 @app.route("/api/profile/me", methods=["GET"])
 def get_my_profile():
     """Get current user's profile with real counts"""

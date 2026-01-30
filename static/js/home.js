@@ -1132,3 +1132,316 @@ async function loadPendingRequests() {
         console.error('Error loading pending requests:', error);
     }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NOTIFICATION BELL FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+let notificationsOpen = false;
+
+function toggleNotifications() {
+    const dropdown = document.getElementById('notification-dropdown');
+    
+    if (!dropdown) return;
+    
+    notificationsOpen = !notificationsOpen;
+    
+    if (notificationsOpen) {
+        dropdown.classList.remove('hidden');
+        loadNotifications();
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const bell = document.getElementById('notification-bell');
+    const dropdown = document.getElementById('notification-dropdown');
+    
+    if (bell && dropdown && notificationsOpen) {
+        if (!bell.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.classList.add('hidden');
+            notificationsOpen = false;
+        }
+    }
+});
+
+
+async function loadNotifications() {
+    try {
+        const response = await fetch('/api/notifications');
+        
+        if (!response.ok) {
+            console.error('Failed to load notifications');
+            return;
+        }
+        
+        const data = await response.json();
+        const listContainer = document.getElementById('notifications-list');
+        
+        if (!listContainer) return;
+        
+        listContainer.innerHTML = '';
+        
+        if (data.notifications.length === 0) {
+            listContainer.innerHTML = `
+                <div class="p-8 text-center">
+                    <p class="text-gray-500 text-sm">No notifications yet</p>
+                </div>
+            `;
+            return;
+        }
+        
+        data.notifications.forEach(notif => {
+            const notifElement = createNotificationElement(notif);
+            listContainer.insertAdjacentHTML('beforeend', notifElement);
+        });
+        
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+    }
+}
+
+
+function createNotificationElement(notif) {
+    const isUnread = !notif.is_read;
+    const bgClass = isUnread ? 'bg-indigo-50' : 'bg-white';
+    const dotClass = isUnread ? 'bg-indigo-600' : 'bg-gray-300';
+    
+    const actorImg = notif.actor ? notif.actor.profile_picture : 'https://ui-avatars.com/api/?name=System';
+    const timeAgo = getTimeAgo(notif.created_at);
+    
+    return `
+        <div class="${bgClass} p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition"
+                onclick="handleNotificationClick(${notif.id}, '${notif.type}', ${notif.reference_id})">
+            <div class="flex items-start gap-3">
+                <img src="${actorImg}" 
+                        class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        alt="User">
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm text-gray-900">${notif.message}</p>
+                    <p class="text-xs text-gray-500 mt-1">${timeAgo}</p>
+                </div>
+                <div class="w-2 h-2 rounded-full ${dotClass} flex-shrink-0 mt-2"></div>
+            </div>
+        </div>
+    `;
+}
+
+
+async function handleNotificationClick(notifId, type, referenceId) {
+    // Mark as read
+    await markNotificationRead(notifId);
+    
+    // Handle different notification types
+    switch(type) {
+        case 'connection_request':
+            // Refresh pending requests to show the new request
+            if (typeof loadPendingRequests === 'function') {
+                loadPendingRequests();
+            }
+            break;
+            
+        case 'connection_accepted':
+            // Refresh profile to show updated connection count
+            if (typeof loadProfileCard === 'function') {
+                loadProfileCard();
+            }
+            break;
+            
+        case 'post_like':
+        case 'post_comment':
+            // Could scroll to the post or open it
+            console.log('Navigate to post:', referenceId);
+            break;
+    }
+    
+    // Close dropdown
+    document.getElementById('notification-dropdown').classList.add('hidden');
+    notificationsOpen = false;
+}
+
+
+async function markNotificationRead(notifId) {
+    try {
+        await fetch(`/api/notifications/mark-read/${notifId}`, {
+            method: 'POST'
+        });
+        
+        // Refresh badge count
+        updateNotificationBadge();
+        
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+    }
+}
+
+
+async function markAllAsRead() {
+    try {
+        const response = await fetch('/api/notifications/mark-all-read', {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            // Reload notifications to update UI
+            loadNotifications();
+            updateNotificationBadge();
+        }
+        
+    } catch (error) {
+        console.error('Error marking all as read:', error);
+    }
+}
+
+
+async function updateNotificationBadge() {
+    try {
+        const response = await fetch('/api/notifications/unread-count');
+        
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const badge = document.getElementById('notification-badge');
+        
+        if (!badge) return;
+        
+        if (data.count > 0) {
+            badge.textContent = data.count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+        
+    } catch (error) {
+        console.error('Error updating badge:', error);
+    }
+}
+
+
+function getTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTO-UPDATE BADGE (Poll every 30 seconds)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Update badge on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateNotificationBadge();
+    
+    // Poll for new notifications every 30 seconds
+    setInterval(updateNotificationBadge, 30000);
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VIEW CONNECTIONS MODAL
+// ═══════════════════════════════════════════════════════════════════════════
+
+function openConnectionsModal() {
+    const modal = document.getElementById('connections-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        loadConnectionsList();
+    }
+}
+
+function closeConnectionsModal() {
+    const modal = document.getElementById('connections-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+async function loadConnectionsList() {
+    try {
+        const response = await fetch('/api/connections/list');
+        
+        if (!response.ok) {
+            console.error('Failed to load connections');
+            return;
+        }
+        
+        const data = await response.json();
+        const container = document.getElementById('connections-modal-body');
+        const countText = document.getElementById('connections-count-text');
+        
+        if (!container) return;
+        
+        // Update count
+        if (countText) {
+            countText.textContent = `${data.count} connection${data.count !== 1 ? 's' : ''}`;
+        }
+        
+        // Clear container
+        container.innerHTML = '';
+        
+        if (data.connections.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-12">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    <p class="text-gray-500 text-lg mb-2">No connections yet</p>
+                    <p class="text-gray-400 text-sm">Start connecting with people to grow your network!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Create grid of connections
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+        
+        data.connections.forEach(connection => {
+            const card = `
+                <div class="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition">
+                    <div class="flex items-center gap-3 mb-3">
+                        <img src="${connection.profile_picture}" 
+                                class="w-12 h-12 rounded-full object-cover"
+                                alt="${connection.name}">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold text-gray-900 truncate">${connection.name}</p>
+                            <p class="text-xs text-gray-500 truncate">${connection.major}</p>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-400 mb-3">
+                        ${connection.university} • ${connection.batch}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        Connected since ${connection.connected_since}
+                    </div>
+                </div>
+            `;
+            grid.insertAdjacentHTML('beforeend', card);
+        });
+        
+        container.appendChild(grid);
+        
+    } catch (error) {
+        console.error('Error loading connections:', error);
+    }
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('connections-modal');
+    if (modal && !modal.classList.contains('hidden')) {
+        if (event.target === modal) {
+            closeConnectionsModal();
+        }
+    }
+});
