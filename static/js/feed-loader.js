@@ -123,7 +123,7 @@ class FeedLoader {
                 this.posts = data.posts;
             }
 
-            this.renderPosts(append);
+            this.renderPosts(append, data.posts);
             this.currentPage++;
 
         } catch (error) {
@@ -139,8 +139,11 @@ class FeedLoader {
     // POST RENDERING
     // ═══════════════════════════════════════════════════════════════
 
-    renderPosts(append = false) {
-        if (!this.container) return;
+    renderPosts(append = false, newPosts = []) {
+        if (!this.container) {
+            console.warn('Feed container not found:', this.containerId);
+            return;
+        }
 
         this.hideLoadingState();
         this.hideEmptyState();
@@ -149,11 +152,12 @@ class FeedLoader {
             this.container.innerHTML = '';
         }
 
-        this.posts.forEach((post, index) => {
+        const postsToRender = append ? newPosts : this.posts;
+
+        postsToRender.forEach((post, index) => {
             const article = document.createElement('article');
             article.className = 'post-card';
 
-            // Use shared rendering from PostUtils
             article.innerHTML = window.PostUtils.renderPostCard(post, index, {
                 onLike: `window.feedLoader.toggleLike(${index})`,
                 onComment: `window.feedLoader.openComments(${index})`,
@@ -162,15 +166,6 @@ class FeedLoader {
 
             this.container.appendChild(article);
         });
-
-        // Show load more button if there might be more posts
-        if (this.loadMoreBtn) {
-            if (this.hasMore && this.posts.length >= 5) {
-                this.loadMoreBtn.classList.remove('hidden');
-            } else {
-                this.loadMoreBtn.classList.add('hidden');
-            }
-        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -299,11 +294,10 @@ class FeedLoader {
     showToast(message, type = 'success') {
         // Create toast element
         const toast = document.createElement('div');
-        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white text-sm font-medium z-50 transition-opacity duration-300 ${
-            type === 'success' ? 'bg-green-500' :
+        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white text-sm font-medium z-50 transition-opacity duration-300 ${type === 'success' ? 'bg-green-500' :
             type === 'error' ? 'bg-red-500' :
-            'bg-indigo-500'
-        }`;
+                'bg-indigo-500'
+            }`;
         toast.textContent = message;
 
         document.body.appendChild(toast);

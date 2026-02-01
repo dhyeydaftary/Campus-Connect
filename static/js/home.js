@@ -355,23 +355,6 @@ function showToast(message, type = 'success') {
     // Fade out and remove after 3 seconds
     setTimeout(() => {
         toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-
-function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500' :
-            type === 'error' ? 'bg-red-500' :
-                'bg-indigo-500'
-        } text-white font-medium`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.5s';
         setTimeout(() => toast.remove(), 500);
     }, 3000);
 }
@@ -418,15 +401,20 @@ async function submitPost() {
             throw new Error(data.error || 'Failed to create post');
         }
 
-        // Success - reload posts
+        // Success - reload posts and update counts
         closeCreatePost();
-        posts = [];
-        currentPage = 1;
-        hasMore = true;
-        document.getElementById('posts-feed').innerHTML = '';
-        await loadPosts();
+        
+        // Clear and reload feed (FIXED: correct container ID)
+        // Reset feed loader state properly
+        feedLoader.currentPage = 1;
+        feedLoader.hasMore = true;
+        feedLoader.posts = [];
 
-        // Show success message
+        await feedLoader.loadPosts(false);
+
+        // Update counts AFTER feed loads
+        await loadProfileCard();
+
         showToast('Post created successfully!', 'success');
 
     } catch (error) {
@@ -437,25 +425,6 @@ async function submitPost() {
         submitBtn.textContent = 'Post';
     }
 }
-
-
-// Infinite Scroll Handler
-function handleScroll() {
-    if (!hasMore) return;
-
-    const nearBottom =
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 300;
-
-    if (nearBottom) {
-        loadPosts();
-    }
-}
-
-
-// Attach Scroll Event
-window.addEventListener("scroll", handleScroll);
-
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SUGGESTED FOR YOU - DYNAMIC LOADING
