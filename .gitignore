@@ -15,3 +15,13 @@ instance/
 
 # OS junk
 .DS_Store
+
+# =========================
+# Flask user uploads (IMPORTANT)
+# =========================
+static/uploads/documents/*
+static/uploads/images/*
+
+# Keep folder structure
+!static/uploads/documents/.gitkeep
+!static/uploads/images/.gitkeep
