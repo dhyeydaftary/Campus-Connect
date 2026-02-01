@@ -149,6 +149,19 @@ document.addEventListener('click', function (event) {
     }
 });
 
+// Load notification badge on page load (all pages)
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const res = await fetch('/api/notifications');
+        if (res.ok) {
+            const data = await res.json();
+            updateNotificationBadge(data.unread_count || 0);
+        }
+    } catch (err) {
+        console.error('Badge count load failed:', err);
+    }
+});
+
 // ═══════════════════════════════════════════════════════════════
 // EXPORT FOR USE IN OTHER MODULES
 // ═══════════════════════════════════════════════════════════════

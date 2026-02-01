@@ -394,6 +394,15 @@ async function openEditModal(type) {
   document.body.style.overflow = 'hidden';
 }
 function closeEditModal() {
+  // Remove any temporary (unsaved) items before closing
+  if (state.currentModal === 'experience') {
+    profileData.experiences = profileData.experiences.filter(exp => !exp.isNew);
+    renderExperience();
+  } else if (state.currentModal === 'education') {
+    profileData.educations = profileData.educations.filter(edu => !edu.isNew);
+    renderEducation();
+  }
+  
   const modal = document.getElementById('editModal');
   modal.classList.add('hidden');
   document.body.style.overflow = '';
@@ -436,7 +445,7 @@ async function saveModal() {
         break;
 
       case 'experience':
-        // Update existing experiences in database
+        // Collect data from all experience inputs
         const expInputs = document.querySelectorAll('[data-exp-id]');
         const expUpdates = {};
         
@@ -448,13 +457,14 @@ async function saveModal() {
             const exp = profileData.experiences.find(e => e.id == expId);
             expUpdates[expId] = { 
               id: expId,
-              title: exp.title,
-              company: exp.company,
-              location: exp.location,
-              start_date: exp.start_date,
-              end_date: exp.end_date,
-              description: exp.description,
-              is_current: exp.is_current
+              title: exp?.title || '',
+              company: exp?.company || '',
+              location: exp?.location || '',
+              start_date: exp?.start_date || '',
+              end_date: exp?.end_date || '',
+              description: exp?.description || '',
+              is_current: exp?.is_current || false,
+              isNew: exp?.isNew || false
             };
           }
           
@@ -465,21 +475,55 @@ async function saveModal() {
           }
         });
         
-        // Save each updated experience
+        // Save each experience (POST for new, PUT for existing)
         for (const expId in expUpdates) {
           const expData = expUpdates[expId];
-          const response = await fetch('/api/profile/experiences', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(expData)
-          });
+          const isNew = expId.toString().startsWith('temp_');
           
-          if (response.ok) {
-            const updatedExp = await response.json();
-            const index = profileData.experiences.findIndex(e => e.id == expId);
-            if (index !== -1) {
-              profileData.experiences[index] = updatedExp;
+          // Skip if required fields are empty
+          if (!expData.title || !expData.company || !expData.start_date) {
+            // Remove from profileData if it's a new item with no data
+            if (isNew) {
+              profileData.experiences = profileData.experiences.filter(e => e.id != expId);
             }
+            continue;
+          }
+          
+          try {
+            if (isNew) {
+              // Create new experience (POST)
+              const { id, isNew: _, ...dataToSend } = expData; // Remove id and isNew flag
+              const response = await fetch('/api/profile/experiences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSend)
+              });
+              
+              if (response.ok) {
+                const newExp = await response.json();
+                const index = profileData.experiences.findIndex(e => e.id == expId);
+                if (index !== -1) {
+                  profileData.experiences[index] = newExp; // Replace temp with real data
+                }
+              }
+            } else {
+              // Update existing experience (PUT)
+              const response = await fetch('/api/profile/experiences', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(expData)
+              });
+              
+              if (response.ok) {
+                const updatedExp = await response.json();
+                const index = profileData.experiences.findIndex(e => e.id == expId);
+                if (index !== -1) {
+                  profileData.experiences[index] = updatedExp;
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error saving experience:', error);
           }
         }
         
@@ -487,7 +531,7 @@ async function saveModal() {
         break;
 
       case 'education':
-        // Update existing educations in database
+        // Collect data from all education inputs
         const eduInputs = document.querySelectorAll('[data-edu-id]');
         const eduUpdates = {};
         
@@ -499,31 +543,66 @@ async function saveModal() {
             const edu = profileData.educations.find(e => e.id == eduId);
             eduUpdates[eduId] = {
               id: eduId,
-              degree: edu.degree,
-              field: edu.field,
-              institution: edu.institution,
-              year: edu.year
+              degree: edu?.degree || '',
+              field: edu?.field || '',
+              institution: edu?.institution || '',
+              year: edu?.year || '',
+              isNew: edu?.isNew || false
             };
           }
           
           eduUpdates[eduId][field] = input.value;
         });
         
-        // Save each updated education
+        // Save each education (POST for new, PUT for existing)
         for (const eduId in eduUpdates) {
           const eduData = eduUpdates[eduId];
-          const response = await fetch('/api/profile/educations', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(eduData)
-          });
+          const isNew = eduId.toString().startsWith('temp_');
           
-          if (response.ok) {
-            const updatedEdu = await response.json();
-            const index = profileData.educations.findIndex(e => e.id == eduId);
-            if (index !== -1) {
-              profileData.educations[index] = updatedEdu;
+          // Skip if required fields are empty
+          if (!eduData.degree || !eduData.field || !eduData.institution || !eduData.year) {
+            // Remove from profileData if it's a new item with no data
+            if (isNew) {
+              profileData.educations = profileData.educations.filter(e => e.id != eduId);
             }
+            continue;
+          }
+          
+          try {
+            if (isNew) {
+              // Create new education (POST)
+              const { id, isNew: _, ...dataToSend } = eduData; // Remove id and isNew flag
+              const response = await fetch('/api/profile/educations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSend)
+              });
+              
+              if (response.ok) {
+                const newEdu = await response.json();
+                const index = profileData.educations.findIndex(e => e.id == eduId);
+                if (index !== -1) {
+                  profileData.educations[index] = newEdu; // Replace temp with real data
+                }
+              }
+            } else {
+              // Update existing education (PUT)
+              const response = await fetch('/api/profile/educations', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(eduData)
+              });
+              
+              if (response.ok) {
+                const updatedEdu = await response.json();
+                const index = profileData.educations.findIndex(e => e.id == eduId);
+                if (index !== -1) {
+                  profileData.educations[index] = updatedEdu;
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error saving education:', error);
           }
         }
         
@@ -599,39 +678,37 @@ async function removeSkill(skillId) {
 // EXPERIENCE MANAGEMENT
 // ============================================
 
-async function addExperience() {
-  try {
-    const response = await fetch('/api/profile/experiences', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: 'New Position',
-        company: 'Company Name',
-        location: '',
-        start_date: 'Jan 2024',
-        end_date: null,
-        description: '',
-        is_current: false
-      })
-    });
-
-    if (response.ok) {
-      const newExp = await response.json();
-      if (!profileData.experiences) profileData.experiences = [];
-      profileData.experiences.unshift(newExp); // Add to beginning
-      openEditModal('experience'); // Refresh modal
-      showToast('Experience added! Update the details.');
-    } else {
-      const error = await response.json();
-      showToast(error.error || 'Failed to add experience', 'error');
-    }
-  } catch (error) {
-    console.error('Error adding experience:', error);
-    showToast('Error adding experience', 'error');
-  }
+function addExperience() {
+  // Create temporary experience with a temporary ID (negative to distinguish from real ones)
+  const tempExp = {
+    id: `temp_${Date.now()}`,
+    title: '',
+    company: '',
+    location: '',
+    start_date: '',
+    end_date: '',
+    description: '',
+    is_current: false,
+    isNew: true  // Flag to indicate this is a new, unsaved item
+  };
+  
+  if (!profileData.experiences) profileData.experiences = [];
+  profileData.experiences.unshift(tempExp); // Add to beginning
+  openEditModal('experience'); // Refresh modal to show new empty fields
 }
 
 async function removeExperience(expId) {
+  // Check if this is a temporary (unsaved) item
+  const exp = profileData.experiences.find(e => e.id == expId);
+  if (exp && exp.isNew) {
+    // Just remove from local array, no API call needed
+    profileData.experiences = profileData.experiences.filter(e => e.id != expId);
+    openEditModal('experience'); // Refresh modal
+    renderExperience();
+    return;
+  }
+  
+  // For existing items, delete from database
   try {
     const response = await fetch(`/api/profile/experiences?id=${expId}`, {
       method: 'DELETE'
@@ -656,36 +733,34 @@ async function removeExperience(expId) {
 // EDUCATION MANAGEMENT
 // ============================================
 
-async function addEducation() {
-  try {
-    const response = await fetch('/api/profile/educations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        degree: 'Bachelor of Science',
-        field: 'Computer Science',
-        institution: 'University Name',
-        year: '2024 - 2028'
-      })
-    });
-
-    if (response.ok) {
-      const newEdu = await response.json();
-      if (!profileData.educations) profileData.educations = [];
-      profileData.educations.push(newEdu);
-      openEditModal('education'); // Refresh modal
-      showToast('Education added! Update the details.');
-    } else {
-      const error = await response.json();
-      showToast(error.error || 'Failed to add education', 'error');
-    }
-  } catch (error) {
-    console.error('Error adding education:', error);
-    showToast('Error adding education', 'error');
-  }
+function addEducation() {
+  // Create temporary education with a temporary ID (negative to distinguish from real ones)
+  const tempEdu = {
+    id: `temp_${Date.now()}`,
+    degree: '',
+    field: '',
+    institution: '',
+    year: '',
+    isNew: true  // Flag to indicate this is a new, unsaved item
+  };
+  
+  if (!profileData.educations) profileData.educations = [];
+  profileData.educations.push(tempEdu);
+  openEditModal('education'); // Refresh modal to show new empty fields
 }
 
 async function removeEducation(eduId) {
+  // Check if this is a temporary (unsaved) item
+  const edu = profileData.educations.find(e => e.id == eduId);
+  if (edu && edu.isNew) {
+    // Just remove from local array, no API call needed
+    profileData.educations = profileData.educations.filter(e => e.id != eduId);
+    openEditModal('education'); // Refresh modal
+    renderEducation();
+    return;
+  }
+  
+  // For existing items, delete from database
   try {
     const response = await fetch(`/api/profile/educations?id=${eduId}`, {
       method: 'DELETE'
@@ -798,6 +873,12 @@ function updateProfileDisplay() {
 // ============================================
 
 async function loadProfileData(userId) {
+  document.getElementById('profileName').textContent = 'Loading...';
+  document.getElementById('profileMajor').textContent = '';
+  document.getElementById('profileBatch').textContent = '';
+  document.getElementById('profileLocation').textContent = '';
+  document.getElementById('aboutText').textContent = 'Loading profile...';
+  document.getElementById('aboutTabText').textContent = 'Loading profile...';
   try {
     const response = await fetch(`/api/profile/${userId}`);
     if (!response.ok) throw new Error('Failed to load profile data');
