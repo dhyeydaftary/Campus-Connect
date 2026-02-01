@@ -738,3 +738,106 @@ class EventRegistration(db.Model):
         # For counting going/interested users
         Index("idx_registrations_event_status", "event_id", "status"),  # 🆕
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROFILE ENHANCEMENT TABLES - ADD THESE TO THE END OF models.py
+# ═══════════════════════════════════════════════════════════════════════════
+
+class Skill(db.Model):
+    """
+    User skills for profile display.
+    
+    USAGE:
+    - Display user's technical and soft skills
+    - Skills shown as tags/badges on profile
+    """
+    __tablename__ = "skills"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    skill_name = db.Column(db.String(100), nullable=False)
+    skill_level = db.Column(db.String(20), nullable=True)  # 'beginner', 'intermediate', 'advanced', 'expert'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationship
+    user = db.relationship("User", backref=db.backref("skills", lazy="dynamic", cascade="all, delete-orphan"))
+    
+    __table_args__ = (
+        # Prevent duplicate skills for same user
+        db.UniqueConstraint("user_id", "skill_name", name="unique_user_skill"),
+        Index("idx_skills_user", "user_id"),
+    )
+
+
+class Experience(db.Model):
+    """
+    User work experience, internships, and projects.
+    
+    USAGE:
+    - Display professional experience on profile
+    - Shows timeline of user's career/academic journey
+    """
+    __tablename__ = "experiences"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    
+    # Experience details
+    title = db.Column(db.String(100), nullable=False)  # e.g., "Software Engineer Intern"
+    company = db.Column(db.String(100), nullable=False)  # e.g., "Google"
+    location = db.Column(db.String(100), nullable=True)  # e.g., "Mountain View, CA"
+    start_date = db.Column(db.String(20), nullable=False)  # e.g., "Jan 2024"
+    end_date = db.Column(db.String(20), nullable=True)  # e.g., "Present" or "Jun 2024"
+    description = db.Column(db.Text, nullable=True)  # Brief description of role
+    is_current = db.Column(db.Boolean, default=False)  # Currently working here?
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationship
+    user = db.relationship("User", backref=db.backref("experiences", lazy="dynamic", cascade="all, delete-orphan"))
+    
+    __table_args__ = (
+        Index("idx_experiences_user", "user_id"),
+    )
+
+
+class Education(db.Model):
+    """
+    User education history.
+
+    USAGE:
+    - Display educational background on profile
+    - Shows degrees, institutions, and graduation years
+    """
+    __tablename__ = "educations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    # Education details
+    degree = db.Column(db.String(100), nullable=False)  # e.g., "Bachelor of Science"
+    field = db.Column(db.String(100), nullable=False)  # e.g., "Computer Science"
+    institution = db.Column(db.String(100), nullable=False)  # e.g., "Harvard University"
+    year = db.Column(db.String(20), nullable=False)  # e.g., "2024 - 2028" or "2028"
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationship
+    user = db.relationship("User", backref=db.backref("educations", lazy="dynamic", cascade="all, delete-orphan"))
+
+    __table_args__ = (
+        Index("idx_educations_user", "user_id"),
+    )

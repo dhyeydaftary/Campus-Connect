@@ -9,7 +9,7 @@ from flask import (
 )
 
 from config import Config
-from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration, Connection, ConnectionRequest, Notification
+from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration, Connection, ConnectionRequest, Notification, Skill, Experience, Education
 from sqlalchemy import func, or_, and_
 import random
 from werkzeug.utils import secure_filename
@@ -1150,6 +1150,612 @@ def get_my_profile():
             "connections": connection_count
         }
     })
+
+
+@app.route("/profile/<int:user_id>")
+def view_profile_page(user_id):
+    """Serve the profile page HTML (no Jinja2 rendering)"""
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    
+    # Just serve the static HTML file
+    # JavaScript will fetch data from /api/profile/<user_id>
+    return render_template("profile.html")
+
+
+@app.route("/api/profile/<int:user_id>/posts")
+def api_profile_posts(user_id):
+    """Get posts for a specific user's profile - same format as /api/posts"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    # Check if profile user exists
+    profile_user = User.query.get(user_id)
+    if not profile_user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Fetch posts for this specific user
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 5))
+    offset = (page - 1) * limit
+
+    likes_subq = (
+        db.session.query(
+            Like.post_id,
+            func.count(Like.id).label("likes")
+        )
+        .group_by(Like.post_id)
+        .subquery()
+    )
+
+    comments_subq = (
+        db.session.query(
+            Comment.post_id,
+            func.count(Comment.id).label("comments")
+        )
+        .group_by(Comment.post_id)
+        .subquery()
+    )
+
+    db_posts = (
+        db.session.query(
+            Post,
+            User,
+            func.coalesce(likes_subq.c.likes, 0).label("likes"),
+            func.coalesce(comments_subq.c.comments, 0).label("comments")
+        )
+        .join(User, Post.user_id == User.id)
+        .outerjoin(likes_subq, likes_subq.c.post_id == Post.id)
+        .outerjoin(comments_subq, comments_subq.c.post_id == Post.id)
+        .filter(Post.user_id == user_id)  # Filter by specific user
+        .order_by(Post.created_at.desc())  # Most recent first for profile
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    formatted_db_posts = []
+
+    for post, user, likes_count, comments_count in db_posts:
+        is_liked = Like.query.filter_by(
+            post_id=post.id,
+            user_id=session["user_id"]
+        ).first() is not None
+
+        formatted_db_posts.append({
+            "id": post.id,
+            "username": user.full_name,
+            "profileImage": f"https://ui-avatars.com/api/?name={user.full_name}",
+            "postImages": [f"/static/{post.file_path}"] if post.file_path else ([post.image_url] if post.image_url else []),
+            "currentImageIndex": 0,
+            "caption": post.caption,
+            "accountType": "student",
+            "collegeName": user.major,
+            "likesCount": likes_count,
+            "commentsCount": comments_count,
+            "comments": [],
+            "isLiked": is_liked,
+            "createdAt": post.created_at.isoformat() + "Z",
+            "file_path": post.file_path,
+            "file_type": post.file_type,
+            "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url
+        })
+
+    return jsonify({
+        "viewer": {
+            "id": session.get("user_id"),
+            "name": session.get("user_name")
+        },
+        "posts": formatted_db_posts
+    })
+
+
+@app.route("/api/profile/<int:user_id>", methods=["GET"])
+def get_profile_data(user_id):
+    """Get profile data as JSON (for JavaScript to consume)"""
+
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user_id = session["user_id"]
+
+    # Get the profile user
+    profile_user = User.query.get(user_id)
+
+    if not profile_user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Check if viewing own profile
+    is_own_profile = (current_user_id == user_id)
+
+    # Get connection status
+    connection_status = None
+    pending_request_id = None
+
+    if not is_own_profile:
+        # Check if connected
+        existing_connection = Connection.query.filter(
+            or_(
+                and_(Connection.user_id == current_user_id, Connection.connected_user_id == user_id),
+                and_(Connection.user_id == user_id, Connection.connected_user_id == current_user_id)
+            )
+        ).first()
+
+        if existing_connection:
+            connection_status = 'connected'
+        else:
+            # Check for pending requests
+            sent_request = ConnectionRequest.query.filter_by(
+                sender_id=current_user_id,
+                receiver_id=user_id,
+                status='pending'
+            ).first()
+
+            received_request = ConnectionRequest.query.filter_by(
+                sender_id=user_id,
+                receiver_id=current_user_id,
+                status='pending'
+            ).first()
+
+            if sent_request:
+                connection_status = 'pending_sent'
+            elif received_request:
+                connection_status = 'pending_received'
+                pending_request_id = received_request.id
+            else:
+                connection_status = 'not_connected'
+
+    # Get connection count and list
+    connections_query = Connection.query.filter(
+        or_(
+            Connection.user_id == user_id,
+            Connection.connected_user_id == user_id
+        )
+    )
+    connection_count = connections_query.count()
+
+    # Get connections list
+    connections_data = []
+    for conn in connections_query.all():
+        other_user_id = conn.connected_user_id if conn.user_id == user_id else conn.user_id
+        other_user = User.query.get(other_user_id)
+        if other_user:
+            connections_data.append({
+                'id': other_user.id,
+                'full_name': other_user.full_name,
+                'major': other_user.major,
+                'university': other_user.university,
+                'profile_picture': getattr(other_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={other_user.full_name}"
+            })
+
+    # Get mutual connections (if not own profile)
+    mutual_connections = []
+    if not is_own_profile:
+        # Get current user's connections
+        current_user_connections = Connection.query.filter(
+            or_(
+                Connection.user_id == current_user_id,
+                Connection.connected_user_id == current_user_id
+            )
+        ).all()
+
+        current_user_connection_ids = set()
+        for conn in current_user_connections:
+            other_id = conn.connected_user_id if conn.user_id == current_user_id else conn.user_id
+            current_user_connection_ids.add(other_id)
+
+        # Get profile user's connections
+        profile_user_connections = Connection.query.filter(
+            or_(
+                Connection.user_id == user_id,
+                Connection.connected_user_id == user_id
+            )
+        ).all()
+
+        profile_user_connection_ids = set()
+        for conn in profile_user_connections:
+            other_id = conn.connected_user_id if conn.user_id == user_id else conn.user_id
+            profile_user_connection_ids.add(other_id)
+
+        # Find mutual connections
+        mutual_ids = current_user_connection_ids.intersection(profile_user_connection_ids)
+        for mutual_id in mutual_ids:
+            mutual_user = User.query.get(mutual_id)
+            if mutual_user:
+                mutual_connections.append({
+                    'id': mutual_user.id,
+                    'full_name': mutual_user.full_name,
+                    'major': mutual_user.major,
+                    'profile_picture': getattr(mutual_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={mutual_user.full_name}"
+                })
+
+    # Get user's posts with counts
+    user_posts = Post.query.filter_by(user_id=user_id).order_by(Post.created_at.desc()).limit(20).all()
+    post_count = Post.query.filter_by(user_id=user_id).count()
+
+    # Format posts data
+    posts_data = []
+    for post in user_posts:
+        likes_count = Like.query.filter_by(post_id=post.id).count()
+        comments_count = Comment.query.filter_by(post_id=post.id).count()
+
+        posts_data.append({
+            'id': post.id,
+            'caption': post.caption,
+            'image_url': post.image_url,
+            'created_at': post.created_at.strftime('%B %d, %Y at %I:%M %p'),
+            'likes_count': likes_count,
+            'comments_count': comments_count
+        })
+
+    skills_data = []
+    user_skills = Skill.query.filter_by(user_id=user_id).all()
+    for skill in user_skills:
+        skills_data.append({
+            'id': skill.id,
+            'name': skill.skill_name,
+            'level': skill.skill_level
+        })
+
+    # Get user's experiences (ordered by most recent first)
+    experiences_data = []
+    user_experiences = Experience.query.filter_by(user_id=user_id).order_by(Experience.start_date.desc()).all()
+    for exp in user_experiences:
+        experiences_data.append({
+            'id': exp.id,
+            'title': exp.title,
+            'company': exp.company,
+            'location': exp.location,
+            'start_date': exp.start_date,
+            'end_date': exp.end_date or 'Present',
+            'description': exp.description,
+            'is_current': exp.is_current
+        })
+
+    # Get user's educations
+    educations_data = []
+    user_educations = Education.query.filter_by(user_id=user_id).all()
+    for edu in user_educations:
+        educations_data.append({
+            'id': edu.id,
+            'degree': edu.degree,
+            'field': edu.field,
+            'institution': edu.institution,
+            'year': edu.year
+        })
+
+    # Return all data as JSON
+    return jsonify({
+        'user': {
+            'id': profile_user.id,
+            'full_name': profile_user.full_name,
+            'email': profile_user.email,
+            'university': profile_user.university,
+            'major': profile_user.major,
+            'batch': profile_user.batch,
+            'bio': getattr(profile_user, 'bio', None),
+            'profile_picture': getattr(profile_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={profile_user.full_name}",
+            'member_since': profile_user.created_at.strftime('%B %Y')
+        },
+        'is_own_profile': is_own_profile,
+        'connection_status': connection_status,
+        'pending_request_id': pending_request_id,
+        'stats': {
+            'connections_count': connection_count,
+            'posts_count': post_count
+        },
+        'posts': posts_data,
+        'connections': connections_data,
+        'mutual_connections': mutual_connections,
+        'skills': skills_data,  # ← NEW
+        'experiences': experiences_data,  # ← NEW
+        'educations': educations_data  # ← NEW
+    })
+
+
+# --------------------------------------------------
+# PROFILE MANAGEMENT API
+# --------------------------------------------------
+
+@app.route("/api/profile/skills", methods=["GET", "POST", "PUT", "DELETE"])
+def manage_skills():
+    """Manage user skills"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+
+    if request.method == "GET":
+        skills = Skill.query.filter_by(user_id=user_id).all()
+        return jsonify([{
+            'id': skill.id,
+            'name': skill.skill_name,
+            'level': skill.skill_level
+        } for skill in skills])
+
+    elif request.method == "POST":
+        data = request.json
+        skill_name = data.get("name", "").strip()
+        skill_level = data.get("level")
+
+        # Allow empty skill name for new items that will be edited later
+        # But prevent duplicates if name is provided
+        if skill_name:
+            existing = Skill.query.filter_by(user_id=user_id, skill_name=skill_name).first()
+            if existing:
+                return jsonify({"error": "Skill already exists"}), 400
+
+        skill = Skill(
+            user_id=user_id,
+            skill_name=skill_name or "",  # Allow empty for new items
+            skill_level=skill_level
+        )
+        db.session.add(skill)
+        db.session.commit()
+
+        return jsonify({
+            'id': skill.id,
+            'name': skill.skill_name,
+            'level': skill.skill_level
+        }), 201
+
+    elif request.method == "PUT":
+        data = request.json
+        skill_id = data.get("id")
+        skill_name = data.get("name", "").strip()
+        skill_level = data.get("level")
+
+        if not skill_id or not skill_name:
+            return jsonify({"error": "Skill ID and name required"}), 400
+
+        skill = Skill.query.filter_by(id=skill_id, user_id=user_id).first()
+        if not skill:
+            return jsonify({"error": "Skill not found"}), 404
+
+        skill.skill_name = skill_name
+        skill.skill_level = skill_level
+        db.session.commit()
+
+        return jsonify({
+            'id': skill.id,
+            'name': skill.skill_name,
+            'level': skill.skill_level
+        })
+
+    elif request.method == "DELETE":
+        skill_id = request.args.get("id")
+        if not skill_id:
+            return jsonify({"error": "Skill ID required"}), 400
+
+        skill = Skill.query.filter_by(id=skill_id, user_id=user_id).first()
+        if not skill:
+            return jsonify({"error": "Skill not found"}), 404
+
+        db.session.delete(skill)
+        db.session.commit()
+
+        return jsonify({"message": "Skill deleted"})
+
+
+@app.route("/api/profile/experiences", methods=["GET", "POST", "PUT", "DELETE"])
+def manage_experiences():
+    """Manage user experiences"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+
+    if request.method == "GET":
+        experiences = Experience.query.filter_by(user_id=user_id).order_by(Experience.start_date.desc()).all()
+        return jsonify([{
+            'id': exp.id,
+            'title': exp.title,
+            'company': exp.company,
+            'location': exp.location,
+            'start_date': exp.start_date,
+            'end_date': exp.end_date,
+            'description': exp.description,
+            'is_current': exp.is_current
+        } for exp in experiences])
+
+    elif request.method == "POST":
+        data = request.json
+        title = data.get("title", "").strip()
+        company = data.get("company", "").strip()
+        location = data.get("location", "").strip()
+        start_date = data.get("start_date", "").strip()
+        end_date = data.get("end_date", "").strip() if data.get("end_date") else None
+        description = data.get("description", "").strip()
+        is_current = data.get("is_current", False)
+
+        if not title or not company or not start_date:
+            return jsonify({"error": "Title, company, and start date required"}), 400
+
+        experience = Experience(
+            user_id=user_id,
+            title=title,
+            company=company,
+            location=location,
+            start_date=start_date,
+            end_date=end_date,
+            description=description,
+            is_current=is_current
+        )
+        db.session.add(experience)
+        db.session.commit()
+
+        return jsonify({
+            'id': experience.id,
+            'title': experience.title,
+            'company': experience.company,
+            'location': experience.location,
+            'start_date': experience.start_date,
+            'end_date': experience.end_date,
+            'description': experience.description,
+            'is_current': experience.is_current
+        }), 201
+
+    elif request.method == "PUT":
+        data = request.json
+        exp_id = data.get("id")
+        title = data.get("title", "").strip()
+        company = data.get("company", "").strip()
+        location = data.get("location", "").strip()
+        start_date = data.get("start_date", "").strip()
+        end_date = data.get("end_date", "").strip() if data.get("end_date") else None
+        description = data.get("description", "").strip()
+        is_current = data.get("is_current", False)
+
+        if not exp_id or not title or not company or not start_date:
+            return jsonify({"error": "Experience ID, title, company, and start date required"}), 400
+
+        experience = Experience.query.filter_by(id=exp_id, user_id=user_id).first()
+        if not experience:
+            return jsonify({"error": "Experience not found"}), 404
+
+        experience.title = title
+        experience.company = company
+        experience.location = location
+        experience.start_date = start_date
+        experience.end_date = end_date
+        experience.description = description
+        experience.is_current = is_current
+        db.session.commit()
+
+        return jsonify({
+            'id': experience.id,
+            'title': experience.title,
+            'company': experience.company,
+            'location': experience.location,
+            'start_date': experience.start_date,
+            'end_date': experience.end_date,
+            'description': experience.description,
+            'is_current': experience.is_current
+        })
+
+    elif request.method == "DELETE":
+        exp_id = request.args.get("id")
+        if not exp_id:
+            return jsonify({"error": "Experience ID required"}), 400
+
+        experience = Experience.query.filter_by(id=exp_id, user_id=user_id).first()
+        if not experience:
+            return jsonify({"error": "Experience not found"}), 404
+
+        db.session.delete(experience)
+        db.session.commit()
+
+        return jsonify({"message": "Experience deleted"})
+
+
+@app.route("/api/profile/educations", methods=["GET", "POST", "PUT", "DELETE"])
+def manage_educations():
+    """Manage user educations"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+
+    if request.method == "GET":
+        educations = Education.query.filter_by(user_id=user_id).all()
+        return jsonify([{
+            'id': edu.id,
+            'degree': edu.degree,
+            'field': edu.field,
+            'institution': edu.institution,
+            'year': edu.year
+        } for edu in educations])
+
+    elif request.method == "POST":
+        data = request.json
+        degree = data.get("degree", "").strip()
+        field = data.get("field", "").strip()
+        institution = data.get("institution", "").strip()
+        year = data.get("year", "").strip()
+
+        if not degree or not field or not institution or not year:
+            return jsonify({"error": "Degree, field, institution, and year required"}), 400
+
+        education = Education(
+            user_id=user_id,
+            degree=degree,
+            field=field,
+            institution=institution,
+            year=year
+        )
+        db.session.add(education)
+        db.session.commit()
+
+        return jsonify({
+            'id': education.id,
+            'degree': education.degree,
+            'field': education.field,
+            'institution': education.institution,
+            'year': education.year
+        }), 201
+
+    elif request.method == "PUT":
+        data = request.json
+        edu_id = data.get("id")
+        degree = data.get("degree", "").strip()
+        field = data.get("field", "").strip()
+        institution = data.get("institution", "").strip()
+        year = data.get("year", "").strip()
+
+        if not edu_id or not degree or not field or not institution or not year:
+            return jsonify({"error": "Education ID, degree, field, institution, and year required"}), 400
+
+        education = Education.query.filter_by(id=edu_id, user_id=user_id).first()
+        if not education:
+            return jsonify({"error": "Education not found"}), 404
+
+        education.degree = degree
+        education.field = field
+        education.institution = institution
+        education.year = year
+        db.session.commit()
+
+        return jsonify({
+            'id': education.id,
+            'degree': education.degree,
+            'field': education.field,
+            'institution': education.institution,
+            'year': education.year
+        })
+
+    elif request.method == "DELETE":
+        edu_id = request.args.get("id")
+        if not edu_id:
+            return jsonify({"error": "Education ID required"}), 400
+
+        education = Education.query.filter_by(id=edu_id, user_id=user_id).first()
+        if not education:
+            return jsonify({"error": "Education not found"}), 404
+
+        db.session.delete(education)
+        db.session.commit()
+
+        return jsonify({"message": "Education deleted"})
+
+
+@app.route("/api/profile/bio", methods=["PUT"])
+def update_bio():
+    """Update user bio"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+    data = request.json
+    bio = data.get("bio", "").strip()
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    user.bio = bio
+    db.session.commit()
+
+    return jsonify({"message": "Bio updated", "bio": bio})
 
 
 # --------------------------------------------------

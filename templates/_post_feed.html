@@ -1,0 +1,55 @@
+<div id="post-feed-wrapper" class="w-full max-w-2xl mx-auto">
+
+    {# Loading State - shown while fetching posts #}
+    <div id="feed-loading" class="flex flex-col items-center justify-center py-12 space-y-4">
+        <div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
+        <p class="text-gray-500 text-sm">Loading posts...</p>
+    </div>
+
+    {# Error State - shown when fetch fails #}
+    <div id="feed-error" class="hidden text-center py-12">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
+            <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">Failed to load posts</h3>
+        <p class="text-gray-500 mb-4">Something went wrong. Please try again.</p>
+        <button onclick="FeedLoader.retry()"
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+            Retry
+        </button>
+    </div>
+
+    {# Empty State - shown when no posts exist #}
+    <div id="feed-empty" class="hidden text-center py-12">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">No posts yet</h3>
+        <p class="text-gray-500">Be the first to share something!</p>
+    </div>
+
+    {# Posts Container - posts are injected here via JavaScript #}
+    <div id="post-feed" class="space-y-4">
+        {# Posts will be rendered here by post-renderer.js #}
+    </div>
+
+    {# Load More / Infinite Scroll Trigger #}
+    <div id="feed-load-more" class="hidden py-8 text-center">
+        <button onclick="FeedLoader.loadMore()"
+            class="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+            Load more posts
+        </button>
+    </div>
+
+    {# End of Feed #}
+    <div id="feed-end" class="hidden py-8 text-center">
+        <p class="text-gray-400 text-sm">You've reached the end</p>
+    </div>
+
+</div>

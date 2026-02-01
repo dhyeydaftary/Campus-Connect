@@ -1,0 +1,107 @@
+<!-- NAVIGATION BAR - Shared Component -->
+<nav class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
+    <div class="max-w-screen-2xl mx-auto px-4">
+        <div class="flex items-center justify-between h-16">
+
+            <!-- Logo -->
+            <a href="/home" class="flex items-center space-x-2 font-bold text-xl">
+                <i class="fas fa-graduation-cap text-indigo-600"></i>
+                <span class="hidden sm:block">Campus Connect</span>
+            </a>
+
+            <!-- Search Bar (Desktop) -->
+            <div class="hidden lg:flex flex-1 max-w-md mx-8">
+                <div class="relative w-full">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </span>
+                    <input type="text" placeholder="Search students, posts, topics..."
+                        class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white">
+                </div>
+            </div>
+
+            <!-- Right Icons -->
+            <div class="flex items-center space-x-6">
+                <!-- Home -->
+                <a href="/home" class="text-indigo-600 hover:text-indigo-700">
+                    <i class="fas fa-home text-xl"></i>
+                </a>
+
+                <!-- Messages -->
+                <a href="#" class="text-gray-600 hover:text-indigo-600 relative">
+                    <i class="fas fa-comment-dots text-xl"></i>
+                    <span
+                        class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                </a>
+
+                <!-- Notification Bell -->
+                <div class="relative">
+                    <!-- Bell Icon Button -->
+                    <button id="notification-bell" onclick="toggleNotifications()"
+                        class="text-gray-600 hover:text-indigo-600 relative focus:outline-none">
+                        <i class="fas fa-bell text-xl"></i>
+
+                        <!-- Red Badge -->
+                        <span id="notification-badge"
+                            class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            0
+                        </span>
+                    </button>
+
+                    <!-- Notification Dropdown (hidden by default) -->
+                    <div id="notification-dropdown"
+                        class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-200">
+
+                        <!-- Header -->
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
+                            <button onclick="markAllAsRead()" class="text-xs text-indigo-600 hover:text-indigo-800">
+                                Mark all read
+                            </button>
+                        </div>
+
+                        <!-- Notifications List -->
+                        <div id="notifications-list" class="max-h-96 overflow-y-auto">
+                            <div class="p-4 text-center text-gray-500 text-sm">
+                                Loading notifications...
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="px-4 py-3 border-t border-gray-200 text-center">
+                            <a href="#" class="text-sm text-indigo-600 hover:text-indigo-800">
+                                View all notifications
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Dropdown -->
+                <div class="relative" id="profile-dropdown">
+                    <button onclick="toggleProfileDropdown()" class="flex items-center space-x-2 focus:outline-none">
+                        <img src="https://ui-avatars.com/api/?name={{ user_name }}" alt="Profile"
+                            class="w-8 h-8 rounded-full ring-2 ring-gray-200">
+                        <i class="fas fa-chevron-down text-xs text-gray-600"></i>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="dropdown-menu"
+                        class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                        <a href="/profile/{{ session.user_id }}"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fas fa-user mr-2"></i>My Profile
+                        </a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fas fa-cog mr-2"></i>Settings
+                        </a>
+                        <hr class="my-1">
+                        <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</nav>
