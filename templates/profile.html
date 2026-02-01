@@ -4,84 +4,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile | CampusConnect</title>
-
+    <title>Profile - Campus Connect</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+
+    <!-- Shared utilities -->
+    <script defer src="{{ url_for('static', filename='js/navbar-utils.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/post-utils.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/feed-loader.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/profile.js') }}"></script>
 </head>
 
-<body class="min-h-screen flex items-center justify-center p-4 gradient-soft text-slate-900">
+<body class="bg-background min-h-screen">
+    <!-- Header -->
+    {% include '_navbar.html' %}
 
-    <div class="w-full max-w-md animate-scale-in">
-        <div class="bg-white rounded-lg border border-slate-200 shadow-elevated overflow-hidden">
-            <div class="p-8">
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-                <!-- HEADER -->
-                <div class="text-center mb-8">
-                    <a href="/" class="inline-flex items-center gap-2">
-                        <div class="p-2.5 rounded-xl gradient-primary shadow-soft">
-                            <i data-lucide="graduation-cap" class="h-6 w-6 text-white"></i>
+        <!-- Profile Header -->
+        <div class="bg-card rounded-xl shadow-card border border-border p-6 mb-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                <!-- Avatar -->
+                <div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-3xl ring-4 ring-primary-light"
+                    id="profileAvatar">
+                    DD
+                </div>
+                <!-- Info -->
+                <div class="flex-1">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
+                        <h1 class="text-2xl font-bold text-foreground" id="profileName">Dhyey Daftary</h1>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 bg-primary-light text-primary text-sm font-medium rounded-full"
+                                id="profileMajor">IT</span>
+                            <span class="text-muted-foreground text-sm" id="profileBatch">Batch of 2028</span>
                         </div>
-                        <span class="font-bold text-2xl text-slate-900">
-                            Campus<span class="text-indigo-600">Connect</span>
-                        </span>
-                    </a>
-                    <p class="text-slate-500 mt-3 text-sm">
-                        Update your profile details
+                    </div>
+                    <p class="text-muted-foreground flex items-center gap-1 mb-4">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span id="profileLocation">Harvard, Cambridge, MA</span>
+                    </p>
+                    <!-- Stats -->
+                    <div class="flex items-center gap-6">
+                        <div class="text-center">
+                            <div class="text-xl font-bold text-foreground" id="connectionsCount">3</div>
+                            <div class="text-sm text-muted-foreground">Connections</div>
+                        </div>
+                        <div class="w-px h-8 bg-border"></div>
+                        <div class="text-center">
+                            <div class="text-xl font-bold text-foreground" id="postsCount">2</div>
+                            <div class="text-sm text-muted-foreground">Posts</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Actions -->
+                <div class="flex gap-2 w-full sm:w-auto" id="profileActions">
+                    <!-- Actions will be populated by JavaScript based on profile ownership -->
+                </div>
+            </div>
+        </div>
+        <!-- Tabs -->
+        <div class="bg-card rounded-xl shadow-card border border-border overflow-hidden mb-6">
+            <div class="flex border-b border-border">
+                <button onclick="switchTab('posts')"
+                    class="tab-btn active flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative"
+                    data-tab="posts">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    Posts
+                    <span class="tab-indicator"></span>
+                </button>
+                <button onclick="switchTab('about')"
+                    class="tab-btn flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative"
+                    data-tab="about">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    About
+                    <span class="tab-indicator"></span>
+                </button>
+                <button onclick="switchTab('connections')"
+                    class="tab-btn flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative"
+                    data-tab="connections">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    Connections
+                    <span class="tab-indicator"></span>
+                </button>
+            </div>
+        </div>
+        <!-- Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+
+                <!-- About Card -->
+                <div class="bg-card rounded-xl shadow-card border border-border p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-foreground">About</h3>
+                        <div id="aboutEditButton">
+                            <button onclick="openEditModal('about')"
+                                class="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-muted-foreground text-sm leading-relaxed" id="aboutText">
+                        Passionate software developer with a keen interest in building scalable web applications.
+                        Currently exploring AI/ML and cloud technologies. Always eager to learn and collaborate on
+                        innovative projects.
                     </p>
                 </div>
-
-                <!-- PROFILE FORM -->
-                <form id="profile-form" class="space-y-4" novalidate>
-
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium">Full Name</label>
-                        <div class="relative">
-                            <i data-lucide="user"
-                                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="name" type="text" placeholder="John Doe" class="input-field" required>
+                <!-- Skills Card -->
+                <div class="bg-card rounded-xl shadow-card border border-border p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-foreground">Skills</h3>
+                        <div id="skillsEditButton">
+                            <button onclick="openEditModal('skills')"
+                                class="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
-
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium">College Email</label>
-                        <div class="relative">
-                            <i data-lucide="mail"
-                                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="email" type="email" placeholder="you@college.edu" class="input-field" required>
+                    <div class="flex flex-wrap gap-2" id="skillsContainer">
+                        <!-- Skills populated by JS -->
+                    </div>
+                </div>
+                <!-- Experience Card -->
+                <div class="bg-card rounded-xl shadow-card border border-border p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-foreground">Experience</h3>
+                        <div id="experienceEditButton">
+                            <button onclick="openEditModal('experience')"
+                                class="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
-
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium">New Password</label>
-                        <div class="relative">
-                            <i data-lucide="lock"
-                                class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
-                            <input id="password" type="password" placeholder="••••••••" class="input-field"
-                                minlength="6">
+                    <div class="space-y-4" id="experienceContainer">
+                        <!-- Experience populated by JS -->
+                    </div>
+                </div>
+                <!-- Education Card -->
+                <div class="bg-card rounded-xl shadow-card border border-border p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-foreground">Education</h3>
+                        <div id="educationEditButton">
+                            <button onclick="openEditModal('education')"
+                                class="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
                         </div>
-                        <p class="text-[10px] text-slate-500">
-                            Leave blank to keep current password
+                    </div>
+                    <div class="space-y-4" id="educationContainer">
+                        <!-- Education populated by JS -->
+                    </div>
+                </div>
+            </div>
+            <!-- Main Content Area -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Posts Tab -->
+                <div id="postsTab" class="tab-content">
+                    {% include "_post_feed.html" %}
+                </div>
+
+                <!-- About Tab -->
+                <div id="aboutTab" class="tab-content hidden">
+                    <div class="bg-card rounded-xl shadow-card border border-border p-6">
+                        <h2 class="text-xl font-semibold text-foreground mb-4">About Me</h2>
+                        <p class="text-muted-foreground leading-relaxed" id="aboutTabText">
+                            Passionate software developer with a keen interest in building scalable web applications.
+                            Currently exploring AI/ML and cloud technologies. Always eager to learn and collaborate on
+                            innovative projects.
                         </p>
                     </div>
-
-                    <button type="submit" id="profile-btn" class="btn-primary">
-                        <i data-lucide="save" class="h-4 w-4" id="btn-icon"></i>
-                        <span id="btn-text">Save Changes</span>
+                </div>
+                <!-- Connections Tab -->
+                <div id="connectionsTab" class="tab-content hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="connectionsContainer">
+                        <!-- Connections populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 z-50 hidden">
+        <div class="fixed inset-0 bg-black/50" onclick="closeEditModal()"></div>
+        <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+            <div
+                class="bg-card rounded-xl shadow-xl border border-border w-full max-w-lg max-h-[90vh] overflow-y-auto pointer-events-auto">
+                <div class="flex items-center justify-between p-4 border-b border-border">
+                    <h2 class="text-lg font-semibold text-foreground" id="modalTitle">Edit</h2>
+                    <button onclick="closeEditModal()" class="p-1.5 hover:bg-muted rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
-
-                </form>
-
+                </div>
+                <div class="p-4" id="modalContent">
+                    <!-- Modal content populated by JS -->
+                </div>
+                <div class="flex justify-end gap-2 p-4 border-t border-border">
+                    <button onclick="closeEditModal()"
+                        class="px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="saveModal()"
+                        class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity">
+                        Save Changes
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-
-    <!-- Toast -->
-    <div id="toast-container"></div>
-
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 </body>
 
 </html>
