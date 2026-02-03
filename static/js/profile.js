@@ -39,6 +39,8 @@ tailwind.config = {
 // ============================================
 
 let profileData = {};
+let feedLoader; // Feed loader instance for profile posts
+let profileUserId;
 
 // ============================================
 // MOCK DATA - For edit functionality
@@ -999,8 +1001,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load profile data (which will render skills, experience, education)
     loadProfileData(userId);
 
-    // Initialize feed loader for profile page
-    feedLoader = new FeedLoader(`/api/profile/${userId}/posts`, 'posts-feed');
+    // Initialize feed loader for profile page (uses same container 'post-feed' as home)
+    feedLoader = new FeedLoader(`/api/profile/${userId}/posts`, 'post-feed');
     window.feedLoader = feedLoader; // Make it globally accessible
 
     // Load initial posts
@@ -1017,3 +1019,106 @@ document.addEventListener('keydown', (e) => {
     closeEditModal();
   }
 });
+
+
+// ═══════════════════════════════════════════════════════════════
+// CONNECTION STATUS (For viewing other profiles)
+// ═══════════════════════════════════════════════════════════════
+
+async function loadConnectionStatus() {
+    const container = document.getElementById('profileActions');
+    if (!container) return;
+    
+    try {
+        const response = await fetch(`/api/connections/status/${profileUserId}`);
+        if (!response.ok) throw new Error('Failed to load connection status');
+        
+        const data = await response.json();
+        
+        if (data.status === 'connected') {
+            container.innerHTML = `
+                <button class="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg cursor-default">
+                    <i class="fas fa-check mr-2"></i>Connected
+                </button>
+            `;
+        } else if (data.status === 'pending') {
+            container.innerHTML = `
+                <button class="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg cursor-default">
+                    <i class="fas fa-clock mr-2"></i>Request Pending
+                </button>
+            `;
+        } else {
+            container.innerHTML = `
+                <button onclick="sendConnectionRequest()" 
+                    class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition">
+                    <i class="fas fa-user-plus mr-2"></i>Connect
+                </button>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('Error loading connection status:', error);
+    }
+}
+
+async function sendConnectionRequest() {
+    try {
+        const response = await fetch('/api/connections/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: profileUserId })
+        });
+        
+        if (!response.ok) throw new Error('Failed to send request');
+        
+        loadConnectionStatus();
+        showToast('Connection request sent!', 'success');
+        
+    } catch (error) {
+        console.error('Error sending connection request:', error);
+        showToast('Failed to send connection request', 'error');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMMENT MODAL
+// ═══════════════════════════════════════════════════════════════
+
+function closeComments(event) {
+    const modal = document.getElementById("comment-modal");
+    
+    if (event && event.target === modal) {
+        modal.style.display = "none";
+    } else if (!event) {
+        modal.style.display = "none";
+    }
+}
+
+async function submitComment() {
+    const input = document.getElementById('comment-input');
+    const postId = input.dataset.postId;
+    const text = input.value.trim();
+    
+    if (!text || !postId) return;
+    
+    try {
+        const response = await fetch(`/api/posts/${postId}/comment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        });
+        
+        if (!response.ok) throw new Error('Failed to post comment');
+        
+        input.value = '';
+        
+        const postIndex = feedLoader.posts.findIndex(p => p.id == postId);
+        if (postIndex >= 0) {
+            feedLoader.openComments(postIndex);
+        }
+        
+    } catch (error) {
+        console.error('Error posting comment:', error);
+        showToast('Failed to post comment', 'error');
+    }
+}
