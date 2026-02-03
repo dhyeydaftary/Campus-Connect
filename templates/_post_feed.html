@@ -16,7 +16,7 @@
         </div>
         <h3 class="text-lg font-semibold text-gray-800 mb-2">Failed to load posts</h3>
         <p class="text-gray-500 mb-4">Something went wrong. Please try again.</p>
-        <button onclick="FeedLoader.retry()"
+        <button onclick="window.feedLoader.retry()"
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
             Retry
         </button>
@@ -41,7 +41,7 @@
 
     {# Load More / Infinite Scroll Trigger #}
     <div id="feed-load-more" class="hidden py-8 text-center">
-        <button onclick="FeedLoader.loadMore()"
+        <button onclick="window.feedLoader.loadMore()"
             class="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
             Load more posts
         </button>

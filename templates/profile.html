@@ -15,9 +15,17 @@
 
     <!-- Shared utilities -->
     <script defer src="{{ url_for('static', filename='js/navbar-utils.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/post-utils.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/feed-loader.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/post-utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/feed-loader.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/profile.js') }}"></script>
+        
+    <script>
+        window.profileUserId = Number("{{ profile_user.id }}");
+        window.isOwnProfile = "{{ is_own_profile }}" === "true";
+        window.currentUserId = Number("{{ current_user_id }}");
+    </script>
+
+
 </head>
 
 <body class="bg-background min-h-screen">
@@ -243,8 +251,34 @@
             </div>
         </div>
     </div>
+
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <!-- COMMENT MODAL -->
+    <div id="comment-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+        <div class="bg-white w-full max-w-lg rounded-lg overflow-hidden max-h-[80vh] flex flex-col shadow-xl"
+            onclick="event.stopPropagation()">
+            <header class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-900 text-lg">Comments</h3>
+                <button onclick="closeComments()" class="text-gray-400 hover:text-gray-600 transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </header>
+            <div id="modal-comments-list" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+            <div class="p-4 border-t border-gray-200 flex gap-3">
+                <img src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&size=32"
+                    alt="Your avatar" class="w-8 h-8 rounded-full">
+                <input id="comment-input" type="text" placeholder="Write a comment..."
+                    class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                    onkeydown="if(event.key==='Enter') submitComment()">
+                <button onclick="submitComment()"
+                    class="text-indigo-600 hover:text-indigo-700 font-semibold text-sm px-3 transition">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

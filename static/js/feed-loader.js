@@ -39,11 +39,13 @@ class FeedLoader {
     }
 
     showSkeleton() {
-        if (this.skeleton) this.skeleton.classList.remove('hidden');
+        // Use loadingState since skeleton-container doesn't exist in _post_feed.html
+        if (this.loadingState) this.loadingState.classList.remove('hidden');
     }
 
     hideSkeleton() {
-        if (this.skeleton) this.skeleton.classList.add('hidden');
+        // Use loadingState since skeleton-container doesn't exist in _post_feed.html
+        if (this.loadingState) this.loadingState.classList.add('hidden');
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -140,10 +142,10 @@ class FeedLoader {
     // ═══════════════════════════════════════════════════════════════
 
     renderPosts(append = false, newPosts = []) {
-        if (!this.container) {
-            console.warn('Feed container not found:', this.containerId);
-            return;
-        }
+        //if (!this.container) {
+        //    console.warn('Feed container not found:', this.containerId);
+        //    return;
+        //}
 
         this.hideLoadingState();
         this.hideEmptyState();
@@ -152,16 +154,20 @@ class FeedLoader {
             this.container.innerHTML = '';
         }
 
-        const postsToRender = append ? newPosts : this.posts;
+        const postsToRender = newPosts.length > 0 ? newPosts : this.posts;
 
-        postsToRender.forEach((post, index) => {
+        postsToRender.forEach((post) => {
             const article = document.createElement('article');
             article.className = 'post-card';
 
-            article.innerHTML = window.PostUtils.renderPostCard(post, index, {
-                onLike: `window.feedLoader.toggleLike(${index})`,
-                onComment: `window.feedLoader.openComments(${index})`,
-                onShare: `window.feedLoader.sharePost(${index})`
+            // Find the global index in this.posts for correct event handler binding
+            const globalIndex = this.posts.findIndex(p => p.id === post.id);
+            const safeIndex = globalIndex >= 0 ? globalIndex : this.posts.length;
+
+            article.innerHTML = window.PostUtils.renderPostCard(post, safeIndex, {
+                onLike: `window.feedLoader.toggleLike(${safeIndex})`,
+                onComment: `window.feedLoader.openComments(${safeIndex})`,
+                onShare: `window.feedLoader.sharePost(${safeIndex})`
             });
 
             this.container.appendChild(article);
