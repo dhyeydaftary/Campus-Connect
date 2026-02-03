@@ -35,6 +35,9 @@ class User(db.Model):
     # Status
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     
+    # Role-based access control
+    account_type = db.Column(db.String(20), default="student", nullable=False)
+    
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -840,4 +843,55 @@ class Education(db.Model):
 
     __table_args__ = (
         Index("idx_educations_user", "user_id"),
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ADMIN LOG TABLE - ADD THIS TO models.py
+# ═══════════════════════════════════════════════════════════════════════════
+
+class AdminLog(db.Model):
+    """
+    Tracks admin actions for audit trail.
+    
+    USAGE:
+    - Log when admin toggles user status
+    - Log when admin creates events on behalf of others
+    - Provides accountability and audit trail
+    """
+    __tablename__ = "admin_logs"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True  # In case admin account is deleted later
+    )
+    action_type = db.Column(db.String(50), nullable=False)  # 'toggle_user', 'create_event'
+    target_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True  # User affected by the action
+    )
+    target_event_id = db.Column(
+        db.Integer,
+        db.ForeignKey("events.id", ondelete="SET NULL"),
+        nullable=True  # Event created by admin
+    )
+    details = db.Column(db.Text, nullable=True)  # JSON or text details about the action
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    admin = db.relationship("User", foreign_keys=[admin_id], backref="admin_actions")
+    target_user = db.relationship("User", foreign_keys=[target_user_id])
+    
+    __table_args__ = (
+        # For querying admin's action history
+        Index("idx_admin_logs_admin", "admin_id", "created_at"),
+        
+        # For querying actions on a specific user
+        Index("idx_admin_logs_target_user", "target_user_id", "created_at"),
+        
+        # For querying by action type
+        Index("idx_admin_logs_action_type", "action_type", "created_at"),
     )

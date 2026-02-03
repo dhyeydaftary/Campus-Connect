@@ -1,0 +1,109 @@
+{% extends "admin/layout.html" %}
+{% block title %}System Status | Admin{% endblock %}
+{% block content %}
+
+<!-- Top Navbar -->
+<header class="top-navbar">
+    <h1 class="page-title">System Status</h1>
+    <div class="navbar-right">
+        <button class="btn btn-secondary" onclick="refreshStatus()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                <path d="M16 16h5v5" />
+            </svg>
+            Refresh
+        </button>
+        <div class="admin-profile">
+            <div class="admin-avatar">AD</div>
+            <div class="admin-info">
+                <span class="admin-name">Admin User</span>
+                <span class="admin-role">Super Admin</span>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- Content Area -->
+<div class="content-area">
+    <!-- System Overview -->
+    <div class="card mb-6">
+        <div class="card-header flex items-center justify-between">
+            <h2 class="card-title">System Overview</h2>
+            <span id="last-updated" style="font-size: 0.75rem; color: var(--text-secondary);">
+                Last updated: --
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="grid-3" id="system-overview">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Detailed Status -->
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Service Status</h2>
+            </div>
+            <div class="card-body" id="service-status">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Quick Actions</h2>
+            </div>
+            <div class="card-body">
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <button class="btn btn-secondary" style="justify-content: flex-start;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                            <path d="M3 3v5h5" />
+                        </svg>
+                        Restart API Server
+                    </button>
+                    <button class="btn btn-secondary" style="justify-content: flex-start;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                        </svg>
+                        Clear Cache
+                    </button>
+                    <button class="btn btn-secondary" style="justify-content: flex-start;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <ellipse cx="12" cy="5" rx="9" ry="3" />
+                            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                        </svg>
+                        Run Database Backup
+                    </button>
+                    <button class="btn btn-secondary" style="justify-content: flex-start;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 2v6h6" />
+                            <path d="M12 18v-6" />
+                            <path d="M9 15h6" />
+                        </svg>
+                        Download Logs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin/system.js') }}"></script>
+{% endblock %}
