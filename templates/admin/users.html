@@ -1,0 +1,59 @@
+{% extends "admin/layout.html" %}
+{% block title %}Users Management| Admin{% endblock %}
+{% block content %}
+
+<!-- Top Navbar -->
+<header class="top-navbar">
+    <h1 class="page-title">Users Management</h1>
+    <div class="navbar-right">
+        <div class="admin-profile">
+            <div class="admin-avatar">AD</div>
+            <div class="admin-info">
+                <span class="admin-name">Admin User</span>
+                <span class="admin-role">Super Admin</span>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- Content Area -->
+<div class="content-area">
+    <div class="card">
+        <div class="card-header flex items-center justify-between">
+            <h2 class="card-title">All Users</h2>
+            <div class="flex gap-4">
+                <input type="text" class="form-input" style="width: 280px;" placeholder="Search users..."
+                    id="search-input">
+                <select class="form-select" style="width: 150px;" id="role-filter">
+                    <option value="">All Roles</option>
+                    <option value="student">Student</option>
+                    <option value="official">Official</option>
+                    <option value="admin">Admin</option>
+                    <option value="club">Club</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div class="loading-spinner" id="users-loading">
+                <div class="spinner"></div>
+            </div>
+            <table class="data-table" id="users-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Join Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin/users.js') }}"></script>
+{% endblock %}
