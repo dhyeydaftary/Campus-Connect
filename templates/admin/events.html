@@ -30,7 +30,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="event-date">Event Date</label>
-                        <input type="datetime-local" class="form-input" id="event-date" required>
+                        <input type="date" class="form-input" id="event-date" required>
                     </div>
                 </div>
                 <div class="form-group">
@@ -40,15 +40,38 @@
                 </div>
                 <div class="grid-2">
                     <div class="form-group">
+                        <label class="form-label" for="start-time">Start Time</label>
+                        <input type="datetime-local" class="form-input" id="start-time" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="end-time">End Time</label>
+                        <input type="datetime-local" class="form-input" id="end-time" required>
+                    </div>
+                </div>
+                <select class="form-select" id="event-location" required>
+                    <option value="">Select Venue</option>
+                    <option value="Engineering Auditorium">Engineering Auditorium</option>
+                    <option value="Law Auditorium">Law Auditorium</option>
+                    <option value="Architecture Auditorium">Architecture Auditorium</option>
+                    <option value="Open Ground">Open Ground</option>
+                </select>
+                <div class="form-group">
+                    <label class="form-label" for="total-seats">Total Seats</label>
+                    <input
+                        type="number"
+                        class="form-input"
+                        id="total-seats"
+                        min="1"
+                        value="100"
+                        required
+                    >
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
                         <label class="form-label" for="event-type">Event Type</label>
                         <select class="form-select" id="event-type" required>
                             <option value="">Select event type</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="target-entity">Target Entity</label>
-                        <select class="form-select" id="target-entity" required>
-                            <option value="">Select target audience</option>
                         </select>
                     </div>
                 </div>

@@ -207,18 +207,6 @@ const API = {
             await delay(400);
             return mockData.logs;
         }
-    },
-    // System Status
-    async getSystemStatus() {
-        try {
-            const response = await fetch(`${API_BASE}/admin/api/system/status`);
-            if (!response.ok) throw new Error('API Error');
-            return await response.json();
-        } catch (error) {
-            console.log('Using mock data for system status');
-            await delay(350);
-            return mockData.systemStatus;
-        }
     }
 };
 // Export for use in other scripts
