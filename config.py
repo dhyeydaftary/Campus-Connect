@@ -3,12 +3,12 @@ import os
 class Config:
     """Flask application configuration"""
     
-    # Database Configuration
-    SQLALCHEMY_DATABASE_URI = "sqlite:///campusconnect.db"  
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
     # Security Configuration
-    SECRET_KEY = "campus-connect-secret-key-change-later"
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+
+    # Database Configuration
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # File Upload Configuration
     UPLOAD_FOLDER = 'static/uploads'

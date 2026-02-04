@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import (
     Flask,
     render_template,
@@ -12,7 +15,6 @@ from flask import (
 from config import Config
 from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration, Connection, ConnectionRequest, Notification, Skill, Experience, Education, AdminLog
 from sqlalchemy import func, or_, and_
-import random
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timezone
@@ -31,64 +33,15 @@ from flask import send_file
 app = Flask(__name__)
 app.config.from_object(Config)  # This loads ALL config from config.py
 
+if not app.secret_key:
+    raise RuntimeError("SECRET_KEY not set. Check .env file.")
+
+if not app.config["SQLALCHEMY_DATABASE_URI"]:
+    raise RuntimeError("DATABASE_URL not set. Check .env file.")
+
 # Initialize extensions
 db.init_app(app)
 bcrypt.init_app(app)
-
-# --------------------------------------------------
-# FAKE POSTS DATA
-# --------------------------------------------------
-
-FAKE_POSTS = [
-    {
-        "id": None,
-        "isFake": True,
-        "username": "Campus Club",
-        "profileImage": "https://ui-avatars.com/api/?name=Campus+Club",
-        "postImages": [f"https://picsum.photos/600?seed={random.randint(1,9999)}"],
-        "currentImageIndex": 0,
-        "caption": "Hackathon registrations open 🚀",
-        "accountType": "club",
-        "collegeName": "CSE",
-        "likesCount": random.randint(10, 500),
-        "commentsCount": random.randint(1, 20),
-        "comments": [],
-        "isLiked": False,
-        "timestamp": "Just now"
-    },
-    {
-        "id": None,
-        "isFake": True,
-        "username": "Dhruv Patel",
-        "profileImage": "https://ui-avatars.com/api/?name=Dhruv+Patel",
-        "postImages": [f"https://picsum.photos/600?seed={random.randint(1,9999)}"],
-        "currentImageIndex": 0,
-        "caption": "Late night coding hits different 💻",
-        "accountType": "student",
-        "collegeName": "IT",
-        "likesCount": random.randint(10, 500),
-        "commentsCount": random.randint(1, 20),
-        "comments": [],
-        "isLiked": False,
-        "timestamp": "5 min ago"
-    },
-    {
-        "id": None,
-        "isFake": True,
-        "username": "Placement Cell",
-        "profileImage": "https://ui-avatars.com/api/?name=Placement+Cell",
-        "postImages": [f"https://picsum.photos/600?seed={random.randint(1,9999)}"],
-        "currentImageIndex": 0,
-        "caption": "Amazon internship shortlist released",
-        "accountType": "official",
-        "collegeName": "Admin",
-        "likesCount": random.randint(100, 1000),
-        "commentsCount": random.randint(10, 50),
-        "comments": [],
-        "isLiked": False,
-        "timestamp": "1 hr ago"
-    }
-]
 
 # --------------------------------------------------
 # HELPER FUNCTIONS
@@ -361,24 +314,12 @@ def api_posts():
             "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url
         })
 
-    # Combine DB posts with ALL Fake posts
-    combined = formatted_db_posts + FAKE_POSTS
-    
-    # Shuffle the entire list so DB posts don't always appear first
-    # if page == 1:
-    #     random.shuffle(combined)
-
-    if page == 1:
-        combined = formatted_db_posts + FAKE_POSTS
-    else:
-        combined = formatted_db_posts
-
     return jsonify({
         "viewer": {
             "id": session.get("user_id"),
             "name": session.get("user_name")
         },
-        "posts": combined
+        "posts": formatted_db_posts
     })
 
 
@@ -2145,8 +2086,6 @@ def admin_create_event():
         target_user_id = session["user_id"]
     
     # Verify target user exists and has correct account type
-    # Event owner is always the Admin
-    target_user_id = session["user_id"]
     target_user = User.query.get(target_user_id)
     if not target_user:
         return jsonify({"error": "Target user not found"}), 404
@@ -2285,11 +2224,17 @@ def seed_admin():
     if admin:
         return
 
+    email = os.environ.get("ADMIN_EMAIL")
+    password = os.environ.get("ADMIN_PASSWORD")
+
+    if not email or not password:
+        return
+
     admin = User(
         first_name="Admin",
-        last_name="Dhyey",
-        email="admin@campusconnect.com",
-        password_hash=bcrypt.generate_password_hash("dhyey104@"),
+        last_name="User",
+        email=email,
+        password_hash=bcrypt.generate_password_hash(password),
         university="Campus Connect University",
         major="Administration",
         batch="N/A",
