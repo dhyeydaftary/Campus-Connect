@@ -25,3 +25,6 @@ static/uploads/images/*
 # Keep folder structure
 !static/uploads/documents/.gitkeep
 !static/uploads/images/.gitkeep
+
+
+seed_admin.py

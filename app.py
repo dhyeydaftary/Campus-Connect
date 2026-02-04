@@ -14,7 +14,7 @@ from flask import (
 
 from config import Config
 from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration, Connection, ConnectionRequest, Notification, Skill, Experience, Education, AdminLog
-from sqlalchemy import func, or_, and_
+from sqlalchemy import func, or_, and_, DateTime
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timezone
@@ -155,7 +155,9 @@ def profile_page(user_id):
         return redirect(url_for("login_page"))
     
     # Get the user whose profile is being viewed
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id)
+    if not user:
+        abort(404)
     
     # Check if viewing own profile
     is_own_profile = (session["user_id"] == user_id)
@@ -513,7 +515,7 @@ def get_events():
     
     # Get all upcoming events
     events = Event.query.filter(
-        Event.event_date >= datetime.utcnow()
+        Event.event_date >= datetime.now(timezone.utc)
     ).order_by(Event.event_date.asc()).all()
     
     events_data = []
@@ -702,7 +704,7 @@ def seed_events():
             title="Tech Career Fair 2024",
             description="Meet top tech companies and explore internship opportunities. Leading tech giants will be present!",
             location="Main Auditorium",
-            event_date=datetime.utcnow() + timedelta(days=1),
+            event_date=datetime.now(timezone.utc) + timedelta(days=1),
             total_seats=200,
             user_id=user.id
         ),
@@ -710,7 +712,7 @@ def seed_events():
             title="Hackathon 2024",
             description="48-hour coding marathon. Build innovative solutions and win amazing prizes!",
             location="CS Lab Building",
-            event_date=datetime.utcnow() + timedelta(days=7),
+            event_date=datetime.now(timezone.utc) + timedelta(days=7),
             total_seats=100,
             user_id=user.id
         ),
@@ -718,7 +720,7 @@ def seed_events():
             title="Guest Lecture: AI & ML",
             description="Industry expert discusses latest trends in artificial intelligence and machine learning",
             location="Seminar Hall 3",
-            event_date=datetime.utcnow() + timedelta(days=14),
+            event_date=datetime.now(timezone.utc) + timedelta(days=14),
             total_seats=150,
             user_id=user.id
         ),
@@ -726,7 +728,7 @@ def seed_events():
             title="Campus Placement Drive",
             description="Multiple companies conducting interviews. Dress formally!",
             location="Conference Room A",
-            event_date=datetime.utcnow() + timedelta(days=21),
+            event_date=datetime.now(timezone.utc) + timedelta(days=21),
             total_seats=80,
             user_id=user.id
         ),
@@ -734,7 +736,7 @@ def seed_events():
             title="Workshop: Web Development",
             description="Hands-on workshop covering modern web technologies - React, Node.js, and more",
             location="Computer Lab 2",
-            event_date=datetime.utcnow() + timedelta(days=10),
+            event_date=datetime.now(timezone.utc) + timedelta(days=10),
             total_seats=50,
             user_id=user.id
         )
@@ -763,7 +765,7 @@ def get_suggestions():
         return jsonify({"error": "Unauthorized"}), 401
     
     current_user_id = session["user_id"]
-    current_user = User.query.get(current_user_id)
+    current_user = db.session.get(User, current_user_id)
     
     if not current_user:
         return jsonify({"error": "User not found"}), 404
@@ -859,7 +861,7 @@ def send_connection_request():
         return jsonify({"error": "Cannot connect with yourself"}), 400
     
     # Check if receiver exists
-    receiver = User.query.get(receiver_id)
+    receiver = db.session.get(User, receiver_id)
     if not receiver:
         return jsonify({"error": "User not found"}), 404
     
@@ -899,7 +901,7 @@ def send_connection_request():
     db.session.add(new_request)
     
     # Create notification for receiver
-    sender = User.query.get(sender_id)
+    sender = db.session.get(User, sender_id)
     notification = Notification(
         user_id=receiver_id,
         type='connection_request',
@@ -928,7 +930,7 @@ def accept_connection_request(request_id):
     current_user_id = session["user_id"]
     
     # Get the request
-    conn_request = ConnectionRequest.query.get(request_id)
+    conn_request = db.session.get(ConnectionRequest, request_id)
     
     if not conn_request:
         return jsonify({"error": "Request not found"}), 404
@@ -943,7 +945,7 @@ def accept_connection_request(request_id):
     
     # Update request status
     conn_request.status = 'accepted'
-    conn_request.responded_at = datetime.utcnow()
+    conn_request.responded_at = datetime.now(timezone.utc)
     
     # Create connection (store smaller ID first for consistency)
     user_a = min(conn_request.sender_id, conn_request.receiver_id)
@@ -957,7 +959,7 @@ def accept_connection_request(request_id):
     db.session.add(new_connection)
     
     # Create notification for sender
-    receiver = User.query.get(current_user_id)
+    receiver = db.session.get(User, current_user_id)
     notification = Notification(
         user_id=conn_request.sender_id,
         type='connection_accepted',
@@ -985,7 +987,7 @@ def reject_connection_request(request_id):
     current_user_id = session["user_id"]
     
     # Get the request
-    conn_request = ConnectionRequest.query.get(request_id)
+    conn_request = db.session.get(ConnectionRequest, request_id)
     
     if not conn_request:
         return jsonify({"error": "Request not found"}), 404
@@ -996,7 +998,7 @@ def reject_connection_request(request_id):
     
     # Update request status
     conn_request.status = 'rejected'
-    conn_request.responded_at = datetime.utcnow()
+    conn_request.responded_at = datetime.now(timezone.utc)
     
     db.session.commit()
     
@@ -1023,7 +1025,7 @@ def get_pending_requests():
     
     result = []
     for req in pending_requests:
-        sender = User.query.get(req.sender_id)
+        sender = db.session.get(User, req.sender_id)
         if sender:
             result.append({
                 "request_id": req.id,
@@ -1059,7 +1061,7 @@ def get_notifications():
         # Get actor info if exists
         actor = None
         if notif.actor_id:
-            actor_user = User.query.get(notif.actor_id)
+            actor_user = db.session.get(User, notif.actor_id)
             if actor_user:
                 actor = {
                     "id": actor_user.id,
@@ -1118,7 +1120,7 @@ def get_connections_list():
     for conn in connections:
         # Get the OTHER user's ID
         other_user_id = conn.connected_user_id if conn.user_id == current_user_id else conn.user_id
-        other_user = User.query.get(other_user_id)
+        other_user = db.session.get(User, other_user_id)
         
         if other_user:
             result.append({
@@ -1143,7 +1145,7 @@ def mark_notification_read(notification_id):
     
     user_id = session["user_id"]
     
-    notification = Notification.query.get(notification_id)
+    notification = db.session.get(Notification, notification_id)
     
     if not notification:
         return jsonify({"error": "Notification not found"}), 404
@@ -1183,7 +1185,7 @@ def get_my_profile():
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
-    user = User.query.get(session["user_id"])
+    user = db.session.get(User, session["user_id"])
     if not user:
         return jsonify({"error": "User not found"}), 404
     
@@ -1232,7 +1234,7 @@ def api_profile_posts(user_id):
         return jsonify({"error": "Unauthorized"}), 401
 
     # Check if profile user exists
-    profile_user = User.query.get(user_id)
+    profile_user = db.session.get(User, user_id)
     if not profile_user:
         return jsonify({"error": "User not found"}), 404
 
@@ -1323,7 +1325,7 @@ def get_profile_data(user_id):
     current_user_id = session.get("user_id", None)  # None if not logged in
 
     # Get the profile user
-    profile_user = User.query.get(user_id)
+    profile_user = db.session.get(User, user_id)
 
     if not profile_user:
         return jsonify({"error": "User not found"}), 404
@@ -1384,7 +1386,7 @@ def get_profile_data(user_id):
     connections_data = []
     for conn in connections_query.all():
         other_user_id = conn.connected_user_id if conn.user_id == user_id else conn.user_id
-        other_user = User.query.get(other_user_id)
+        other_user = db.session.get(User, other_user_id)
         if other_user:
             connections_data.append({
                 'id': other_user.id,
@@ -1426,7 +1428,7 @@ def get_profile_data(user_id):
         # Find mutual connections
         mutual_ids = current_user_connection_ids.intersection(profile_user_connection_ids)
         for mutual_id in mutual_ids:
-            mutual_user = User.query.get(mutual_id)
+            mutual_user = db.session.get(User, mutual_id)
             if mutual_user:
                 mutual_connections.append({
                     'id': mutual_user.id,
@@ -1814,7 +1816,7 @@ def update_bio():
     data = request.json
     bio = data.get("bio", "").strip()
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
 
@@ -2019,7 +2021,9 @@ def admin_toggle_user_status(user_id):
     if user_id == session["user_id"]:
         return jsonify({"error": "You cannot disable your own account"}), 403
     
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id)
+    if not user:
+        abort(404)
     
     # Toggle the is_active status
     old_status = user.is_active
@@ -2086,7 +2090,7 @@ def admin_create_event():
         target_user_id = session["user_id"]
     
     # Verify target user exists and has correct account type
-    target_user = User.query.get(target_user_id)
+    target_user = db.session.get(User, target_user_id)
     if not target_user:
         return jsonify({"error": "Target user not found"}), 404
     
@@ -2253,14 +2257,14 @@ def seed_admin():
 @app.route("/admin/api/events/upcoming")
 def admin_get_upcoming_events():
     admin_required()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     events = Event.query.filter(Event.event_date >= now).order_by(Event.event_date.asc()).all()
     return jsonify([_format_admin_event(e) for e in events])
 
 @app.route("/admin/api/events/past")
 def admin_get_past_events():
     admin_required()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     events = Event.query.filter(Event.event_date < now).order_by(Event.event_date.desc()).all()
     return jsonify([_format_admin_event(e) for e in events])
 
@@ -2274,16 +2278,18 @@ def _format_admin_event(event):
         "total_seats": event.total_seats,
         "interested_count": event.interested_count,
         "going_count": event.going_count,
-        "is_past": event.event_date < datetime.utcnow()
+        "is_past": event.event_date < datetime.now(timezone.utc)
     }
 
 @app.route("/admin/api/events/<int:event_id>", methods=["PUT"])
 def admin_update_event(event_id):
     admin_required()
-    event = Event.query.get_or_404(event_id)
+    event = db.session.get(Event, event_id)
+    if not event:
+        abort(404)
     
     # Prevent editing past events
-    if event.event_date < datetime.utcnow():
+    if event.event_date < datetime.now(timezone.utc):
         return jsonify({"error": "Cannot edit past events"}), 400
         
     data = request.json
@@ -2309,7 +2315,9 @@ def admin_update_event(event_id):
 @app.route("/admin/api/events/<int:event_id>/participants")
 def admin_get_event_participants(event_id):
     admin_required()
-    event = Event.query.get_or_404(event_id)
+    event = db.session.get(Event, event_id)
+    if not event:
+        abort(404)
     
     # Get only 'going' participants
     participants = (
@@ -2332,7 +2340,9 @@ def admin_get_event_participants(event_id):
 @app.route("/admin/api/events/<int:event_id>/download")
 def admin_download_event_pdf(event_id):
     admin_required()
-    event = Event.query.get_or_404(event_id)
+    event = db.session.get(Event, event_id)
+    if not event:
+        abort(404)
     
     participants = db.session.query(User).join(EventRegistration).filter(
         EventRegistration.event_id == event_id, EventRegistration.status == 'going'
