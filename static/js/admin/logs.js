@@ -49,6 +49,11 @@ function filterAndRenderLogs() {
     renderLogs(filtered);
 }
 
+// Download logs
+window.downloadLogs = function() {
+    window.location.href = '/admin/api/logs/download';
+}
+
 // Initialize page
 async function initLogs() {
     allLogs = await API.getLogs();

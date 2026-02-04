@@ -10,14 +10,6 @@ async function loadEventMeta() {
         option.textContent = type;
         typeSelect.appendChild(option);
     });
-    // Populate target entities
-    const entitySelect = document.getElementById('target-entity');
-    meta.targetEntities.forEach(entity => {
-        const option = document.createElement('option');
-        option.value = entity.id;
-        option.textContent = `${entity.name} (${entity.type})`;
-        entitySelect.appendChild(option);
-    });
 }
 // Reset form
 window.resetForm = function() {
@@ -33,9 +25,14 @@ async function handleSubmit(e) {
     const eventData = {
         title: document.getElementById('event-title').value,
         description: document.getElementById('event-description').value,
-        date: document.getElementById('event-date').value,
-        type: document.getElementById('event-type').value,
-        targetEntity: document.getElementById('target-entity').value
+
+        event_date: document.getElementById('event-date').value,
+        start_datetime: document.getElementById('start-time').value,
+        end_datetime: document.getElementById('end-time').value,
+
+        location: document.getElementById('event-location').value,
+        total_seats: parseInt(document.getElementById('total-seats').value),
+        type: document.getElementById('event-type').value
     };
     const result = await API.createEvent(eventData);
     submitBtn.disabled = false;

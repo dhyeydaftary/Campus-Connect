@@ -188,12 +188,6 @@ def admin_logs_page():
     admin_required()
     return render_template("admin/logs.html")
 
-@app.route("/admin/system")
-def admin_system_page():
-    admin_required()
-    return render_template("admin/system.html")
-
-
 @app.route("/profile/<int:user_id>")
 def profile_page(user_id):
     """Profile page route - renders the profile HTML template"""
@@ -594,7 +588,7 @@ def get_events():
             "interestedCount": event.interested_count,
             "userStatus": registration.status if registration else None,
             "month": event.event_date.strftime("%b").upper(),
-            "day": event.event_date.strftime("%d"),
+            "day": event.event_date.day,
             "time": event.event_date.strftime("%I:%M %p"),
             "dateTime": event.event_date.strftime("%B %d, %Y at %I:%M %p")
         })
@@ -615,9 +609,18 @@ def register_for_event(event_id):
     if status not in ['going', 'interested']:
         return jsonify({"error": "Invalid status. Must be 'going' or 'interested'"}), 400
     
-    event = Event.query.get(event_id)
+    # HARDENING: Use with_for_update() to lock the event row.
+    # This prevents race conditions where two users join the last seat simultaneously.
+    # 1. Single locked query
+    event = db.session.query(Event).with_for_update().filter_by(id=event_id).first()
+    
+    # 2. Null check immediately
     if not event:
         return jsonify({"error": "Event not found"}), 404
+    
+    # 3. Cancellation check
+    if event.is_cancelled:
+        return jsonify({"error": "Cannot register for a cancelled event"}), 400
     
     # Check existing registration
     existing = EventRegistration.query.filter_by(
@@ -625,58 +628,91 @@ def register_for_event(event_id):
         user_id=user_id
     ).first()
     
+    message = ""
+    user_status = None
+    status_code = 200
+
     if existing:
         # User wants to change status
         if existing.status == status:
             # Same status - remove registration (toggle off)
             db.session.delete(existing)
-            db.session.commit()
-            
-            return jsonify({
-                "message": "Registration cancelled",
-                "userStatus": None,
-                "availableSeats": event.available_seats,
-                "goingCount": event.going_count,
-                "interestedCount": event.interested_count
-            })
+            message = "Registration cancelled"
+            user_status = None
+            status_code = 200
         else:
             # Different status - update
             # If changing from interested to going, check seats
-            if status == 'going' and event.available_seats <= 0:
-                return jsonify({"error": "No seats available"}), 400
+            if status == 'going':
+                # Optimization: Check seats efficiently without triggering extra queries if possible
+                # event.available_seats triggers a query. We can do it manually or use the property.
+                # Since we are inside a lock, we must be careful.
+                current_going = event.registrations.filter_by(status='going').count()
+                if (event.total_seats - current_going) <= 0:
+                    return jsonify({"error": "No seats available"}), 400
             
             existing.status = status
-            db.session.commit()
-            
-            return jsonify({
-                "message": f"Status updated to {status}",
-                "userStatus": status,
-                "availableSeats": event.available_seats,
-                "goingCount": event.going_count,
-                "interestedCount": event.interested_count
-            })
+            message = f"Status updated to {status}"
+            user_status = status
+            status_code = 200
+    else:
+        # New registration
+        if status == 'going':
+            current_going = event.registrations.filter_by(status='going').count()
+            if (event.total_seats - current_going) <= 0:
+                return jsonify({"error": "No seats available"}), 400
+        
+        registration = EventRegistration(
+            event_id=event_id,
+            user_id=user_id,
+            status=status
+        )
+        db.session.add(registration)
+        message = f"Registered as {status}"
+        user_status = status
+        status_code = 201
     
-    # New registration
-    if status == 'going' and event.available_seats <= 0:
-        return jsonify({"error": "No seats available"}), 400
-    
-    registration = EventRegistration(
-        event_id=event_id,
-        user_id=user_id,
-        status=status
-    )
-    
-    db.session.add(registration)
     db.session.commit()
     
+    # Calculate final counts for response
+    # We query these to ensure accuracy after the transaction
+    final_going = event.registrations.filter_by(status='going').count()
+    final_interested = event.registrations.filter_by(status='interested').count()
+    final_available = max(0, event.total_seats - final_going)
+    
     return jsonify({
-        "message": f"Registered as {status}",
-        "userStatus": status,
-        "availableSeats": event.available_seats,
-        "goingCount": event.going_count,
-        "interestedCount": event.interested_count
-    }), 201
+        "message": message,
+        "userStatus": user_status,
+        "availableSeats": final_available,
+        "goingCount": final_going,
+        "interestedCount": final_interested
+    }), status_code
 
+
+@app.route("/api/announcements", methods=["GET"])
+def get_announcements():
+    """Get announcements for students (fetched from AdminLogs for demo simplicity)"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    # Fetch logs that are announcements
+    # In a real app, this would be a separate table
+    announcement_logs = AdminLog.query.filter_by(
+        action_type="create_announcement"
+    ).order_by(AdminLog.created_at.desc()).limit(10).all()
+    
+    announcements = []
+    for log in announcement_logs:
+        # Extract text from details: "Created announcement: [text]..."
+        text = log.details.replace("Created announcement: ", "")
+        announcements.append({
+            "id": log.id,
+            "text": text,
+            "date": log.created_at.strftime("%Y-%m-%d"),
+            "author": "Admin"
+        })
+    
+    return jsonify(announcements)
 
 # --------------------------------------------------
 # DEVELOPMENT ROUTES
@@ -2089,18 +2125,6 @@ def admin_get_event_creators():
 def admin_create_event():
     """
     STEP 4.2: Admin creates event on behalf of another user.
-    
-    Request body:
-        - target_user_id: ID of official/club who will be the event owner
-        - title: Event title
-        - description: Event description
-        - location: Event location
-        - event_date: Event date (ISO format)
-        - total_seats: Number of seats
-    
-    Rules:
-        - Event.user_id = target_user_id (NOT the admin)
-        - Action is logged in AdminLog
     """
     admin_required()
     
@@ -2108,31 +2132,37 @@ def admin_create_event():
     
     # Validate required fields
     # Frontend sends 'targetEntity' as ID
+    # Fallback to current admin if not provided (Option B)
     target_user_id = data.get("targetEntity")
     if not target_user_id:
-         return jsonify({"error": "Target entity required"}), 400
+        target_user_id = session["user_id"]
     
     # Verify target user exists and has correct account type
+    # Event owner is always the Admin
+    target_user_id = session["user_id"]
     target_user = User.query.get(target_user_id)
     if not target_user:
         return jsonify({"error": "Target user not found"}), 404
     
-    if target_user.account_type not in ["official", "club"]:
-        return jsonify({"error": "Target user must be official or club"}), 400
+    if target_user.account_type not in ["official", "club", "admin"]:
+        return jsonify({"error": "Target user must be official, club, or admin"}), 400
     
     # Parse event_date
+    # Parse start_datetime (Used as the primary event_date)
     try:
-        event_date = datetime.fromisoformat(data.get("date").replace('Z', '+00:00'))
+        # Frontend sends datetime-local (e.g., "2023-10-27T10:00")
+        start_dt_str = data.get("start_datetime")
+        event_date = datetime.fromisoformat(start_dt_str.replace('Z', '+00:00'))
     except (ValueError, AttributeError):
-        return jsonify({"error": "Invalid event_date format. Use ISO format."}), 400
+        return jsonify({"error": "Invalid start_datetime format."}), 400
     
     # Create event with target_user_id as the owner
     event = Event(
         title=data.get("title").strip(),
         description=data.get("description").strip(),
-        location="Campus", # Default or add to form
+        location=data.get("location").strip(),
         event_date=event_date,
-        total_seats=100, # Default or add to form
+        total_seats=int(data.get("total_seats", 100)),
         user_id=target_user_id  # Event owner is the target user, NOT the admin
     )
     
@@ -2168,24 +2198,38 @@ def admin_create_event():
 @app.route("/admin/api/announcements", methods=["GET"])
 def admin_get_announcements():
     admin_required()
-    # Mock data for now as no Announcement model exists
-    return jsonify([
-        { "id": 1, "text": "System maintenance scheduled for tonight.", "date": "2024-03-20", "author": "Admin" }
-    ]), 200
+    # Fetch from AdminLog to persist across sessions
+    announcement_logs = AdminLog.query.filter_by(
+        action_type="create_announcement"
+    ).order_by(AdminLog.created_at.desc()).all()
+    
+    announcements = []
+    for log in announcement_logs:
+        text = log.details.replace("Created announcement: ", "")
+        announcements.append({
+            "id": log.id,
+            "text": text,
+            "date": log.created_at.strftime("%Y-%m-%d"),
+            "author": "Admin"
+        })
+        
+    return jsonify(announcements), 200
 
 @app.route("/admin/api/announcements", methods=["POST"])
 def admin_create_announcement():
     admin_required()
     data = request.json
+    text = data.get("text")
+    
     # Log action
     log = AdminLog(
         admin_id=session["user_id"],
         action_type="create_announcement",
-        details=f"Created announcement: {data.get('text')[:50]}..."
+        details=f"Created announcement: {text}"
     )
     db.session.add(log)
     db.session.commit()
-    return jsonify({ "success": True, "announcement": { "id": 999, "text": data.get("text"), "date": datetime.now().strftime('%Y-%m-%d'), "author": "Admin" } }), 201
+    return jsonify({ "success": True, "announcement": { "id": log.id, "text": text, "date": datetime.now().strftime('%Y-%m-%d'), "author": "Admin" } }), 201
 
 @app.route("/admin/api/logs", methods=["GET"])
 def admin_get_logs():
@@ -2200,17 +2244,30 @@ def admin_get_logs():
         "ip": "127.0.0.1"
     } for log in logs]), 200
 
-@app.route("/admin/api/system/status", methods=["GET"])
-def admin_get_system_status():
+@app.route("/admin/api/logs/download", methods=["GET"])
+def admin_download_logs():
+    """Download logs as a text file"""
     admin_required()
-    return jsonify({
-        "api": { "name": "API Server", "status": "online", "uptime": "99.9%", "responseTime": "45ms" },
-        "database": { "name": "Primary Database", "status": "online", "uptime": "99.9%", "connections": 12 },
-        "cache": { "name": "Redis Cache", "status": "online", "uptime": "99.9%", "hitRate": "94%" },
-        "storage": { "name": "File Storage", "status": "online", "uptime": "99.9%", "usage": "45%" },
-        "email": { "name": "Email Service", "status": "online", "uptime": "99.9%", "queue": 0 },
-        "search": { "name": "Search Engine", "status": "online", "uptime": "99.9%", "indexing": "idle" }
-    }), 200
+    
+    logs = AdminLog.query.order_by(AdminLog.created_at.desc()).all()
+    
+    # Generate text content
+    content = "CAMPUS CONNECT - ADMIN LOGS\n"
+    content += f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    content += "=" * 80 + "\n\n"
+    
+    for log in logs:
+        timestamp = log.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        action = log.action_type.replace('_', ' ').upper()
+        details = log.details
+        content += f"[{timestamp}] {action}: {details}\n"
+    
+    from flask import Response
+    return Response(
+        content,
+        mimetype="text/plain",
+        headers={"Content-Disposition": "attachment;filename=admin_logs.txt"}
+    )
 
 
 def seed_admin():
