@@ -15,7 +15,14 @@ from sqlalchemy import func, or_, and_
 import random
 from werkzeug.utils import secure_filename
 import os
-from datetime import datetime
+from datetime import datetime, timezone
+
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from flask import send_file
 
 # --------------------------------------------------
 # CREATE APP & LOAD CONFIGURATION
@@ -2150,9 +2157,12 @@ def admin_create_event():
     # Parse event_date
     # Parse start_datetime (Used as the primary event_date)
     try:
-        # Frontend sends datetime-local (e.g., "2023-10-27T10:00")
         start_dt_str = data.get("start_datetime")
-        event_date = datetime.fromisoformat(start_dt_str.replace('Z', '+00:00'))
+        if not start_dt_str or ('Z' not in start_dt_str and '+' not in start_dt_str):
+             return jsonify({"error": "UTC Datetime required"}), 400
+        
+        dt = datetime.fromisoformat(start_dt_str.replace('Z', '+00:00'))
+        event_date = dt.astimezone(timezone.utc).replace(tzinfo=None)
     except (ValueError, AttributeError):
         return jsonify({"error": "Invalid start_datetime format."}), 400
     
@@ -2290,6 +2300,134 @@ def seed_admin():
     db.session.add(admin)
     db.session.commit()
     print("✅ Default admin created")
+
+# --------------------------------------------------
+# ADMIN EVENT MANAGEMENT ROUTES (TASK 1)
+# --------------------------------------------------
+
+@app.route("/admin/api/events/upcoming")
+def admin_get_upcoming_events():
+    admin_required()
+    now = datetime.utcnow()
+    events = Event.query.filter(Event.event_date >= now).order_by(Event.event_date.asc()).all()
+    return jsonify([_format_admin_event(e) for e in events])
+
+@app.route("/admin/api/events/past")
+def admin_get_past_events():
+    admin_required()
+    now = datetime.utcnow()
+    events = Event.query.filter(Event.event_date < now).order_by(Event.event_date.desc()).all()
+    return jsonify([_format_admin_event(e) for e in events])
+
+def _format_admin_event(event):
+    return {
+        "id": event.id,
+        "title": event.title,
+        "date": event.event_date.isoformat() + "Z",
+        "location": event.location,
+        "description": event.description,
+        "total_seats": event.total_seats,
+        "interested_count": event.interested_count,
+        "going_count": event.going_count,
+        "is_past": event.event_date < datetime.utcnow()
+    }
+
+@app.route("/admin/api/events/<int:event_id>", methods=["PUT"])
+def admin_update_event(event_id):
+    admin_required()
+    event = Event.query.get_or_404(event_id)
+    
+    # Prevent editing past events
+    if event.event_date < datetime.utcnow():
+        return jsonify({"error": "Cannot edit past events"}), 400
+        
+    data = request.json
+    
+    if "title" in data: event.title = data["title"]
+    if "description" in data: event.description = data["description"]
+    if "location" in data: event.location = data["location"]
+    if "total_seats" in data: event.total_seats = int(data["total_seats"])
+    
+    if "event_date" in data:
+        try:
+            dt_str = data["event_date"]
+            if 'Z' not in dt_str and '+' not in dt_str:
+                return jsonify({"error": "UTC Datetime required"}), 400
+            dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+            event.event_date = dt.astimezone(timezone.utc).replace(tzinfo=None)
+        except ValueError:
+            return jsonify({"error": "Invalid date format"}), 400
+            
+    db.session.commit()
+    return jsonify({"success": True, "message": "Event updated successfully"})
+
+@app.route("/admin/api/events/<int:event_id>/participants")
+def admin_get_event_participants(event_id):
+    admin_required()
+    event = Event.query.get_or_404(event_id)
+    
+    # Get only 'going' participants
+    participants = (
+        db.session.query(User)
+        .join(EventRegistration)
+        .filter(
+            EventRegistration.event_id == event_id,
+            EventRegistration.status == 'going'
+        )
+        .all()
+    )
+    
+    return jsonify([{
+        "name": u.full_name,
+        "email": u.email,
+        "college": u.university,
+        "department": u.major
+    } for u in participants])
+
+@app.route("/admin/api/events/<int:event_id>/download")
+def admin_download_event_pdf(event_id):
+    admin_required()
+    event = Event.query.get_or_404(event_id)
+    
+    participants = db.session.query(User).join(EventRegistration).filter(
+        EventRegistration.event_id == event_id, EventRegistration.status == 'going'
+    ).all()
+    
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    elements.append(Paragraph(f"Event Report: {event.title}", styles['Title']))
+    elements.append(Spacer(1, 12))
+    
+    details = [
+        f"<b>Date:</b> {event.event_date.strftime('%Y-%m-%d %H:%M')}",
+        f"<b>Location:</b> {event.location}",
+        f"<b>Participated:</b> {event.going_count} | <b>Interested:</b> {event.interested_count}"
+    ]
+    for d in details:
+        elements.append(Paragraph(d, styles['Normal']))
+        elements.append(Spacer(1, 6))
+        
+    elements.append(Spacer(1, 20))
+    
+    if participants:
+        data = [['Name', 'Email', 'University', 'Major']] + [[p.full_name, p.email, p.university, p.major] for p in participants]
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.grey),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('GRID', (0,0), (-1,-1), 1, colors.black)
+        ]))
+        elements.append(table)
+    else:
+        elements.append(Paragraph("No participants yet.", styles['Normal']))
+        
+    doc.build(elements)
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name=f"event_{event_id}.pdf", mimetype='application/pdf')
 
 # --------------------------------------------------
 # APP ENTRY POINT

@@ -17,7 +17,7 @@
 </header>
 <!-- Content Area -->
 <div class="content-area">
-    <div class="card">
+    <div class="card mb-6">
         <div class="card-header">
             <h2 class="card-title">Create New Event</h2>
         </div>
@@ -89,6 +89,104 @@
             </form>
         </div>
     </div>
+
+    <!-- Manage Events Card (Task 1) -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Manage Events</h2>
+        </div>
+        <div class="card-body">
+            <!-- Upcoming Events Section -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Upcoming Events</h3>
+                <div id="upcoming-events-list" class="flex flex-col gap-4">
+                    <div class="loading-spinner"><div class="spinner"></div></div>
+                </div>
+            </div>
+
+            <!-- Past Events Section -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Past Events</h3>
+                <div id="past-events-list" class="flex flex-col gap-4">
+                    <div class="loading-spinner"><div class="spinner"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Event Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Update Event</h3>
+                <button onclick="closeModal('edit-modal')" class="text-gray-500 hover:text-gray-700">&times;</button>
+            </div>
+            <form id="edit-event-form">
+                <input type="hidden" id="edit-event-id">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Event Title</label>
+                        <input type="text" class="form-input" id="edit-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date & Time</label>
+                        <input type="datetime-local" class="form-input" id="edit-date" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="edit-description" required></textarea>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Location</label>
+                        <select class="form-select" id="edit-location" required>
+                            <option value="Engineering Auditorium">Engineering Auditorium</option>
+                            <option value="Law Auditorium">Law Auditorium</option>
+                            <option value="Architecture Auditorium">Architecture Auditorium</option>
+                            <option value="Open Ground">Open Ground</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Total Seats</label>
+                        <input type="number" class="form-input" id="edit-seats" required>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Details Modal -->
+    <div id="view-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold" id="view-modal-title">Event Details</h3>
+                <button onclick="closeModal('view-modal')" class="text-gray-500 hover:text-gray-700">&times;</button>
+            </div>
+            
+            <div class="mb-6 grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded">
+                <div><span class="font-semibold">Date:</span> <span id="view-date"></span></div>
+                <div><span class="font-semibold">Location:</span> <span id="view-location"></span></div>
+                <div><span class="font-semibold">Participated:</span> <span id="view-participated"></span></div>
+                <div><span class="font-semibold">Interested:</span> <span id="view-interested"></span></div>
+            </div>
+
+            <h4 class="font-bold mb-2">Participated Users</h4>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 border-b"><th class="p-2">Name</th><th class="p-2">Email</th><th class="p-2">College</th><th class="p-2">Dept</th></tr>
+                    </thead>
+                    <tbody id="participants-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Success Message -->
     <div id="success-message" class="card mt-4" style="display: none; border-left: 4px solid #10b981;">
         <div class="card-body flex items-center gap-4">
