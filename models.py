@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from datetime import datetime
-from sqlalchemy import Index, CheckConstraint, and_, or_
+from datetime import datetime, timezone
+from sqlalchemy import Index, CheckConstraint, and_, or_, DateTime
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -39,8 +39,8 @@ class User(db.Model):
     account_type = db.Column(db.String(20), default="student", nullable=False)
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
     posts = db.relationship("Post", backref="user", lazy="dynamic", cascade="all, delete-orphan")
@@ -197,7 +197,7 @@ class Connection(db.Model):
         db.ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
-    connected_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    connected_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     
     __table_args__ = (
         # Prevent duplicate connections
@@ -281,8 +281,8 @@ class ConnectionRequest(db.Model):
         default='pending'
     )  # 'pending', 'accepted', 'rejected'
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    responded_at = db.Column(db.DateTime, nullable=True)  # When accepted/rejected
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    responded_at = db.Column(db.DateTime(timezone=True), nullable=True)  # When accepted/rejected
     
     __table_args__ = (
         # Only one request between two users
@@ -373,7 +373,7 @@ class Notification(db.Model):
         nullable=True
     )  # Who performed the action
     is_read = db.Column(db.Boolean, default=False, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationships
     user = db.relationship("User", foreign_keys=[user_id], backref="notifications")
@@ -448,7 +448,7 @@ class UserBlock(db.Model):
     )  # Who was blocked
     reason = db.Column(db.String(50), nullable=True)  # 'spam', 'harassment', 'other'
     is_active = db.Column(db.Boolean, default=True, nullable=False)  # Can unblock
-    blocked_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    blocked_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationships
     blocker = db.relationship("User", foreign_keys=[blocker_id], backref="blocks_made")
@@ -525,8 +525,8 @@ class Post(db.Model):
     )  # 🆕 'public', 'connections', 'private'
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # 🆕
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # 🆕
     
     __table_args__ = (
         # For "get user's posts" query
@@ -570,7 +570,7 @@ class Like(db.Model):
         db.ForeignKey("posts.id", ondelete="CASCADE"),
         nullable=False
     )
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     __table_args__ = (
         # Prevent double-likes
@@ -627,7 +627,7 @@ class Comment(db.Model):
     )  # 🆕 For threaded replies
     
     text = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     user = db.relationship("User")
@@ -665,7 +665,7 @@ class Event(db.Model):
     title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=False)
     location = db.Column(db.String(100), nullable=False)
-    event_date = db.Column(db.DateTime, nullable=False)
+    event_date = db.Column(DateTime(timezone=True), nullable=False)
     total_seats = db.Column(db.Integer, nullable=False, default=100)
     is_cancelled = db.Column(db.Boolean, default=False, nullable=False)  # 🆕
 
@@ -675,8 +675,8 @@ class Event(db.Model):
         nullable=False
     )
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # 🆕
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # 🆕
     
     # Relationships
     registrations = db.relationship(
@@ -732,7 +732,7 @@ class EventRegistration(db.Model):
         nullable=False
     )
     status = db.Column(db.String(20), nullable=False)  # 'going', 'interested'
-    registered_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    registered_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     __table_args__ = (
         # One registration per user per event
@@ -765,7 +765,7 @@ class Skill(db.Model):
     )
     skill_name = db.Column(db.String(100), nullable=False)
     skill_level = db.Column(db.String(20), nullable=True)  # 'beginner', 'intermediate', 'advanced', 'expert'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationship
     user = db.relationship("User", backref=db.backref("skills", lazy="dynamic", cascade="all, delete-orphan"))
@@ -803,7 +803,7 @@ class Experience(db.Model):
     description = db.Column(db.Text, nullable=True)  # Brief description of role
     is_current = db.Column(db.Boolean, default=False)  # Currently working here?
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationship
     user = db.relationship("User", backref=db.backref("experiences", lazy="dynamic", cascade="all, delete-orphan"))
@@ -836,7 +836,7 @@ class Education(db.Model):
     institution = db.Column(db.String(100), nullable=False)  # e.g., "Harvard University"
     year = db.Column(db.String(20), nullable=False)  # e.g., "2024 - 2028" or "2028"
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationship
     user = db.relationship("User", backref=db.backref("educations", lazy="dynamic", cascade="all, delete-orphan"))
@@ -879,7 +879,7 @@ class AdminLog(db.Model):
         nullable=True  # Event created by admin
     )
     details = db.Column(db.Text, nullable=True)  # JSON or text details about the action
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationships
     admin = db.relationship("User", foreign_keys=[admin_id], backref="admin_actions")
