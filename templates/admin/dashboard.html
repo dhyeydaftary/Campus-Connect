@@ -1,24 +1,12 @@
 {% extends "admin/layout.html" %}
 {% block title %}Dashboard | Admin{% endblock %}
+{% block header_title %}Dashboard{% endblock %}
 {% block content %}
 
-<!-- Top Navbar -->
-<header class="top-navbar">
-    <h1 class="page-title">Dashboard</h1>
-    <div class="navbar-right">
-        <div class="admin-profile">
-            <div class="admin-avatar">AD</div>
-            <div class="admin-info">
-                <span class="admin-name">Admin User</span>
-                <span class="admin-role">Super Admin</span>
-            </div>
-        </div>
-    </div>
-</header>
 <!-- Content Area -->
 <div class="content-area">
     <!-- KPI Cards -->
-    <div class="grid-5 mb-6" id="kpi-cards">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6" id="kpi-cards">
         <div class="kpi-card">
             <div class="kpi-icon blue">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -78,7 +66,7 @@
         </div>
     </div>
     <!-- Charts Row -->
-    <div class="grid-2 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">User Growth</h2>
@@ -101,7 +89,7 @@
         </div>
     </div>
     <!-- Content Activity & Top Accounts -->
-    <div class="grid-2 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">Content Activity</h2>
@@ -123,22 +111,15 @@
             </div>
         </div>
     </div>
-    <!-- System Health -->
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">System Health</h2>
-        </div>
-        <div class="card-body">
-            <div class="grid-2" id="system-health">
-                <div class="loading-spinner">
-                    <div class="spinner"></div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/admin/dashboard.js') }}"></script>
+
+<!-- Chart.js (dependency) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Admin dashboard logic -->
+<script src="{{ url_for('static', filename='js/admin/admin_dashboard_chart.js') }}"></script>
+
 {% endblock %}

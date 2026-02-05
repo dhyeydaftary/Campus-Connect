@@ -1,20 +1,8 @@
 {% extends "admin/layout.html" %}
 {% block title %}Events | Admin{% endblock %}
+{% block header_title %}Events Management{% endblock %}
 {% block content %}
 
-<!-- Top Navbar -->
-<header class="top-navbar">
-    <h1 class="page-title">Events Management</h1>
-    <div class="navbar-right">
-        <div class="admin-profile">
-            <div class="admin-avatar">AD</div>
-            <div class="admin-info">
-                <span class="admin-name">Admin User</span>
-                <span class="admin-role">Super Admin</span>
-            </div>
-        </div>
-    </div>
-</header>
 <!-- Content Area -->
 <div class="content-area">
     <div class="card mb-6">
@@ -29,43 +17,29 @@
                         <input type="text" class="form-input" id="event-title" placeholder="Enter event title" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="event-date">Event Date</label>
-                        <input type="date" class="form-input" id="event-date" required>
+                        <label class="form-label" for="event-date">Event Date & Time</label>
+                        <input type="datetime-local" class="form-input" id="event-date" required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="event-description">Description</label>
-                    <textarea class="form-textarea" id="event-description" placeholder="Enter event description"
-                        required></textarea>
+                    <textarea class="form-textarea" id="event-description" placeholder="Enter event description" required></textarea>
                 </div>
                 <div class="grid-2">
                     <div class="form-group">
-                        <label class="form-label" for="start-time">Start Time</label>
-                        <input type="datetime-local" class="form-input" id="start-time" required>
+                        <label class="form-label" for="event-location">Venue</label>
+                        <select class="form-select" id="event-location" required>
+                            <option value="">Select Venue</option>
+                            <option value="Engineering Auditorium">Engineering Auditorium</option>
+                            <option value="Law Auditorium">Law Auditorium</option>
+                            <option value="Architecture Auditorium">Architecture Auditorium</option>
+                            <option value="Open Ground">Open Ground</option>
+                        </select>
                     </div>
-
                     <div class="form-group">
-                        <label class="form-label" for="end-time">End Time</label>
-                        <input type="datetime-local" class="form-input" id="end-time" required>
+                        <label class="form-label" for="total-seats">Total Seats</label>
+                        <input type="number" class="form-input" id="total-seats" min="1" value="100" required>
                     </div>
-                </div>
-                <select class="form-select" id="event-location" required>
-                    <option value="">Select Venue</option>
-                    <option value="Engineering Auditorium">Engineering Auditorium</option>
-                    <option value="Law Auditorium">Law Auditorium</option>
-                    <option value="Architecture Auditorium">Architecture Auditorium</option>
-                    <option value="Open Ground">Open Ground</option>
-                </select>
-                <div class="form-group">
-                    <label class="form-label" for="total-seats">Total Seats</label>
-                    <input
-                        type="number"
-                        class="form-input"
-                        id="total-seats"
-                        min="1"
-                        value="100"
-                        required
-                    >
                 </div>
                 <div class="grid-2">
                     <div class="form-group">
@@ -170,11 +144,16 @@
                 <button onclick="closeModal('view-modal')" class="text-gray-500 hover:text-gray-700">&times;</button>
             </div>
             
+            <div class="mb-4">
+                <h4 class="font-bold mb-2 text-gray-800">Description</h4>
+                <p id="view-description" class="text-gray-600 text-sm whitespace-pre-wrap"></p>
+            </div>
+
             <div class="mb-6 grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded">
                 <div><span class="font-semibold">Date:</span> <span id="view-date"></span></div>
+                <div><span class="font-semibold">Time:</span> <span id="view-time"></span></div>
                 <div><span class="font-semibold">Location:</span> <span id="view-location"></span></div>
-                <div><span class="font-semibold">Participated:</span> <span id="view-participated"></span></div>
-                <div><span class="font-semibold">Interested:</span> <span id="view-interested"></span></div>
+                <div><span class="font-semibold">Seats Usage:</span> <span id="view-seats-ratio"></span></div>
             </div>
 
             <h4 class="font-bold mb-2">Participated Users</h4>

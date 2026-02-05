@@ -68,15 +68,15 @@ function setupFormHandlers() {
         btn.disabled = true;
         btn.innerHTML = 'Creating...';
 
-        const startVal = document.getElementById('start-time').value;
-        const startIso = startVal ? new Date(startVal).toISOString() : null;
+        const dateVal = document.getElementById('event-date').value;
+        const dateIso = dateVal ? new Date(dateVal).toISOString() : null;
 
         const data = {
             title: document.getElementById('event-title').value,
             description: document.getElementById('event-description').value,
             location: document.getElementById('event-location').value,
             total_seats: document.getElementById('total-seats').value,
-            start_datetime: startIso, // Send UTC ISO string
+            event_date: dateIso, // Send UTC ISO string
             targetEntity: null // Default to admin
         };
 
@@ -198,10 +198,14 @@ async function openViewModal(id) {
     if (!event) return;
 
     document.getElementById('view-modal-title').textContent = event.title;
-    document.getElementById('view-date').textContent = new Date(event.date).toLocaleString();
+    document.getElementById('view-description').textContent = event.description;
+    
+    const dateObj = new Date(event.date);
+    document.getElementById('view-date').textContent = dateObj.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    document.getElementById('view-time').textContent = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    
     document.getElementById('view-location').textContent = event.location;
-    document.getElementById('view-participated').textContent = event.going_count;
-    document.getElementById('view-interested').textContent = event.interested_count;
+    document.getElementById('view-seats-ratio').textContent = `${event.going_count} / ${event.total_seats}`;
 
     // Fetch participants
     const resPart = await fetch(`/admin/api/events/${id}/participants`);
