@@ -17,7 +17,8 @@ from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistrati
 from sqlalchemy import func, or_, and_, DateTime
 from werkzeug.utils import secure_filename
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import time
 
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
@@ -32,6 +33,7 @@ from flask import send_file
 
 app = Flask(__name__)
 app.config.from_object(Config)  # This loads ALL config from config.py
+START_TIME = datetime.now(timezone.utc)
 
 if not app.secret_key:
     raise RuntimeError("SECRET_KEY not set. Check .env file.")
@@ -53,7 +55,7 @@ def admin_required():
     Checks if the current user is an admin, otherwise aborts with 403.
     """
     if "user_id" not in session:
-        abort(401)  # Unauthorized - not logged in
+        abort(redirect(url_for("login_page")))  # Redirect to login if not authenticated
     
     if session.get("account_type") != "admin":
         abort(403)  # Forbidden - not an admin
@@ -82,6 +84,50 @@ def save_uploaded_file(file, file_type):
     return file_path.replace('static/', '')
 
 
+def get_content_activity():
+    today_utc = datetime.now(timezone.utc).date()
+    days = [today_utc - timedelta(days=i) for i in range(6, -1, -1)]
+
+    start_dt = datetime.combine(days[0], datetime.min.time(), tzinfo=timezone.utc)
+
+    posts_counts = {day: 0 for day in days}
+    events_counts = {day: 0 for day in days}
+
+    posts_query = (
+        db.session.query(
+            func.date(func.timezone('UTC', Post.created_at)),
+            func.count(Post.id)
+        )
+        .filter(Post.created_at >= start_dt)
+        .group_by(func.date(func.timezone('UTC', Post.created_at)))
+        .all()
+    )
+
+    for day, count in posts_query:
+        if day in posts_counts:
+            posts_counts[day] = count
+
+    events_query = (
+        db.session.query(
+            func.date(func.timezone('UTC', Event.event_date)),
+            func.count(Event.id)
+        )
+        .filter(Event.event_date >= start_dt)
+        .group_by(func.date(func.timezone('UTC', Event.event_date)))
+        .all()
+    )
+
+    for day, count in events_query:
+        if day in events_counts:
+            events_counts[day] = count
+
+    return {
+        "labels": [d.strftime("%b %d") for d in days],
+        "posts": [posts_counts[d] for d in days],
+        "events": [events_counts[d] for d in days],
+    }
+
+
 # --------------------------------------------------
 # PAGE ROUTES (HTML)
 # --------------------------------------------------
@@ -89,7 +135,6 @@ def save_uploaded_file(file, file_type):
 @app.route("/")
 def home():
     return render_template("landing.html")
-
 
 @app.route("/login")
 def login_page():
@@ -106,6 +151,10 @@ def home_page():
     # Protect home route
     if "user_id" not in session:
         return redirect(url_for("login_page"))
+
+    # Fix: Redirect admin to dashboard if they try to access student home
+    if session.get("account_type") == "admin":
+        return redirect(url_for("admin_dashboard_page"))
 
     return render_template(
         "home.html",
@@ -1892,12 +1941,8 @@ def admin_dashboard_overview():
         # ================================================================
         # D) CONTENT ACTIVITY
         # ================================================================
-        # Frontend expects arrays for charts: { posts: [...], events: [...] }
-        # We provide a simplified view here as we don't have historical daily data easily available
-        content_activity = {
-            "posts": [total_posts],
-            "events": [total_events]
-        }
+        
+        content_activity = get_content_activity()
         
         # ================================================================
         # E) TOP OFFICIAL/CLUB ACCOUNTS BY EVENTS CREATED
@@ -1933,23 +1978,6 @@ def admin_dashboard_overview():
         ]
         
         # ================================================================
-        # F) SYSTEM HEALTH
-        # ================================================================
-        # Check database connection
-        try:
-            db.session.execute(func.now())
-            db_status = "connected"
-        except Exception:
-            db_status = "disconnected"
-        
-        system_health = {
-            "api": { "status": "online", "latency": 45 },
-            "database": { "status": "online" if db_status == "connected" else "offline", "latency": 12 },
-            "storage": { "status": "online", "usage": 67 },
-            "cache": { "status": "online", "hitRate": 94 }
-        }
-        
-        # ================================================================
         # FINAL RESPONSE
         # ================================================================
         return jsonify({
@@ -1961,8 +1989,7 @@ def admin_dashboard_overview():
             "roleDistribution": role_distribution,
             "userGrowth": user_growth,
             "contentActivity": content_activity,
-            "topAccounts": top_creators,
-            "systemHealth": system_health
+            "topAccounts": top_creators
         }), 200
         
     except Exception as e:
@@ -2098,16 +2125,17 @@ def admin_create_event():
         return jsonify({"error": "Target user must be official, club, or admin"}), 400
     
     # Parse event_date
-    # Parse start_datetime (Used as the primary event_date)
+    # Fix: Use event_date directly (simplified logic)
     try:
-        start_dt_str = data.get("start_datetime")
-        if not start_dt_str or ('Z' not in start_dt_str and '+' not in start_dt_str):
-             return jsonify({"error": "UTC Datetime required"}), 400
+        event_date_str = data.get("event_date")
+        if not event_date_str:
+             return jsonify({"error": "Event date required"}), 400
         
-        dt = datetime.fromisoformat(start_dt_str.replace('Z', '+00:00'))
+        # Handle ISO format
+        dt = datetime.fromisoformat(event_date_str.replace('Z', '+00:00'))
         event_date = dt.astimezone(timezone.utc).replace(tzinfo=None)
     except (ValueError, AttributeError):
-        return jsonify({"error": "Invalid start_datetime format."}), 400
+        return jsonify({"error": "Invalid event_date format."}), 400
     
     # Create event with target_user_id as the owner
     event = Event(
@@ -2181,6 +2209,16 @@ def admin_create_announcement():
         details=f"Created announcement: {text}"
     )
     db.session.add(log)
+    
+    # Fix: Create a public Post so it renders on student feed
+    post = Post(
+        user_id=session["user_id"],
+        caption=f"📢 ANNOUNCEMENT: {text}",
+        post_type="normal",
+        visibility="public"
+    )
+    db.session.add(post)
+    
     db.session.commit()
     return jsonify({ "success": True, "announcement": { "id": log.id, "text": text, "date": datetime.now().strftime('%Y-%m-%d'), "author": "Admin" } }), 201
 
@@ -2194,7 +2232,7 @@ def admin_get_logs():
         "target": log.target_user.full_name if log.target_user else "System",
         "admin": log.admin.email if log.admin else "Unknown",
         "timestamp": log.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-        "ip": "127.0.0.1"
+        "ip": request.remote_addr or "127.0.0.1"
     } for log in logs]), 200
 
 @app.route("/admin/api/logs/download", methods=["GET"])
@@ -2269,10 +2307,13 @@ def admin_get_past_events():
     return jsonify([_format_admin_event(e) for e in events])
 
 def _format_admin_event(event):
+    dt_iso = event.event_date.isoformat()
+    if event.event_date.tzinfo is None:
+        dt_iso += "Z"
     return {
         "id": event.id,
         "title": event.title,
-        "date": event.event_date.isoformat() + "Z",
+        "date": dt_iso,
         "location": event.location,
         "description": event.description,
         "total_seats": event.total_seats,
