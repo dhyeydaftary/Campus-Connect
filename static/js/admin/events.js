@@ -3,6 +3,33 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFormHandlers();
 });
 
+// Helper to ensure date is treated as UTC
+function parseAsUTC(dateStr) {
+    if (!dateStr) return new Date();
+    
+    // Robust parsing: Extract components and force UTC construction
+    // This handles "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS"
+    // and ignores any attached timezone offsets that might be incorrect/naive
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (match) {
+        return new Date(Date.UTC(
+            parseInt(match[1]),
+            parseInt(match[2]) - 1,
+            parseInt(match[3]),
+            parseInt(match[4]),
+            parseInt(match[5]),
+            parseInt(match[6] || 0)
+        ));
+    }
+
+    // If string has 'Z' or offset (+00:00), parse normally
+    if (dateStr.indexOf('Z') !== -1 || /[+-]\d{2}:?\d{2}$/.test(dateStr) || dateStr.indexOf('GMT') !== -1 || dateStr.indexOf('UTC') !== -1) {
+        return new Date(dateStr);
+    }
+    // Otherwise, treat as UTC by appending Z (and replacing space with T if needed)
+    return new Date(dateStr.replace(' ', 'T') + 'Z');
+}
+
 function loadEvents() {
     fetch('/admin/api/events/upcoming')
         .then(res => res.json())
@@ -23,7 +50,7 @@ function renderEvents(events, containerId, isUpcoming) {
     }
 
     events.forEach(event => {
-        const date = new Date(event.date).toLocaleString('en-US', { 
+        const date = parseAsUTC(event.date).toLocaleString('en-US', { 
             month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' 
         });
 
@@ -45,12 +72,15 @@ function renderEvents(events, containerId, isUpcoming) {
             <div class="flex gap-2">
                 ${isUpcoming ? `
                 <button onclick="openEditModal(${event.id})" class="btn btn-secondary text-sm px-3 py-1">
+                    <i class="fa-solid   fa-pen-to-square"></i>
                     Update
                 </button>` : ''}
                 <button onclick="openViewModal(${event.id})" class="btn btn-secondary text-sm px-3 py-1">
+                    <i class="fa-solid fa-eye"></i>
                     View Details
                 </button>
                 <button onclick="downloadPdf(${event.id})" class="btn btn-secondary text-sm px-3 py-1 text-red-600 border-red-200 hover:bg-red-50">
+                    <i class="fa-solid fa-file-pdf"></i>
                     PDF
                 </button>
             </div>
@@ -175,9 +205,9 @@ async function openEditModal(id) {
     // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
     // event.date is UTC ISO (e.g., "2023-10-27T14:00:00Z")
     // We need to display it in local time for the input
-    const d = new Date(event.date);
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); // Adjust for local input
-    document.getElementById('edit-date').value = d.toISOString().slice(0, 16);
+    const d = parseAsUTC(event.date);
+    const localDate = new Date(d.getTime() - (d.getTimezoneOffset() * 60000));
+    document.getElementById('edit-date').value = localDate.toISOString().slice(0, 16);
 
     document.getElementById('edit-modal').classList.remove('hidden');
 }
@@ -200,7 +230,7 @@ async function openViewModal(id) {
     document.getElementById('view-modal-title').textContent = event.title;
     document.getElementById('view-description').textContent = event.description;
     
-    const dateObj = new Date(event.date);
+    const dateObj = parseAsUTC(event.date);
     document.getElementById('view-date').textContent = dateObj.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
     document.getElementById('view-time').textContent = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     
