@@ -17,9 +17,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load other components
     loadSuggestions();
     loadProfileCard();
+    loadProfileCompletion();
     loadPendingRequests();
     loadEvents();
     updateNotificationBadge();
+    setupProfileUpload();
 
     // Poll for notifications
     setInterval(updateNotificationBadge, 30000);
@@ -76,6 +78,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// PROFILE PHOTO UPLOAD
+// ═══════════════════════════════════════════════════════════════════════════
+
+function setupProfileUpload() {
+    const input = document.getElementById('home-profile-upload');
+    if (!input) return;
+
+    input.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const url = await ProfileUpload.upload(file);
+            ProfileUpload.updateGlobalAvatars(url);
+            showToast('Profile photo updated!', 'success');
+        } catch (err) {
+            console.error('Upload error:', err);
+            showToast(err.message || 'Failed to upload photo', 'error');
+        }
+    });
+}
 
 // Logic: Open Create Post Modal
 function openCreatePost() {
@@ -564,6 +588,72 @@ async function loadProfileCard() {
 
 
 // ═══════════════════════════════════════════════════════════════════════════
+// PROFILE COMPLETION CARD
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadProfileCompletion() {
+    const container = document.getElementById('profile-completion-card');
+    if (!container) return;
+
+    try {
+        const res = await fetch('/api/profile/completion');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // If 100% complete, show success state or hide (showing success here for engagement)
+        if (data.percentage === 100) {
+            container.innerHTML = `
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-sm">Profile Complete!</h3>
+                            <p class="text-xs text-gray-500">You're all set up.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Render missing items
+        const missingItemsHtml = data.missing_fields.map(item => {
+            const actionAttr = item.is_js ? `onclick="${item.action}"` : `href="${item.action}"`;
+            const tag = item.is_js ? 'button' : 'a';
+            
+            return `
+                <${tag} ${actionAttr} class="block w-full text-left text-sm text-gray-600 hover:text-indigo-600 hover:bg-gray-50 px-2 py-1.5 rounded transition flex items-center gap-2 group">
+                    <i class="fas fa-plus-circle text-xs text-indigo-400 group-hover:text-indigo-600"></i>
+                    ${item.label}
+                </${tag}>
+            `;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+                <div class="flex justify-between items-end mb-2">
+                    <h3 class="font-bold text-gray-900 text-sm">Profile Completion</h3>
+                    <span class="text-xs font-semibold text-indigo-600">${data.percentage}%</span>
+                </div>
+                
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: ${data.percentage}%"></div>
+                </div>
+                
+                <div class="space-y-1">
+                    ${missingItemsHtml}
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Error loading profile completion:', error);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // AUTO-LOAD ON PAGE LOAD
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -571,6 +661,7 @@ async function loadProfileCard() {
 document.addEventListener('DOMContentLoaded', function() {
     loadSuggestions();
     loadProfileCard();
+    loadProfileCompletion();
     loadPendingRequests();
 });
 

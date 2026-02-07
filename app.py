@@ -152,12 +152,16 @@ def home_page():
     if "user_id" not in session:
         return redirect(url_for("login_page"))
 
+    # Fetch current user to get profile picture
+    user = db.session.get(User, session["user_id"])
+
     # Fix: Redirect admin to dashboard if they try to access student home
     if session.get("account_type") == "admin":
         return redirect(url_for("admin_dashboard_page"))
 
     return render_template(
         "home.html",
+        user=user,
         user_name=session.get("user_name")
     )
 
@@ -204,16 +208,21 @@ def profile_page(user_id):
         return redirect(url_for("login_page"))
     
     # Get the user whose profile is being viewed
-    user = db.session.get(User, user_id)
-    if not user:
+    profile_user = db.session.get(User, user_id)
+    if not profile_user:
         abort(404)
     
+    # Get current user for navbar
+    current_user = db.session.get(User, session["user_id"])
+
     # Check if viewing own profile
     is_own_profile = (session["user_id"] == user_id)
     
     return render_template(
         "profile.html",
-        profile_user=user,
+        profile_user=profile_user,
+        user=current_user,
+        user_name=session.get("user_name"),
         is_own_profile=is_own_profile,
         current_user_id=session["user_id"]
     )
@@ -1230,6 +1239,62 @@ def mark_all_notifications_read():
     return jsonify({"success": True})
 
 
+@app.route("/api/profile/completion", methods=["GET"])
+def get_profile_completion():
+    """Calculate profile completion percentage and missing fields"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+    user = db.session.get(User, user_id)
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    checklist = []
+    
+    # 1. Profile Picture
+    has_pic = getattr(user, 'profile_picture', None) is not None
+    if not has_pic:
+        checklist.append({"label": "Add profile photo", "action": f"/profile/{user_id}", "is_js": False})
+    
+    # 2. Bio
+    has_bio = user.bio is not None and len(user.bio.strip()) > 0
+    if not has_bio:
+        checklist.append({"label": "Add bio", "action": f"/profile/{user_id}", "is_js": False})
+        
+    # 3. Major (Department)
+    has_major = user.major is not None and len(user.major.strip()) > 0
+    if not has_major:
+        checklist.append({"label": "Add major/department", "action": f"/profile/{user_id}", "is_js": False})
+
+    # 4. Skills
+    skill_count = Skill.query.filter_by(user_id=user_id).count()
+    if skill_count == 0:
+        checklist.append({"label": "Add skills", "action": f"/profile/{user_id}", "is_js": False})
+
+    # 5. Post
+    post_count = Post.query.filter_by(user_id=user_id).count()
+    if post_count == 0:
+        checklist.append({"label": "Create your first post", "action": "openCreatePost()", "is_js": True})
+
+    # 6. Connection
+    conn_count = Connection.query.filter(
+        or_(Connection.user_id == user_id, Connection.connected_user_id == user_id)
+    ).count()
+    if conn_count == 0:
+        checklist.append({"label": "Connect with someone", "action": "document.getElementById('suggestions-container').scrollIntoView({behavior: 'smooth'})", "is_js": True})
+
+    total_items = 6
+    completed_items = total_items - len(checklist)
+    percentage = int((completed_items / total_items) * 100)
+
+    return jsonify({
+        "percentage": percentage,
+        "missing_fields": checklist
+    })
+
+
 @app.route("/api/profile/me", methods=["GET"])
 def get_my_profile():
     """Get current user's profile with real counts"""
@@ -1266,17 +1331,6 @@ def get_my_profile():
         }
     })
 
-
-@app.route("/profile/<int:user_id>")
-def view_profile_page(user_id):
-    """Serve the profile page HTML (no Jinja2 rendering)"""
-    # TEMPORARY: Allow viewing without login for testing
-    # if "user_id" not in session:
-    #     return redirect(url_for("login"))
-    
-    # Just serve the static HTML file
-    # JavaScript will fetch data from /api/profile/<user_id>
-    return render_template("profile.html")
 
 
 @app.route("/api/profile/<int:user_id>/posts")
@@ -1570,6 +1624,46 @@ def get_profile_data(user_id):
         'skills': skills_data,  # ← NEW
         'experiences': experiences_data,  # ← NEW
         'educations': educations_data  # ← NEW
+    })
+
+
+@app.route("/api/profile/photo", methods=["POST"])
+def upload_profile_photo():
+    """Upload and update user profile photo"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+        
+    # Validate file type (Images only)
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+        return jsonify({"error": "Invalid file type. Allowed: PNG, JPG, JPEG, WEBP"}), 400
+
+    # Create directory if not exists
+    upload_folder = os.path.join(app.root_path, 'static/uploads/profile_photos')
+    os.makedirs(upload_folder, exist_ok=True)
+    
+    # Secure unique filename: user_{id}_{timestamp}.ext
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"user_{session['user_id']}_{int(time.time())}.{ext}"
+    file_path = os.path.join(upload_folder, filename)
+    
+    file.save(file_path)
+    
+    # Update User in DB
+    user = db.session.get(User, session["user_id"])
+    user.profile_picture = f"/static/uploads/profile_photos/{filename}"
+    db.session.commit()
+    
+    return jsonify({
+        "message": "Profile photo updated", 
+        "url": user.profile_picture
     })
 
 
