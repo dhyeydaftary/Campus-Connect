@@ -848,18 +848,6 @@ async function toggleLike(postId) {
 // PROFILE DISPLAY UPDATE
 // ============================================
 
-function updateProfileDisplay() {
-  if (profileData.user) {
-    document.getElementById('profileName').textContent = profileData.user.full_name;
-    document.getElementById('profileMajor').textContent = profileData.user.major;
-    document.getElementById('profileBatch').textContent = `Batch of ${profileData.user.batch}`;
-    document.getElementById('profileLocation').textContent = profileData.user.university;
-    const initials = profileData.user.full_name.split(' ').map(n => n[0]).join('');
-    document.getElementById('profileAvatar').textContent = initials;
-    document.getElementById('userAvatar').textContent = initials;
-  }
-}
-
 // ============================================
 // API DATA FETCHING
 // ============================================
@@ -900,6 +888,18 @@ function updateProfileHeader(user) {
   document.getElementById('aboutTabText').textContent = user.bio || 'No bio available.';
   document.getElementById('connectionsCount').textContent = profileData.stats.connections_count;
   document.getElementById('postsCount').textContent = profileData.stats.posts_count;
+
+  // Update Avatar
+  const initials = user.full_name.split(' ').map(n => n[0]).join('');
+  const avatarContainer = document.getElementById('profileAvatar');
+  if (user.profile_picture && !user.profile_picture.includes('ui-avatars.com')) {
+      avatarContainer.innerHTML = `<img src="${user.profile_picture}" class="w-full h-full object-cover profile-avatar-img">`;
+  } else {
+      avatarContainer.textContent = initials;
+  }
+
+  // Re-attach overlay for upload if it was wiped by innerHTML
+  setupAvatarUpload(profileData.is_own_profile);
 
   // Render profile actions based on ownership
   renderProfileActions();
@@ -975,6 +975,62 @@ function renderProfileActions() {
       </button>
     `;
   }
+}
+
+function setupAvatarUpload(isOwnProfile) {
+    const container = document.getElementById('profileAvatar');
+    
+    // 1. Re-create Overlay if missing (because innerHTML was overwritten)
+    let overlay = document.getElementById('avatarOverlay');
+    if (isOwnProfile && !overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'avatarOverlay';
+        overlay.className = 'absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity';
+        overlay.innerHTML = '<i class="fas fa-camera text-white text-xl"></i>';
+        overlay.onclick = () => {
+            const fileInput = document.getElementById('profile-photo-input');
+            if (fileInput) fileInput.click();
+        };
+        container.appendChild(overlay);
+    }
+
+    // 2. Re-create Input if missing
+    let input = document.getElementById('profile-photo-input');
+    if (isOwnProfile && !input) {
+        input = document.createElement('input');
+        input.type = 'file';
+        input.id = 'profile-photo-input';
+        input.hidden = true;
+        input.accept = 'image/*';
+        container.appendChild(input);
+    }
+
+    // 3. Attach Listener
+    if (input && isOwnProfile) {
+        // Remove old listener to prevent duplicates
+        const newInput = input.cloneNode(true);
+        input.parentNode.replaceChild(newInput, input);
+        
+        newInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            try {
+                container.classList.add('opacity-50'); // Loading state
+                const url = await ProfileUpload.upload(file);
+                
+                // Update local data and UI
+                profileData.user.profile_picture = url;
+                updateProfileHeader(profileData.user);
+                ProfileUpload.updateGlobalAvatars(url);
+                showToast('Profile photo updated', 'success');
+            } catch (err) {
+                showToast(err.message || 'Upload failed', 'error');
+            } finally {
+                container.classList.remove('opacity-50');
+            }
+        });
+    }
 }
 
 // ============================================

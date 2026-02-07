@@ -16,6 +16,7 @@
     <!-- Shared utilities -->
     <script defer src="{{ url_for('static', filename='js/navbar-utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/post-utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/upload-utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/feed-loader.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/profile.js') }}"></script>
         
@@ -39,8 +40,18 @@
         <div class="bg-card rounded-xl shadow-card border border-border p-6 mb-6">
             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                 <!-- Avatar -->
-                <div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-3xl ring-4 ring-primary-light"
+                <div class="relative group w-24 h-24 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-3xl ring-4 ring-primary-light overflow-hidden"
                     id="profileAvatar">
+                    <!-- Image will be injected here by JS -->
+                    
+                    <!-- Upload Overlay (Only for own profile) -->
+                    <div id="avatarOverlay" class="hidden absolute inset-0 bg-black/40 items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                         onclick="document.getElementById('profile-photo-input').click()">
+                        <i class="fas fa-camera text-white text-xl"></i>
+                    </div>
+                    
+                    <!-- Hidden Input -->
+                    <input type="file" id="profile-photo-input" hidden accept="image/*">
                 </div>
                 <!-- Info -->
                 <div class="flex-1">

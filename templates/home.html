@@ -14,6 +14,7 @@
     <!-- Shared utilities (load before page-specific scripts) -->
     <script defer src="{{ url_for('static', filename='js/navbar-utils.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/post-utils.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/upload-utils.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/feed-loader.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/home.js') }}"></script>
 </head>
@@ -38,9 +39,23 @@
                     <!-- Profile Info -->
                     <div class="px-4 pb-4">
                         <!-- Avatar (overlapping cover) -->
-                        <div class="flex justify-center -mt-8 mb-2">
-                            <img src="https://ui-avatars.com/api/?name={{ user_name }}&background=6366f1&color=fff&size=80"
-                                alt="Profile" class="w-16 h-16 rounded-full border-4 border-white shadow-md">
+                        <div class="relative flex justify-center -mt-8 mb-2 group">
+                            <!-- Profile Image -->
+                            <img id="home-profile-img" 
+                                src="{{ user.profile_picture if user.profile_picture else 'https://ui-avatars.com/api/?name=' + user_name + '&background=6366f1&color=fff&size=80' }}"
+                                alt="Profile" 
+                                class="w-16 h-16 rounded-full border-4 border-white shadow-md object-cover bg-white cursor-pointer"
+                                onclick="document.getElementById('home-profile-upload').click()">
+                            
+                            <!-- Upload Trigger (Visible on Hover) -->
+                            <button onclick="document.getElementById('home-profile-upload').click()" 
+                                class="absolute bottom-0 right-[calc(50%-32px)] bg-gray-800 text-white rounded-full p-1.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border-2 border-white"
+                                title="Change Photo">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            
+                            <!-- Hidden Input -->
+                            <input type="file" id="home-profile-upload" hidden accept="image/*">
                         </div>
 
                         <!-- Name & Major -->
@@ -74,6 +89,9 @@
                         
                     </div>
                 </div>
+
+                <!-- PROFILE COMPLETION CARD (Dynamic) -->
+                <div id="profile-completion-card"></div>
 
             </aside>
 
