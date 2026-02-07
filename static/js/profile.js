@@ -39,8 +39,6 @@ tailwind.config = {
 // ============================================
 
 let profileData = {};
-let feedLoader; // Feed loader instance for profile posts
-let profileUserId;
 
 // ============================================
 // MOCK DATA - For edit functionality
@@ -109,16 +107,6 @@ let state = {
 // UTILITY FUNCTIONS
 // ============================================
 
-function timeAgo(date) {
-  const seconds = Math.floor((new Date() - date) / 1000);
-
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
   const toast = document.createElement('div');
@@ -248,7 +236,9 @@ function switchTab(tabName) {
   document.querySelectorAll('.tab-content').forEach(content => {
     content.classList.add('hidden');
   });
-  document.getElementById(`${tabName}Tab`).classList.remove('hidden');
+  
+  const tab = document.getElementById(`${tabName}Tab`);
+  if (tab) tab.classList.remove('hidden');
 }
 
 // ============================================
@@ -1001,15 +991,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load profile data (which will render skills, experience, education)
     loadProfileData(userId);
 
-    // Initialize feed loader for profile page (uses same container 'post-feed' as home)
-    feedLoader = new FeedLoader(`/api/profile/${userId}/posts`, 'post-feed');
-    window.feedLoader = feedLoader; // Make it globally accessible
+    // 1. Force 'posts' tab to be visible immediately
+    switchTab('posts');
 
-    // Load initial posts
-    feedLoader.loadPosts();
+    // 2. Initialize Feed Loader with safety checks
+    const feedContainer = document.getElementById('post-feed');
+    
+    if (feedContainer && typeof FeedLoader !== 'undefined') {
+        // Create instance targeting the profile posts API
+        window.feedLoader = new FeedLoader(`/api/profile/${userId}/posts`, 'post-feed');
 
-    // Enable infinite scroll
-    feedLoader.enableInfiniteScroll();
+        // Clear container to prevent duplication or stale data
+        feedContainer.innerHTML = '';
+        
+        // Reset loader state
+        window.feedLoader.posts = [];
+        window.feedLoader.currentPage = 1;
+        window.feedLoader.hasMore = true;
+
+        // Load initial posts
+        window.feedLoader.loadPosts();
+
+        // Enable infinite scroll
+        window.feedLoader.enableInfiniteScroll();
+    } else {
+        if (!feedContainer) console.error("Profile Error: Element #post-feed not found in DOM.");
+        if (typeof FeedLoader === 'undefined') console.error("Profile Error: FeedLoader class not loaded. Check script order.");
+    }
   }
 });
 
@@ -1020,65 +1028,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-
-// ═══════════════════════════════════════════════════════════════
-// CONNECTION STATUS (For viewing other profiles)
-// ═══════════════════════════════════════════════════════════════
-
-async function loadConnectionStatus() {
-    const container = document.getElementById('profileActions');
-    if (!container) return;
-    
-    try {
-        const response = await fetch(`/api/connections/status/${profileUserId}`);
-        if (!response.ok) throw new Error('Failed to load connection status');
-        
-        const data = await response.json();
-        
-        if (data.status === 'connected') {
-            container.innerHTML = `
-                <button class="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg cursor-default">
-                    <i class="fas fa-check mr-2"></i>Connected
-                </button>
-            `;
-        } else if (data.status === 'pending') {
-            container.innerHTML = `
-                <button class="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg cursor-default">
-                    <i class="fas fa-clock mr-2"></i>Request Pending
-                </button>
-            `;
-        } else {
-            container.innerHTML = `
-                <button onclick="sendConnectionRequest()" 
-                    class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition">
-                    <i class="fas fa-user-plus mr-2"></i>Connect
-                </button>
-            `;
-        }
-        
-    } catch (error) {
-        console.error('Error loading connection status:', error);
-    }
-}
-
-async function sendConnectionRequest() {
-    try {
-        const response = await fetch('/api/connections/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: profileUserId })
-        });
-        
-        if (!response.ok) throw new Error('Failed to send request');
-        
-        loadConnectionStatus();
-        showToast('Connection request sent!', 'success');
-        
-    } catch (error) {
-        console.error('Error sending connection request:', error);
-        showToast('Failed to send connection request', 'error');
-    }
-}
 
 // ═══════════════════════════════════════════════════════════════
 // COMMENT MODAL
@@ -1112,9 +1061,9 @@ async function submitComment() {
         
         input.value = '';
         
-        const postIndex = feedLoader.posts.findIndex(p => p.id == postId);
+        const postIndex = window.feedLoader.posts.findIndex(p => p.id == postId);
         if (postIndex >= 0) {
-            feedLoader.openComments(postIndex);
+            window.feedLoader.openComments(postIndex);
         }
         
     } catch (error) {

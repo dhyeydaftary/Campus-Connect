@@ -13,7 +13,14 @@
  * Format timestamp to "X time ago"
  */
 function timeAgo(dateString) {
-    const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+    const date = new Date(dateString);
+    
+    // Check for invalid date to prevent "Just now" bug on bad data
+    if (isNaN(date.getTime())) {
+        return ""; 
+    }
+
+    const seconds = Math.floor((new Date() - date) / 1000);
 
     const intervals = [
         { label: "year", seconds: 31536000 },

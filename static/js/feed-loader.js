@@ -17,6 +17,10 @@ class FeedLoader {
 
         // DOM elements
         this.container = document.getElementById(containerId);
+        if (!this.container) {
+            console.error(`FeedLoader Error: Container with ID '${containerId}' not found in DOM.`);
+        }
+
         this.loader = document.getElementById('feed-loader');
         this.skeleton = document.getElementById('skeleton-container');
         this.loadingState = document.getElementById('feed-loading');
@@ -71,7 +75,11 @@ class FeedLoader {
     showEmptyState() {
         if (this.loadingState) this.loadingState.classList.add('hidden');
         if (this.errorState) this.errorState.classList.add('hidden');
-        if (this.emptyState) this.emptyState.classList.remove('hidden');
+        if (this.emptyState) {
+            this.emptyState.classList.remove('hidden');
+        } else {
+            console.warn('FeedLoader: Empty state element not found');
+        }
     }
 
     hideEmptyState() {
@@ -142,10 +150,16 @@ class FeedLoader {
     // ═══════════════════════════════════════════════════════════════
 
     renderPosts(append = false, newPosts = []) {
-        //if (!this.container) {
-        //    console.warn('Feed container not found:', this.containerId);
-        //    return;
-        //}
+        if (!this.container) {
+            console.error(`FeedLoader: Cannot render posts. Container '${this.containerId}' is missing.`);
+            return;
+        }
+
+        // Safety check for PostUtils
+        if (typeof window.PostUtils === 'undefined') {
+            console.error('FeedLoader: PostUtils is not defined. Ensure post-utils.js is loaded.');
+            return;
+        }
 
         this.hideLoadingState();
         this.hideEmptyState();
@@ -157,20 +171,23 @@ class FeedLoader {
         const postsToRender = newPosts.length > 0 ? newPosts : this.posts;
 
         postsToRender.forEach((post) => {
-            const article = document.createElement('article');
-            article.className = 'post-card';
+            // Create a temporary container to parse the HTML string
+            const tempDiv = document.createElement('div');
 
             // Find the global index in this.posts for correct event handler binding
             const globalIndex = this.posts.findIndex(p => p.id === post.id);
             const safeIndex = globalIndex >= 0 ? globalIndex : this.posts.length;
 
-            article.innerHTML = window.PostUtils.renderPostCard(post, safeIndex, {
+            tempDiv.innerHTML = window.PostUtils.renderPostCard(post, safeIndex, {
                 onLike: `window.feedLoader.toggleLike(${safeIndex})`,
                 onComment: `window.feedLoader.openComments(${safeIndex})`,
                 onShare: `window.feedLoader.sharePost(${safeIndex})`
             });
 
-            this.container.appendChild(article);
+            // Append the actual post element (first child of tempDiv) to the container
+            if (tempDiv.firstElementChild) {
+                this.container.appendChild(tempDiv.firstElementChild);
+            }
         });
     }
 

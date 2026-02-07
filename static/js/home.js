@@ -1,18 +1,18 @@
 // Initialize shared feed loader for home page
-let feedLoader;
 let currentPostType = 'text';
 
 // Initialize feed loader on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize feed loader for home page
-    feedLoader = new FeedLoader('/api/posts', 'post-feed');
-    window.feedLoader = feedLoader; // Make it globally accessible
+    // Initialize feed loader for home page ONLY if we are on /home
+    if (window.location.pathname.includes('/home')) {
+        window.feedLoader = new FeedLoader('/api/posts', 'post-feed');
 
-    // Load initial posts
-    feedLoader.loadPosts();
+        // Load initial posts
+        window.feedLoader.loadPosts();
 
-    // Enable infinite scroll
-    feedLoader.enableInfiniteScroll();
+        // Enable infinite scroll
+        window.feedLoader.enableInfiniteScroll();
+    }
 
     // Load other components
     loadSuggestions();
@@ -406,11 +406,11 @@ async function submitPost() {
         
         // Clear and reload feed (FIXED: correct container ID)
         // Reset feed loader state properly
-        feedLoader.currentPage = 1;
-        feedLoader.hasMore = true;
-        feedLoader.posts = [];
+        window.feedLoader.currentPage = 1;
+        window.feedLoader.hasMore = true;
+        window.feedLoader.posts = [];
 
-        await feedLoader.loadPosts(false);
+        await window.feedLoader.loadPosts(false);
 
         // Update counts AFTER feed loads
         await loadProfileCard();
@@ -447,22 +447,33 @@ async function loadSuggestions() {
             return;
         }
         
-        // Clear existing content
-        container.innerHTML = '';
+        // FIX: Enforce Box/Card Styling programmatically
+        container.className = "bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6";
         
         if (data.suggestions.length === 0) {
             container.innerHTML = `
+                <h3 class="font-bold text-gray-900 mb-4">Suggested for you</h3>
                 <p class="text-gray-500 text-sm text-center py-4">
                     No suggestions available
                 </p>
             `;
             return;
         }
+
+        // FIX: Rebuild internal structure with Header + List Wrapper
+        container.innerHTML = `
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-gray-900">Suggested for you</h3>
+            </div>
+            <div id="suggestions-list-inner" class="space-y-3"></div>
+        `;
+        
+        const listInner = document.getElementById('suggestions-list-inner');
         
         // Add each suggestion
         data.suggestions.forEach(user => {
             const suggestionCard = `
-                <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition duration-200">
+                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition duration-200">
                     <div class="flex items-center gap-3">
                         <img src="${user.profile_picture}" 
                             class="w-10 h-10 rounded-full object-cover"
@@ -473,7 +484,7 @@ async function loadSuggestions() {
                                 class="text-sm font-semibold text-gray-900 hover:text-indigo-600 transition">
                                     ${user.name}
                                 </a>
-                            <p class="text-xs text-gray-500">${user.major}</p>
+                            <p class="text-xs text-gray-500 truncate max-w-[140px]">${user.major}</p>
                         </div>
                     </div>
                     <button onclick="sendConnectionRequest(${user.id})"
@@ -482,7 +493,7 @@ async function loadSuggestions() {
                     </button>
                 </div>
             `;
-            container.insertAdjacentHTML('beforeend', suggestionCard);
+            listInner.insertAdjacentHTML('beforeend', suggestionCard);
         });
         
     } catch (error) {
