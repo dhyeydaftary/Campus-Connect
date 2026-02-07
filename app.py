@@ -359,7 +359,7 @@ def api_posts():
             "commentsCount": comments_count,
             "comments": [],
             "isLiked": is_liked,
-            "createdAt": post.created_at.isoformat() + "Z",
+            "createdAt": post.created_at.isoformat(),
             "file_path": post.file_path,
             "file_type": post.file_type,
             "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url
@@ -522,7 +522,7 @@ def get_comments(post_id):
         {
             "username": user.full_name,
             "text": comment.text,
-            "createdAt": comment.created_at.isoformat() + "Z"
+            "createdAt": comment.created_at.isoformat()
         }
         for comment, user in comments
     ])
@@ -854,6 +854,7 @@ def get_suggestions():
     # Priority 1: Same university + same major
     suggestions = User.query.filter(
         User.id.notin_(exclude_ids),
+        User.account_type != 'admin',
         User.university == current_user.university,
         User.major == current_user.major
     ).limit(5).all()
@@ -862,6 +863,7 @@ def get_suggestions():
     if len(suggestions) < 5:
         additional = User.query.filter(
             User.id.notin_(exclude_ids),
+            User.account_type != 'admin',
             User.id.notin_([s.id for s in suggestions]),
             User.university == current_user.university
         ).limit(5 - len(suggestions)).all()
@@ -871,6 +873,7 @@ def get_suggestions():
     if len(suggestions) < 5:
         additional = User.query.filter(
             User.id.notin_(exclude_ids),
+            User.account_type != 'admin',
             User.id.notin_([s.id for s in suggestions])
         ).limit(5 - len(suggestions)).all()
         suggestions.extend(additional)
@@ -1321,7 +1324,7 @@ def api_profile_posts(user_id):
         .outerjoin(likes_subq, likes_subq.c.post_id == Post.id)
         .outerjoin(comments_subq, comments_subq.c.post_id == Post.id)
         .filter(Post.user_id == user_id)  # Filter by specific user
-        .order_by(Post.created_at.desc())  # Most recent first for profile
+        .order_by(Post.created_at.desc())
         .offset(offset)
         .limit(limit)
         .all()
@@ -1348,7 +1351,7 @@ def api_profile_posts(user_id):
             "commentsCount": comments_count,
             "comments": [],
             "isLiked": is_liked,
-            "createdAt": post.created_at.isoformat() + "Z",
+            "createdAt": post.created_at.isoformat(),
             "file_path": post.file_path,
             "file_type": post.file_type,
             "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url

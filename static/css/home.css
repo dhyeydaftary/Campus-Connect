@@ -40,7 +40,6 @@ body {
 
 /* Sticky Sidebars */
 #left-sidebar-profile,
-#left-sidebar-trending,
 #right-sidebar-connections,
 #right-sidebar-events {
     position: sticky;
