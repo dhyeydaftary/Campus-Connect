@@ -18,6 +18,7 @@ from sqlalchemy import func, or_, and_, DateTime
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timezone, timedelta
+import re
 import time
 
 from io import BytesIO
@@ -83,6 +84,17 @@ def save_uploaded_file(file, file_type):
     
     return file_path.replace('static/', '')
 
+
+def get_clean_filename(file_path):
+    """Extract original filename from the unique system filename"""
+    if not file_path:
+        return None
+    filename = os.path.basename(file_path)
+    # Pattern: userID_YYYYMMDD_HHMMSS_ActualName
+    match = re.match(r'^\d+_\d{8}_\d{6}_(.+)$', filename)
+    if match:
+        return match.group(1)
+    return filename
 
 def get_content_activity():
     today_utc = datetime.now(timezone.utc).date()
@@ -371,7 +383,8 @@ def api_posts():
             "createdAt": post.created_at.isoformat(),
             "file_path": post.file_path,
             "file_type": post.file_type,
-            "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url
+            "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url,
+            "original_filename": get_clean_filename(post.file_path)
         })
 
     return jsonify({
@@ -484,6 +497,31 @@ def create_post_with_file():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Failed to create post: {str(e)}"}), 500
+
+
+@app.route("/api/posts/<int:post_id>/download")
+def download_post_attachment(post_id):
+    """Download post attachment with original filename"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    post = db.session.get(Post, post_id)
+    if not post or not post.file_path:
+        abort(404)
+
+    # Construct absolute path
+    file_path = os.path.join(app.root_path, 'static', post.file_path)
+    
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File not found"}), 404
+    
+    clean_name = get_clean_filename(post.file_path)
+    
+    return send_file(
+        file_path,
+        as_attachment=True,
+        download_name=clean_name
+    )
 
 
 @app.route("/api/posts/<int:post_id>/like", methods=["POST"])
@@ -1412,7 +1450,8 @@ def api_profile_posts(user_id):
             "createdAt": post.created_at.isoformat(),
             "file_path": post.file_path,
             "file_type": post.file_type,
-            "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url
+            "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url,
+            "original_filename": get_clean_filename(post.file_path)
         })
 
     return jsonify({
