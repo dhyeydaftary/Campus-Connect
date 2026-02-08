@@ -13,7 +13,7 @@ from flask import (
 )
 
 from config import Config
-from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration, Connection, ConnectionRequest, Notification, Skill, Experience, Education, AdminLog
+from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration, Connection, ConnectionRequest, Notification, Skill, Experience, Education, AdminLog, Announcement
 from sqlalchemy import func, or_, and_, DateTime
 from werkzeug.utils import secure_filename
 import os
@@ -699,28 +699,32 @@ def register_for_event(event_id):
 
 @app.route("/api/announcements", methods=["GET"])
 def get_announcements():
-    """Get announcements for students (fetched from AdminLogs for demo simplicity)"""
+    """Get announcements for students and admin"""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
-    # Fetch logs that are announcements
-    # In a real app, this would be a separate table
-    announcement_logs = AdminLog.query.filter_by(
-        action_type="create_announcement"
-    ).order_by(AdminLog.created_at.desc()).limit(10).all()
+    limit = request.args.get("limit", type=int)
+    query = Announcement.query.filter_by(status='active').order_by(Announcement.created_at.desc())
     
-    announcements = []
-    for log in announcement_logs:
-        # Extract text from details: "Created announcement: [text]..."
-        text = log.details.replace("Created announcement: ", "")
-        announcements.append({
-            "id": log.id,
-            "text": text,
-            "date": log.created_at.strftime("%Y-%m-%d"),
-            "author": "Admin"
+    if limit:
+        announcements = query.limit(limit).all()
+    else:
+        announcements = query.all()
+    
+    announcements_data = []
+    for ann in announcements:
+        announcements_data.append({
+            "id": ann.id,
+            "title": ann.title,
+            "content": ann.content,
+            "text": ann.content, # Backward compatibility for frontend
+            "date": ann.created_at.strftime("%d %b %Y, %I:%M %p"), # Human readable with time
+            "iso_date": ann.created_at.isoformat(),
+            "author": ann.author.full_name if ann.author else "Admin",
+            "updated_at": ann.updated_at.strftime("%d %b %Y, %I:%M %p") if ann.updated_at else None
         })
     
-    return jsonify(announcements)
+    return jsonify(announcements_data)
 
 # --------------------------------------------------
 # DEVELOPMENT ROUTES
@@ -2276,48 +2280,96 @@ def admin_create_event():
 @app.route("/admin/api/announcements", methods=["GET"])
 def admin_get_announcements():
     admin_required()
-    # Fetch from AdminLog to persist across sessions
-    announcement_logs = AdminLog.query.filter_by(
-        action_type="create_announcement"
-    ).order_by(AdminLog.created_at.desc()).all()
+    status = request.args.get("status", "active")
     
-    announcements = []
-    for log in announcement_logs:
-        text = log.details.replace("Created announcement: ", "")
-        announcements.append({
-            "id": log.id,
-            "text": text,
-            "date": log.created_at.strftime("%Y-%m-%d"),
-            "author": "Admin"
+    # Fetch based on status (active or deleted)
+    announcements = Announcement.query.filter_by(status=status).order_by(Announcement.created_at.desc()).all()
+    
+    announcements_data = []
+    for ann in announcements:
+        announcements_data.append({
+            "id": ann.id,
+            "title": ann.title,
+            "content": ann.content,
+            "date": ann.created_at.strftime("%d %b %Y, %I:%M %p"),
+            "author": ann.author.full_name if ann.author else "Admin",
+            "updated_at": ann.updated_at.strftime("%d %b %Y, %I:%M %p") if ann.updated_at else None,
+            "status": ann.status
         })
-        
-    return jsonify(announcements), 200
+    
+    return jsonify(announcements_data)
 
 @app.route("/admin/api/announcements", methods=["POST"])
 def admin_create_announcement():
     admin_required()
     data = request.json
-    text = data.get("text")
+    title = data.get("title")
+    content = data.get("content")
     
-    # Log action
+    if not title or not content:
+        return jsonify({"error": "Title and content required"}), 400
+    
+    # Create Announcement
+    announcement = Announcement(
+        title=title,
+        content=content,
+        author_id=session["user_id"]
+    )
+    db.session.add(announcement)
+    
+    # Log action (Audit trail)
     log = AdminLog(
         admin_id=session["user_id"],
         action_type="create_announcement",
-        details=f"Created announcement: {text}"
+        details=f"Created announcement: {title}"
     )
     db.session.add(log)
     
-    # Fix: Create a public Post so it renders on student feed
-    post = Post(
-        user_id=session["user_id"],
-        caption=f"📢 ANNOUNCEMENT: {text}",
-        post_type="normal",
-        visibility="public"
-    )
-    db.session.add(post)
-    
     db.session.commit()
-    return jsonify({ "success": True, "announcement": { "id": log.id, "text": text, "date": datetime.now().strftime('%Y-%m-%d'), "author": "Admin" } }), 201
+    return jsonify({ "success": True, "message": "Announcement created" }), 201
+
+@app.route("/admin/api/announcements/<int:id>", methods=["PUT"])
+def admin_update_announcement(id):
+    admin_required()
+    data = request.json
+    
+    announcement = db.session.get(Announcement, id)
+    if not announcement:
+        return jsonify({"error": "Announcement not found"}), 404
+        
+    if "title" in data:
+        announcement.title = data["title"]
+    if "content" in data:
+        announcement.content = data["content"]
+        
+    db.session.commit()
+    return jsonify({"success": True, "message": "Announcement updated"})
+
+@app.route("/admin/api/announcements/<int:id>", methods=["DELETE"])
+def admin_delete_announcement(id):
+    admin_required()
+    
+    announcement = db.session.get(Announcement, id)
+    if not announcement:
+        return jsonify({"error": "Announcement not found"}), 404
+        
+    # Soft delete
+    announcement.status = 'deleted'
+    db.session.commit()
+    return jsonify({"success": True, "message": "Announcement moved to recycle bin"})
+
+@app.route("/admin/api/announcements/<int:id>/restore", methods=["POST"])
+def admin_restore_announcement(id):
+    admin_required()
+    
+    announcement = db.session.get(Announcement, id)
+    if not announcement:
+        return jsonify({"error": "Announcement not found"}), 404
+        
+    # Restore
+    announcement.status = 'active'
+    db.session.commit()
+    return jsonify({"success": True, "message": "Announcement restored"})
 
 @app.route("/admin/api/logs", methods=["GET"])
 def admin_get_logs():
@@ -2449,6 +2501,45 @@ def admin_update_event(event_id):
             
     db.session.commit()
     return jsonify({"success": True, "message": "Event updated successfully"})
+
+@app.route("/admin/api/users/<int:user_id>/details")
+def admin_get_user_details(user_id):
+    """
+    STEP 3.3: Get full details for a specific user (Admin only)
+    """
+    admin_required()
+    
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+        
+    # Get counts efficiently
+    posts_count = Post.query.filter_by(user_id=user_id).count()
+    
+    # Connections (bidirectional)
+    connections_count = Connection.query.filter(
+        or_(
+            Connection.user_id == user_id,
+            Connection.connected_user_id == user_id
+        )
+    ).count()
+    
+    return jsonify({
+        "id": user.id,
+        "full_name": user.full_name,
+        "email": user.email,
+        "role": user.account_type,
+        "status": "active" if user.is_active else "blocked",
+        "university": user.university,
+        "major": user.major,
+        "batch": user.batch,
+        "profile_picture": getattr(user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={user.full_name}",
+        "joined_date": user.created_at.strftime('%B %d, %Y'),
+        "stats": {
+            "posts": posts_count,
+            "connections": connections_count
+        }
+    })
 
 @app.route("/admin/api/events/<int:event_id>/participants")
 def admin_get_event_participants(event_id):
