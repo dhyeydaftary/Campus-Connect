@@ -46,7 +46,9 @@ let profileData = {};
 
 let state = {
   activeTab: 'posts',
+  activeConnectionTab: 'my-connections',
   currentModal: null,
+  connectionToRemove: null,
 };
 
 // ============================================
@@ -139,36 +141,182 @@ function renderEducation() {
   `).join('');
 }
 
-function renderConnections() {
+async function renderConnections() {
   const container = document.getElementById('connectionsContainer');
-  if (!profileData.connections) return;
-  container.innerHTML = profileData.connections.map(conn => `
-    <div class="connection-card bg-card rounded-xl shadow-card border border-border p-4">
-      <div class="flex items-center gap-3 mb-3">
-        <a href="/profile/${conn.id}" class="flex-shrink-0">
-            <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold overflow-hidden hover:opacity-90 transition-opacity">
-            ${conn.profile_picture && !conn.profile_picture.includes('ui-avatars.com') 
-                ? `<img src="${conn.profile_picture}" class="w-full h-full object-cover" alt="${conn.full_name}">`
-                : conn.full_name.split(' ').map(n => n[0]).join('')
-            }
+  if (!container) return;
+
+  container.innerHTML = '<div class="col-span-full text-center py-8 text-muted-foreground">Loading...</div>';
+
+  try {
+    let data = [];
+    let emptyMessage = "No connections found.";
+
+    if (state.activeConnectionTab === 'my-connections') {
+      // Use data already fetched in profileData if available, or fetch fresh
+      // For simplicity and consistency with other tabs, we'll use the list API or profileData
+      // profileData.connections is populated by get_profile_data
+      data = profileData.connections || [];
+      const isOwnProfile = profileData.is_own_profile;
+      
+      // Update count
+      const countEl = document.getElementById('count-my-connections');
+      if (countEl) countEl.textContent = data.length || 0;
+
+      if (data.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-8 text-muted-foreground">${emptyMessage}</div>`;
+        return;
+      }
+
+      container.innerHTML = data.map(conn => `
+        <div class="flex items-center justify-between p-4 bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow">
+          <div class="flex items-center gap-4 flex-1 min-w-0">
+            <a href="/profile/${conn.id}" class="flex-shrink-0">
+              <img src="${conn.profile_picture}" class="w-12 h-12 rounded-full object-cover border border-border" alt="${conn.full_name}">
+            </a>
+            <div class="min-w-0">
+              <a href="/profile/${conn.id}" class="font-semibold text-foreground hover:text-primary transition-colors truncate block">
+                ${conn.full_name}
+              </a>
+              <p class="text-sm text-muted-foreground truncate">${conn.email}</p>
+              <p class="text-xs text-muted-foreground mt-0.5">Connected since ${conn.connected_since || 'Unknown'}</p>
             </div>
-        </a>
-        <div class="flex-1 min-w-0">
-          <a href="/profile/${conn.id}" class="hover:underline decoration-primary"><h4 class="font-medium text-foreground truncate">${conn.full_name}</h4></a>
-          <p class="text-sm text-muted-foreground truncate">${conn.major} • ${conn.university}</p>
+          </div>
+          <div class="flex gap-2 ml-4">
+            <button class="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+            ${isOwnProfile ? `
+            <button onclick="removeConnection(${conn.id})" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors flex items-center gap-2">
+              <i class="fas fa-user-minus"></i>
+            </button>` : ''}
+          </div>
         </div>
-      </div>
-      <div class="flex items-center justify-between text-xs text-muted-foreground mb-3">
-        <span>Connected ${conn.connected_since || ''}</span>
-      </div>
-      <button class="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-        </svg>
-        Message
-      </button>
-    </div>
-  `).join('');
+      `).join('');
+
+    } else if (state.activeConnectionTab === 'received') {
+      const res = await fetch('/api/connections/pending');
+      const json = await res.json();
+      data = json.requests || [];
+      
+      const countEl = document.getElementById('count-received');
+      if (countEl) countEl.textContent = json.count !== undefined ? json.count : 0;
+
+      if (data.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-8 text-muted-foreground">No pending received requests.</div>`;
+        return;
+      }
+
+      container.innerHTML = data.map(req => `
+        <div class="flex items-center justify-between p-4 bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow">
+          <div class="flex items-center gap-4 flex-1 min-w-0">
+            <a href="/profile/${req.sender.id}" class="flex-shrink-0">
+              <img src="${req.sender.profile_picture}" class="w-12 h-12 rounded-full object-cover border border-border" alt="${req.sender.name}">
+            </a>
+            <div class="min-w-0">
+              <a href="/profile/${req.sender.id}" class="font-semibold text-foreground hover:text-primary transition-colors truncate block">
+                ${req.sender.name}
+              </a>
+              <p class="text-sm text-muted-foreground truncate">${req.sender.email}</p>
+            </div>
+          </div>
+          <div class="flex gap-2 ml-4">
+            <button onclick="acceptConnectionRequest(${req.request_id})" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Accept</button>
+            <button onclick="rejectConnectionRequest(${req.request_id})" class="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">Reject</button>
+          </div>
+        </div>
+      `).join('');
+
+    } else if (state.activeConnectionTab === 'sent') {
+      const res = await fetch('/api/connections/sent');
+      const json = await res.json();
+      data = json.requests || [];
+
+      const countEl = document.getElementById('count-sent');
+      if (countEl) countEl.textContent = json.count !== undefined ? json.count : 0;
+
+      if (data.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-8 text-muted-foreground">No pending sent requests.</div>`;
+        return;
+      }
+
+      container.innerHTML = data.map(req => `
+        <div class="flex items-center justify-between p-4 bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow">
+          <div class="flex items-center gap-4 flex-1 min-w-0">
+            <a href="/profile/${req.receiver.id}" class="flex-shrink-0">
+              <img src="${req.receiver.profile_picture}" class="w-12 h-12 rounded-full object-cover border border-border" alt="${req.receiver.name}">
+            </a>
+            <div class="min-w-0">
+              <a href="/profile/${req.receiver.id}" class="font-semibold text-foreground hover:text-primary transition-colors truncate block">
+                ${req.receiver.name}
+              </a>
+              <p class="text-sm text-muted-foreground truncate">${req.receiver.email}</p>
+            </div>
+          </div>
+          <button class="ml-4 px-4 py-2 border border-border rounded-lg text-sm font-medium text-muted-foreground cursor-default bg-muted/50">
+            Request Sent
+          </button>
+        </div>
+      `).join('');
+
+    } else if (state.activeConnectionTab === 'suggestions') {
+      const res = await fetch('/api/suggestions');
+      const json = await res.json();
+      data = json.suggestions || [];
+
+      if (data.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-8 text-muted-foreground">No suggestions available right now.</div>`;
+        return;
+      }
+
+      container.innerHTML = data.map(user => `
+        <div class="flex items-center justify-between p-4 bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow">
+          <div class="flex items-center gap-4 flex-1 min-w-0">
+            <a href="/profile/${user.id}" class="flex-shrink-0">
+              <img src="${user.profile_picture}" class="w-12 h-12 rounded-full object-cover border border-border" alt="${user.name}">
+            </a>
+            <div class="min-w-0">
+              <a href="/profile/${user.id}" class="font-semibold text-foreground hover:text-primary transition-colors truncate block">
+                ${user.name}
+              </a>
+              <p class="text-sm text-muted-foreground truncate">${user.email}</p>
+            </div>
+          </div>
+          <button onclick="sendConnectionRequest(${user.id})" class="ml-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+            Connect
+          </button>
+        </div>
+      `).join('');
+    }
+
+  } catch (error) {
+    console.error('Error rendering connections:', error);
+    container.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">Failed to load data.</div>';
+  }
+}
+
+function switchConnectionTab(tabName) {
+  state.activeConnectionTab = tabName;
+  
+  // Update UI classes
+  document.querySelectorAll('.conn-tab-btn').forEach(btn => {
+    if (btn.dataset.connTab === tabName) {
+      btn.classList.add('bg-white', 'shadow-sm', 'text-foreground');
+      btn.classList.remove('text-muted-foreground', 'hover:bg-muted');
+    } else {
+      btn.classList.remove('bg-white', 'shadow-sm', 'text-foreground');
+      btn.classList.add('text-muted-foreground', 'hover:bg-muted');
+    }
+  });
+
+  // Add animation to container
+  const container = document.getElementById('connectionsContainer');
+  if (container) {
+    container.classList.remove('animate-fade-in');
+    void container.offsetWidth; // Trigger reflow
+    container.classList.add('animate-fade-in');
+  }
+
+  renderConnections();
 }
 
 // ============================================
@@ -186,10 +334,15 @@ function switchTab(tabName) {
   // Update tab content
   document.querySelectorAll('.tab-content').forEach(content => {
     content.classList.add('hidden');
+    content.classList.remove('animate-fade-in');
   });
   
   const tab = document.getElementById(`${tabName}Tab`);
-  if (tab) tab.classList.remove('hidden');
+  if (tab) {
+    tab.classList.remove('hidden');
+    void tab.offsetWidth; // Trigger reflow
+    tab.classList.add('animate-fade-in');
+  }
 }
 
 // ============================================
@@ -701,7 +854,7 @@ async function sendConnectionRequest(receiverId) {
       const data = await response.json();
       showToast('Connection request sent!', 'success');
       // Reload profile data to update connection status
-      await loadProfileData(window.location.pathname.match(/\/profile\/(\d+)/)[1]);
+      await refreshConnectionData();
     } else {
       if (response.status === 401 || response.status === 403) {
         showToast('Session mismatch. Reloading...', 'error');
@@ -728,7 +881,7 @@ async function acceptConnectionRequest(requestId) {
       const data = await response.json();
       showToast('Connection request accepted!', 'success');
       // Reload profile data to update connection status
-      await loadProfileData(window.location.pathname.match(/\/profile\/(\d+)/)[1]);
+      await refreshConnectionData();
     } else {
       if (response.status === 401 || response.status === 403) {
         showToast('Session mismatch. Reloading...', 'error');
@@ -742,6 +895,73 @@ async function acceptConnectionRequest(requestId) {
     console.error('Error accepting connection request:', error);
     showToast('Error accepting connection request', 'error');
   }
+}
+
+async function rejectConnectionRequest(requestId) {
+  try {
+    const response = await fetch(`/api/connections/reject/${requestId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (response.ok) {
+      showToast('Connection request rejected', 'success');
+      await refreshConnectionData();
+    } else {
+      if (response.status === 401 || response.status === 403) {
+        showToast('Session mismatch. Reloading...', 'error');
+        setTimeout(() => window.location.reload(), 1000);
+        return;
+      }
+      const errorData = await response.json();
+      showToast(errorData.error || 'Error rejecting request', 'error');
+    }
+  } catch (error) {
+    console.error('Error rejecting connection request:', error);
+    showToast('Error rejecting connection request', 'error');
+  }
+}
+
+function removeConnection(userId) {
+  state.connectionToRemove = userId;
+  const modal = document.getElementById('removeConnectionModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeRemoveConnectionModal() {
+  const modal = document.getElementById('removeConnectionModal');
+  if (modal) modal.classList.add('hidden');
+  state.connectionToRemove = null;
+}
+
+async function confirmRemoveConnection() {
+  if (!state.connectionToRemove) return;
+  
+  try {
+    const response = await fetch(`/api/connections/${state.connectionToRemove}`, {
+      method: 'DELETE'
+    });
+    
+    if (response.ok) {
+      showToast('Connection removed', 'success');
+      await refreshConnectionData();
+    } else {
+      const data = await response.json();
+      showToast(data.error || 'Failed to remove connection', 'error');
+    }
+  } catch (error) {
+    console.error('Error removing connection:', error);
+    showToast('Error removing connection', 'error');
+  } finally {
+    closeRemoveConnectionModal();
+  }
+}
+
+async function refreshConnectionData() {
+  // Reload main profile data to update counts and "My Connections" list
+  await loadProfileData(window.location.pathname.match(/\/profile\/(\d+)/)[1]);
+  // Re-render current connection tab
+  await renderConnections();
 }
 
 // ============================================
@@ -810,6 +1030,15 @@ function updateProfileHeader(user) {
   document.getElementById('aboutTabText').textContent = user.bio || 'No bio available.';
   document.getElementById('connectionsCount').textContent = profileData.stats.connections_count;
   document.getElementById('postsCount').textContent = profileData.stats.posts_count;
+
+  // Update connection tab counts if elements exist
+  const myConnCount = document.getElementById('count-my-connections');
+  if (myConnCount) myConnCount.textContent = profileData.stats.connections_count || 0;
+  // Received/Sent counts are updated when those tabs are clicked or via specific API calls, but we can init them if data is passed
+  const receivedCount = document.getElementById('count-received');
+  if (receivedCount && profileData.stats.received_count !== undefined) receivedCount.textContent = profileData.stats.received_count || 0;
+  const sentCount = document.getElementById('count-sent');
+  if (sentCount && profileData.stats.sent_count !== undefined) sentCount.textContent = profileData.stats.sent_count || 0;
 
   // Update Avatar
   const initials = user.full_name.split(' ').map(n => n[0]).join('');
@@ -962,6 +1191,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Force 'posts' tab to be visible immediately
     switchTab('posts');
+
+    // Initialize connection tab styling
+    switchConnectionTab('my-connections');
 
     // 2. Initialize Feed Loader with safety checks
     const feedContainer = document.getElementById('post-feed');

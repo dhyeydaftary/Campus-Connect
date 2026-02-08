@@ -504,7 +504,7 @@ async function loadSuggestions() {
                                 class="text-sm font-semibold text-gray-900 hover:text-indigo-600 transition">
                                     ${user.name}
                                 </a>
-                            <p class="text-xs text-gray-500 truncate max-w-[140px]">${user.major}</p>
+                            <p class="text-xs text-gray-500 truncate max-w-[140px]">${user.email}</p>
                         </div>
                     </div>
                     <button onclick="sendConnectionRequest(${user.id})"
@@ -775,8 +775,7 @@ async function loadPendingRequests() {
                             <a href="/profile/${req.sender.id}" class="font-semibold text-gray-900 hover:text-indigo-600 transition">
                                 ${req.sender.name}
                             </a>
-                            <p class="text-xs text-gray-500">${req.sender.major}</p>
-                            <p class="text-xs text-gray-400">${req.sender.university}</p>
+                            <p class="text-xs text-gray-500">${req.sender.email}</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -1046,7 +1045,7 @@ async function loadConnectionsList() {
                             <a href="/profile/${connection.id}" class="font-semibold text-gray-900 hover:text-indigo-600 transition truncate">
                                 ${connection.name}
                             </a>
-                            <p class="text-xs text-gray-500 truncate">${connection.major}</p>
+                            <p class="text-xs text-gray-500 truncate">${connection.email}</p>
                         </div>
                     </div>
                     <div class="text-xs text-gray-400 mb-3">
