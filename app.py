@@ -538,11 +538,35 @@ def toggle_like(post_id):
 
     if existing:
         db.session.delete(existing)
+        
+        # Remove associated notification if it exists
+        notif = Notification.query.filter_by(
+            type='post_like',
+            actor_id=user_id,
+            reference_id=post_id
+        ).first()
+        if notif:
+            db.session.delete(notif)
+            
         db.session.commit()
         liked = False
     else:
         like = Like(user_id=user_id, post_id=post_id)
         db.session.add(like)
+        
+        # Create notification if not liking own post
+        post = db.session.get(Post, post_id)
+        if post and post.user_id != user_id:
+            liker = db.session.get(User, user_id)
+            notification = Notification(
+                user_id=post.user_id,
+                type='post_like',
+                message=f"{liker.full_name} liked your post",
+                reference_id=post.id,
+                actor_id=user_id
+            )
+            db.session.add(notification)
+            
         db.session.commit()
         liked = True
 
@@ -979,20 +1003,54 @@ def send_connection_request():
     if existing_connection:
         return jsonify({"error": "Already connected"}), 400
     
-    # Check if request already exists (in either direction)
-    existing_request = ConnectionRequest.query.filter(
-        or_(
-            and_(ConnectionRequest.sender_id == sender_id, ConnectionRequest.receiver_id == receiver_id),
-            and_(ConnectionRequest.sender_id == receiver_id, ConnectionRequest.receiver_id == sender_id)
-        ),
-        ConnectionRequest.status == 'pending'
+    # Check if I already sent a request (any status)
+    my_request = ConnectionRequest.query.filter_by(
+        sender_id=sender_id,
+        receiver_id=receiver_id
     ).first()
     
-    if existing_request:
-        if existing_request.sender_id == sender_id:
+    if my_request:
+        if my_request.status == 'pending':
             return jsonify({"error": "Request already sent"}), 400
-        else:
+        elif my_request.status == 'accepted':
+            return jsonify({"error": "Already connected"}), 400
+        elif my_request.status == 'rejected':
+            # Reactivate rejected request
+            my_request.status = 'pending'
+            my_request.created_at = datetime.now(timezone.utc)
+            my_request.responded_at = None
+            
+            # Create notification for receiver
+            sender = db.session.get(User, sender_id)
+            notification = Notification(
+                user_id=receiver_id,
+                type='connection_request',
+                message=f"{sender.full_name} sent you a connection request",
+                reference_id=my_request.id,
+                actor_id=sender_id
+            )
+            
+            db.session.add(notification)
+            db.session.commit()
+            
+            return jsonify({
+                "success": True,
+                "message": "Connection request sent",
+                "request_id": my_request.id
+            })
+
+    # Check if they sent me a request
+    their_request = ConnectionRequest.query.filter_by(
+        sender_id=receiver_id,
+        receiver_id=sender_id
+    ).first()
+    
+    if their_request:
+        if their_request.status == 'pending':
             return jsonify({"error": "This user already sent you a request"}), 400
+        elif their_request.status == 'accepted':
+            return jsonify({"error": "Already connected"}), 400
+        # If rejected, we allow sending a new request from me to them
     
     # Create new connection request
     new_request = ConnectionRequest(
@@ -1060,6 +1118,7 @@ def accept_connection_request(request_id):
     )
     
     db.session.add(new_connection)
+    db.session.flush()
     
     # Create notification for sender
     receiver = db.session.get(User, current_user_id)
@@ -1182,7 +1241,13 @@ def get_notifications():
             "created_at": notif.created_at.strftime("%Y-%m-%d %H:%M:%S")
         })
     
-    return jsonify({"notifications": result})
+    # Add unread_count to response so frontend doesn't reset badge to 0
+    unread_count = Notification.query.filter_by(
+        user_id=user_id,
+        is_read=False
+    ).count()
+    
+    return jsonify({"notifications": result, "unread_count": unread_count})
 
 
 @app.route("/api/notifications/unread-count", methods=["GET"])
@@ -1276,6 +1341,21 @@ def mark_all_notifications_read():
         is_read=False
     ).update({"is_read": True})
     
+    db.session.commit()
+    
+    return jsonify({"success": True})
+
+
+@app.route("/api/notifications/clear", methods=["POST"])
+def clear_notifications():
+    """Delete all notifications for the current user"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    user_id = session["user_id"]
+    
+    Notification.query.filter_by(user_id=user_id).delete()
     db.session.commit()
     
     return jsonify({"success": True})
@@ -1542,7 +1622,8 @@ def get_profile_data(user_id):
                 'full_name': other_user.full_name,
                 'major': other_user.major,
                 'university': other_user.university,
-                'profile_picture': getattr(other_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={other_user.full_name}"
+                'profile_picture': getattr(other_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={other_user.full_name}",
+                'connected_since': conn.connected_at.strftime('%B %Y')
             })
 
     # Get mutual connections (if not own profile)
@@ -2651,6 +2732,59 @@ def admin_download_event_pdf(event_id):
     doc.build(elements)
     buffer.seek(0)
     return send_file(buffer, as_attachment=True, download_name=f"event_{event_id}.pdf", mimetype='application/pdf')
+
+# --------------------------------------------------
+# SEARCH API
+# --------------------------------------------------
+
+@app.route("/api/search", methods=["GET"])
+def search_all():
+    """
+    Global search endpoint.
+    Searches Users, Posts, and Announcements.
+    """
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    query = request.args.get("q", "").strip()
+    
+    if not query or len(query) < 2:
+        return jsonify({"users": [], "posts": [], "announcements": []})
+        
+    search_term = f"%{query}%"
+    
+    # 1. Search Users (Name, Major)
+    users = User.query.filter(
+        or_(
+            User.first_name.ilike(search_term),
+            User.last_name.ilike(search_term),
+            User.major.ilike(search_term)
+        ),
+        User.is_active == True
+    ).limit(5).all()
+    
+    # 2. Search Announcements (Title)
+    announcements = Announcement.query.filter(
+        Announcement.title.ilike(search_term),
+        Announcement.status == 'active'
+    ).limit(3).all()
+    
+    return jsonify({
+        "users": [{
+            "id": u.id,
+            "name": u.full_name,
+            "major": u.major,
+            "profile_picture": getattr(u, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={u.full_name}"
+        } for u in users],
+        "announcements": [{
+            "id": a.id,
+            "title": a.title,
+            "content": a.content,
+            "date": a.created_at.strftime("%d %b %Y, %I:%M %p"),
+            "author": a.author.full_name if a.author else "Admin",
+            "updated_at": a.updated_at.strftime("%d %b %Y, %I:%M %p") if a.updated_at else None
+        } for a in announcements]
+    })
 
 # --------------------------------------------------
 # APP ENTRY POINT

@@ -20,11 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadProfileCompletion();
     loadPendingRequests();
     loadEvents();
-    updateNotificationBadge();
     setupProfileUpload();
-
-    // Poll for notifications
-    setInterval(updateNotificationBadge, 30000);
 
     // Setup comment modal
     const modal = document.getElementById('comment-modal');
@@ -540,16 +536,21 @@ async function sendConnectionRequest(userId) {
         
         if (response.ok) {
             // Success - show message and refresh suggestions
-            alert('Connection request sent successfully!');
+            showToast('Connection request sent successfully!', 'success');
             loadSuggestions(); // Refresh suggestions to remove this user
         } else {
+            if (response.status === 401 || response.status === 403) {
+                showToast('Session mismatch. Reloading...', 'error');
+                setTimeout(() => window.location.reload(), 1000);
+                return;
+            }
             // Error - show error message
-            alert(data.error || 'Failed to send connection request');
+            showToast(data.error || 'Failed to send connection request', 'error');
         }
         
     } catch (error) {
         console.error('Error sending connection request:', error);
-        alert('Error sending connection request. Please try again.');
+        showToast('Error sending connection request. Please try again.', 'error');
     }
 }
 
@@ -675,17 +676,22 @@ async function acceptConnectionRequest(requestId) {
         const data = await response.json();
         
         if (response.ok) {
-            alert('Connection request accepted!');
+            showToast('Connection request accepted!', 'success');
             loadPendingRequests(); // Refresh pending requests
             loadSuggestions(); // Refresh suggestions
             loadProfileCard(); // Refresh connection count
         } else {
-            alert(data.error || 'Failed to accept request');
+            if (response.status === 401 || response.status === 403) {
+                showToast('Session mismatch. Reloading...', 'error');
+                setTimeout(() => window.location.reload(), 1000);
+                return;
+            }
+            showToast(data.error || 'Failed to accept request', 'error');
         }
         
     } catch (error) {
         console.error('Error accepting request:', error);
-        alert('Error accepting request. Please try again.');
+        showToast('Error accepting request. Please try again.', 'error');
     }
 }
 
@@ -699,15 +705,20 @@ async function rejectConnectionRequest(requestId) {
         const data = await response.json();
         
         if (response.ok) {
-            alert('Connection request rejected');
+            showToast('Connection request rejected', 'success');
             loadPendingRequests(); // Refresh pending requests
         } else {
-            alert(data.error || 'Failed to reject request');
+            if (response.status === 401 || response.status === 403) {
+                showToast('Session mismatch. Reloading...', 'error');
+                setTimeout(() => window.location.reload(), 1000);
+                return;
+            }
+            showToast(data.error || 'Failed to reject request', 'error');
         }
         
     } catch (error) {
         console.error('Error rejecting request:', error);
-        alert('Error rejecting request. Please try again.');
+        showToast('Error rejecting request. Please try again.', 'error');
     }
 }
 
@@ -951,30 +962,6 @@ async function markAllAsRead() {
 }
 
 
-async function updateNotificationBadge() {
-    try {
-        const response = await fetch('/api/notifications/unread-count');
-        
-        if (!response.ok) return;
-        
-        const data = await response.json();
-        const badge = document.getElementById('notification-badge');
-        
-        if (!badge) return;
-        
-        if (data.count > 0) {
-            badge.textContent = data.count;
-            badge.classList.remove('hidden');
-        } else {
-            badge.classList.add('hidden');
-        }
-        
-    } catch (error) {
-        console.error('Error updating badge:', error);
-    }
-}
-
-
 function getTimeAgo(dateString) {
     const date = new Date(dateString);
     const now = new Date();
@@ -987,19 +974,6 @@ function getTimeAgo(dateString) {
     
     return date.toLocaleDateString();
 }
-
-
-// ═══════════════════════════════════════════════════════════════════════════
-// AUTO-UPDATE BADGE (Poll every 30 seconds)
-// ═══════════════════════════════════════════════════════════════════════════
-
-// Update badge on page load
-document.addEventListener('DOMContentLoaded', function() {
-    updateNotificationBadge();
-    
-    // Poll for new notifications every 30 seconds
-    setInterval(updateNotificationBadge, 30000);
-});
 
 
 // ═══════════════════════════════════════════════════════════════════════════
