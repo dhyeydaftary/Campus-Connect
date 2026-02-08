@@ -73,7 +73,13 @@ function escapeHtml(text) {
 function renderPostContent(post) {
     // DOCUMENT POST
     if (post.file_type === 'document') {
-        const fileName = post.image_url ? post.image_url.split('/').pop() : 'document';
+        // Use original_filename from API, fallback to parsing URL if missing
+        let fileName = post.original_filename;
+        if (!fileName && post.image_url) {
+            const rawName = post.image_url.split('/').pop();
+            const match = rawName.match(/^\d+_\d{8}_\d{6}_(.+)$/);
+            fileName = match ? match[1] : rawName;
+        }
         const fileExt = fileName.split('.').pop().toUpperCase();
         
         // Choose icon and color based on file type
@@ -107,8 +113,7 @@ function renderPostContent(post) {
                     </div>
                     
                     <!-- Download Button -->
-                    <a href="${post.image_url}" 
-                        download 
+                    <a href="/api/posts/${post.id}/download" 
                         class="group flex items-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-base rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 flex-shrink-0">
                         <i class="fas fa-download text-lg"></i>
                         <span>Download</span>

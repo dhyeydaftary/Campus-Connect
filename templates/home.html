@@ -17,6 +17,13 @@
     <script defer src="{{ url_for('static', filename='js/upload-utils.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/feed-loader.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/home.js') }}"></script>
+    <style>
+        /* Ensure user names in post headers don't wrap */
+        #post-feed .font-semibold,
+        #post-feed .font-bold {
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 <body class="bg-gray-50 text-slate-900">
@@ -297,7 +304,7 @@
                     <img src="https://ui-avatars.com/api/?name={{ user_name }}&background=6366f1&color=fff&size=40"
                         alt="Your avatar" class="w-10 h-10 rounded-full">
                     <div>
-                        <p class="font-semibold text-sm text-gray-900">{{ user_name }}</p>
+                        <p class="font-semibold text-sm text-gray-900 whitespace-nowrap">{{ user_name }}</p>
                         <div class="flex items-center gap-1 text-xs text-gray-500">
                             <i class="fas fa-globe-americas"></i>
                             <span>Public</span>
