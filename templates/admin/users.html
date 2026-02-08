@@ -27,16 +27,91 @@
             <table class="data-table" id="users-table" style="display: none;">
                 <thead>
                     <tr>
-                        <th>User</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Join Date</th>
-                        <th>Action</th>
+                        <th class="text-left px-4 py-3">User</th>
+                        <th class="text-left px-4 py-3">Role</th>
+                        <th class="text-left px-4 py-3">Status</th>
+                        <th class="text-left px-4 py-3">Join Date</th>
+                        <th class="text-center px-4 py-3">Action</th>
+                        <th class="text-left px-4 py-3">Details</th>
                     </tr>
                 </thead>
                 <tbody id="users-tbody">
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div id="user-details-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden animate-fade-in">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+            <h3 class="text-lg font-semibold text-gray-800">User Details</h3>
+            <button onclick="closeUserModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="p-6" id="modal-content">
+            <!-- Loading State -->
+            <div id="modal-loading" class="flex justify-center py-8">
+                <div class="spinner"></div>
+            </div>
+            
+            <!-- Content State -->
+            <div id="modal-data" class="hidden">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Left: Profile Image & Basic Info -->
+                    <div class="flex-shrink-0 flex flex-col items-center text-center md:w-1/3">
+                        <img id="modal-avatar" src="" alt="Profile" class="w-32 h-32 rounded-full object-cover border-4 border-indigo-50 mb-4 shadow-sm">
+                        <h4 id="modal-name" class="text-xl font-bold text-gray-900"></h4>
+                        <p id="modal-email" class="text-sm text-gray-500 break-all"></p>
+                        <span id="modal-role" class="mt-2 px-3 py-1 rounded-full text-xs font-semibold uppercase"></span>
+                    </div>
+                    
+                    <!-- Right: Details Grid -->
+                    <div class="flex-1 grid grid-cols-1 gap-4 content-start">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-semibold">Status</p>
+                                <p id="modal-status" class="font-medium capitalize"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-semibold">Joined</p>
+                                <p id="modal-joined" class="font-medium text-sm"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-semibold">University</p>
+                                <p id="modal-university" class="font-medium text-sm truncate"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-semibold">Major</p>
+                                <p id="modal-major" class="font-medium text-sm truncate"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-semibold">Batch</p>
+                                <p id="modal-batch" class="font-medium"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-semibold">User ID</p>
+                                <p id="modal-id" class="font-medium"></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Stats -->
+                        <div class="flex gap-4 mt-2">
+                            <div class="flex-1 bg-indigo-50 p-3 rounded-lg text-center border border-indigo-100">
+                                <p class="text-2xl font-bold text-indigo-600" id="modal-posts-count">0</p>
+                                <p class="text-xs text-indigo-800 font-medium">Posts</p>
+                            </div>
+                            <div class="flex-1 bg-purple-50 p-3 rounded-lg text-center border border-purple-100">
+                                <p class="text-2xl font-bold text-purple-600" id="modal-connections-count">0</p>
+                                <p class="text-xs text-purple-800 font-medium">Connections</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

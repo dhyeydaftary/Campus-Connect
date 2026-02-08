@@ -847,6 +847,27 @@ class Education(db.Model):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# ANNOUNCEMENTS TABLE (🆕 NEW)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class Announcement(db.Model):
+    """
+    System-wide announcements created by admins.
+    """
+    __tablename__ = "announcements"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='active', nullable=False)  # 'active', 'deleted'
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    author = db.relationship("User", backref="announcements")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # ADMIN LOG TABLE - ADD THIS TO models.py
 # ═══════════════════════════════════════════════════════════════════════════
 
