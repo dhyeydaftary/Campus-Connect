@@ -959,6 +959,7 @@ def get_suggestions():
         result.append({
             "id": user.id,
             "name": user.full_name,
+            "email": user.email,
             "university": user.university,
             "major": user.major,
             "batch": user.batch,
@@ -1194,6 +1195,7 @@ def get_pending_requests():
                 "sender": {
                     "id": sender.id,
                     "name": sender.full_name,
+                    "email": sender.email,
                     "university": sender.university,
                     "major": sender.major,
                     "profile_picture": getattr(sender, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={sender.full_name}"
@@ -1202,6 +1204,78 @@ def get_pending_requests():
             })
     
     return jsonify({"requests": result, "count": len(result)})
+
+
+@app.route("/api/connections/sent", methods=["GET"])
+def get_sent_requests():
+    """Get connection requests sent by current user"""
+    
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    current_user_id = session["user_id"]
+    
+    # Get requests where current user is the sender
+    sent_requests = ConnectionRequest.query.filter_by(
+        sender_id=current_user_id,
+        status='pending'
+    ).order_by(ConnectionRequest.created_at.desc()).all()
+    
+    result = []
+    for req in sent_requests:
+        receiver = db.session.get(User, req.receiver_id)
+        if receiver:
+            result.append({
+                "request_id": req.id,
+                "receiver": {
+                    "id": receiver.id,
+                    "name": receiver.full_name,
+                    "email": receiver.email,
+                    "university": receiver.university,
+                    "major": receiver.major,
+                    "profile_picture": getattr(receiver, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={receiver.full_name}"
+                },
+                "created_at": req.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            })
+    
+    return jsonify({"requests": result, "count": len(result)})
+
+
+@app.route("/api/connections/<int:user_id>", methods=["DELETE"])
+def remove_connection(user_id):
+    """Remove a connection with another user"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    current_user_id = session["user_id"]
+    
+    # Find connection (bidirectional check)
+    connection = Connection.query.filter(
+        or_(
+            and_(Connection.user_id == current_user_id, Connection.connected_user_id == user_id),
+            and_(Connection.user_id == user_id, Connection.connected_user_id == current_user_id)
+        )
+    ).first()
+    
+    if not connection:
+        return jsonify({"error": "Connection not found"}), 404
+        
+    db.session.delete(connection)
+    
+    # Clean up associated connection requests to allow re-connecting
+    requests = ConnectionRequest.query.filter(
+        or_(
+            and_(ConnectionRequest.sender_id == current_user_id, ConnectionRequest.receiver_id == user_id),
+            and_(ConnectionRequest.sender_id == user_id, ConnectionRequest.receiver_id == current_user_id)
+        )
+    ).all()
+    
+    for req in requests:
+        db.session.delete(req)
+        
+    db.session.commit()
+    
+    return jsonify({"success": True, "message": "Connection removed"})
 
 
 @app.route("/api/notifications", methods=["GET"])
@@ -1294,6 +1368,7 @@ def get_connections_list():
             result.append({
                 "id": other_user.id,
                 "name": other_user.full_name,
+                "email": other_user.email,
                 "university": other_user.university,
                 "major": other_user.major,
                 "batch": other_user.batch,
@@ -1610,6 +1685,22 @@ def get_profile_data(user_id):
         )
     )
     connection_count = connections_query.count()
+    
+    # Get counts for other tabs (only if own profile)
+    received_count = 0
+    sent_count = 0
+    
+    if is_own_profile:
+        received_count = ConnectionRequest.query.filter_by(
+            receiver_id=user_id,
+            status='pending'
+        ).count()
+        
+        sent_count = ConnectionRequest.query.filter_by(
+            sender_id=user_id,
+            status='pending'
+        ).count()
+        # Suggestions count is dynamic/expensive, usually fetched on demand or estimated
 
     # Get connections list
     connections_data = []
@@ -1620,6 +1711,7 @@ def get_profile_data(user_id):
             connections_data.append({
                 'id': other_user.id,
                 'full_name': other_user.full_name,
+                'email': other_user.email,
                 'major': other_user.major,
                 'university': other_user.university,
                 'profile_picture': getattr(other_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={other_user.full_name}",
@@ -1740,7 +1832,9 @@ def get_profile_data(user_id):
         'pending_request_id': pending_request_id,
         'stats': {
             'connections_count': connection_count,
-            'posts_count': post_count
+            'posts_count': post_count,
+            'received_count': received_count,
+            'sent_count': sent_count
         },
         'posts': posts_data,
         'connections': connections_data,
