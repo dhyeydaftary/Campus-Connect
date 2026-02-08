@@ -41,66 +41,12 @@ tailwind.config = {
 let profileData = {};
 
 // ============================================
-// MOCK DATA - For edit functionality
-// ============================================
-
-const mockData = {
-  currentUser: {
-    id: '1',
-    name: 'Dhyey Daftary',
-    initials: 'DD',
-    major: 'IT',
-    batch: '2028',
-    institution: 'Harvard',
-    location: 'Cambridge, MA',
-    bio: 'Passionate software developer with a keen interest in building scalable web applications. Currently exploring AI/ML and cloud technologies. Always eager to learn and collaborate on innovative projects.',
-    connectionsCount: 3,
-    postsCount: 2,
-  },
-  skills: [
-    { id: '1', name: 'React' },
-    { id: '2', name: 'TypeScript' },
-    { id: '3', name: 'Python' },
-    { id: '4', name: 'Machine Learning' },
-    { id: '5', name: 'Node.js' },
-  ],
-  experiences: [
-    {
-      id: '1',
-      role: 'Software Engineer Intern',
-      organization: 'Google',
-      startDate: 'Jun 2025',
-      endDate: 'Aug 2025',
-      description: 'Worked on improving search algorithms and building internal tools.',
-    },
-    {
-      id: '2',
-      role: 'Research Assistant',
-      organization: 'Harvard AI Lab',
-      startDate: 'Jan 2025',
-      endDate: null,
-      description: 'Conducting research on natural language processing and transformer models.',
-    },
-  ],
-  education: [
-    {
-      id: '1',
-      degree: 'Bachelor of Science',
-      field: 'Computer Science',
-      institution: 'Harvard University',
-      year: '2024 - 2028',
-    },
-  ],
-};
-
-// ============================================
 // STATE MANAGEMENT
 // ============================================
 
 let state = {
   activeTab: 'posts',
   currentModal: null,
-  editData: {},
 };
 
 // ============================================
@@ -199,16 +145,21 @@ function renderConnections() {
   container.innerHTML = profileData.connections.map(conn => `
     <div class="connection-card bg-card rounded-xl shadow-card border border-border p-4">
       <div class="flex items-center gap-3 mb-3">
-        <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
-          ${conn.full_name.split(' ').map(n => n[0]).join('')}
-        </div>
+        <a href="/profile/${conn.id}" class="flex-shrink-0">
+            <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold overflow-hidden hover:opacity-90 transition-opacity">
+            ${conn.profile_picture && !conn.profile_picture.includes('ui-avatars.com') 
+                ? `<img src="${conn.profile_picture}" class="w-full h-full object-cover" alt="${conn.full_name}">`
+                : conn.full_name.split(' ').map(n => n[0]).join('')
+            }
+            </div>
+        </a>
         <div class="flex-1 min-w-0">
-          <h4 class="font-medium text-foreground truncate">${conn.full_name}</h4>
+          <a href="/profile/${conn.id}" class="hover:underline decoration-primary"><h4 class="font-medium text-foreground truncate">${conn.full_name}</h4></a>
           <p class="text-sm text-muted-foreground truncate">${conn.major} • ${conn.university}</p>
         </div>
       </div>
       <div class="flex items-center justify-between text-xs text-muted-foreground mb-3">
-        <span>Connected ${conn.connected_since}</span>
+        <span>Connected ${conn.connected_since || ''}</span>
       </div>
       <button class="w-full px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,30 +203,6 @@ async function openEditModal(type) {
   const content = document.getElementById('modalContent');
 
   switch (type) {
-    case 'profile':
-      title.textContent = 'Edit Profile';
-      content.innerHTML = `
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-1">First Name</label>
-            <input type="text" id="editFirstName" value="${profileData.user.first_name || ''}" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-1">Last Name</label>
-            <input type="text" id="editLastName" value="${profileData.user.last_name || ''}" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-1">Major</label>
-            <input type="text" id="editMajor" value="${profileData.user.major || ''}" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-1">Batch</label>
-            <input type="text" id="editBatch" value="${profileData.user.batch || ''}" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background">
-          </div>
-        </div>
-      `;
-      break;
-
     case 'about':
       title.textContent = 'Edit About';
       content.innerHTML = `
@@ -403,21 +330,6 @@ function closeEditModal() {
 async function saveModal() {
   try {
     switch (state.currentModal) {
-      case 'profile':
-        const firstName = document.getElementById('editFirstName').value;
-        const lastName = document.getElementById('editLastName').value;
-        const major = document.getElementById('editMajor').value;
-        const batch = document.getElementById('editBatch').value;
-
-        // Note: Profile editing would require additional API endpoints for user data
-        // For now, just update the display
-        profileData.user.first_name = firstName;
-        profileData.user.last_name = lastName;
-        profileData.user.major = major;
-        profileData.user.batch = batch;
-        updateProfileHeader(profileData.user);
-        break;
-
       case 'about':
         const bio = document.getElementById('editBio').value;
         const response = await fetch('/api/profile/bio', {
@@ -791,6 +703,11 @@ async function sendConnectionRequest(receiverId) {
       // Reload profile data to update connection status
       await loadProfileData(window.location.pathname.match(/\/profile\/(\d+)/)[1]);
     } else {
+      if (response.status === 401 || response.status === 403) {
+        showToast('Session mismatch. Reloading...', 'error');
+        setTimeout(() => window.location.reload(), 1000);
+        return;
+      }
       const errorData = await response.json();
       showToast(errorData.error || 'Error sending request', 'error');
     }
@@ -813,6 +730,11 @@ async function acceptConnectionRequest(requestId) {
       // Reload profile data to update connection status
       await loadProfileData(window.location.pathname.match(/\/profile\/(\d+)/)[1]);
     } else {
+      if (response.status === 401 || response.status === 403) {
+        showToast('Session mismatch. Reloading...', 'error');
+        setTimeout(() => window.location.reload(), 1000);
+        return;
+      }
       const errorData = await response.json();
       showToast(errorData.error || 'Error accepting request', 'error');
     }
@@ -924,16 +846,7 @@ function renderProfileActions() {
     if (educationEditButton) educationEditButton.classList.remove('hidden');
 
     // Show edit profile button for own profile
-    actionsContainer.innerHTML = `
-      <button onclick="openEditModal('profile')"
-        class="flex-1 sm:flex-none px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-        Edit Profile
-      </button>
-    `;
+    actionsContainer.innerHTML = '';
   } else {
     // Hide edit buttons for other profiles
     if (aboutEditButton) aboutEditButton.classList.add('hidden');

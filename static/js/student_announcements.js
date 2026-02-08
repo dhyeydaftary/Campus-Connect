@@ -58,10 +58,7 @@ function renderStudentAnnouncements(announcements) {
     `).join('');
 }
 
-function openAnnouncementModal(id) {
-    const ann = studentAnnouncements.find(a => a.id === id);
-    if (!ann) return;
-
+function displayAnnouncement(ann) {
     document.getElementById('modal-ann-title').textContent = ann.title;
     document.getElementById('modal-ann-content').textContent = ann.content;
     document.getElementById('modal-ann-date').textContent = ann.date;
@@ -78,6 +75,11 @@ function openAnnouncementModal(id) {
     const modal = document.getElementById('student-announcement-modal');
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function openAnnouncementModal(id) {
+    const ann = studentAnnouncements.find(a => a.id === id);
+    if (ann) displayAnnouncement(ann);
 }
 
 function closeAnnouncementModal() {
@@ -158,3 +160,4 @@ window.openAnnouncementModal = openAnnouncementModal;
 window.closeAnnouncementModal = closeAnnouncementModal;
 window.openAllAnnouncements = openAllAnnouncements;
 window.closeAllAnnouncements = closeAllAnnouncements;
+window.displayAnnouncement = displayAnnouncement;

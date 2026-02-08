@@ -15,7 +15,7 @@
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3">
                         <i class="fas fa-search text-gray-400"></i>
                     </span>
-                    <input type="text" placeholder="Search students, posts, topics..."
+                    <input type="text" id="search-input" placeholder="Search students, posts, topics..."
                         class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white">
                 </div>
             </div>
@@ -61,17 +61,17 @@
                         </div>
 
                         <!-- Notifications List -->
-                        <div id="notifications-list" class="max-h-96 overflow-y-auto">
+                        <div id="notifications-list" class="max-h-64 overflow-y-auto">
                             <div class="p-4 text-center text-gray-500 text-sm">
                                 Loading notifications...
                             </div>
                         </div>
 
                         <!-- Footer -->
-                        <div class="px-4 py-3 border-t border-gray-200 text-center">
-                            <a href="#" class="text-sm text-indigo-600 hover:text-indigo-800">
-                                View all notifications
-                            </a>
+                        <div class="px-4 py-3 border-t border-gray-200 text-center bg-gray-50">
+                            <button onclick="clearAllNotifications()" class="text-sm text-red-600 hover:text-red-800 font-medium w-full">
+                                Clear all
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -105,3 +105,5 @@
         </div>
     </div>
 </nav>
+
+<script defer src="{{ url_for('static', filename='js/navbar-utils.js') }}"></script>
