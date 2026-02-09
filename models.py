@@ -49,13 +49,13 @@ class User(db.Model):
     
     # Connection relationships handled via queries (see Connection table)
     sent_requests = db.relationship("ConnectionRequest", 
-                                   foreign_keys="ConnectionRequest.sender_id",
-                                   backref="sender", 
-                                   lazy="dynamic")
+                                    foreign_keys="ConnectionRequest.sender_id",
+                                    backref="sender", 
+                                    lazy="dynamic")
     received_requests = db.relationship("ConnectionRequest",
-                                       foreign_keys="ConnectionRequest.receiver_id",
-                                       backref="receiver",
-                                       lazy="dynamic")
+                                        foreign_keys="ConnectionRequest.receiver_id",
+                                        backref="receiver",
+                                        lazy="dynamic")
 
     @property
     def full_name(self):
@@ -916,3 +916,260 @@ class AdminLog(db.Model):
         # For querying by action type
         Index("idx_admin_logs_action_type", "action_type", "created_at"),
     )
+
+
+"""
+═══════════════════════════════════════════════════════════════════════════
+DIRECT MESSAGING MODELS
+Add these classes to the end of models.py
+═══════════════════════════════════════════════════════════════════════════
+"""
+
+class Conversation(db.Model):
+    """
+    Represents a one-to-one conversation between two users.
+    
+    DESIGN DECISIONS:
+    - user1_id < user2_id enforced to prevent duplicate conversations
+    - updated_at is automatically updated when new messages are sent (via trigger)
+    - CASCADE delete: If user is deleted, all their conversations are deleted
+    
+    USAGE:
+    - Get all conversations for a user
+    - Find existing conversation between two users
+    - Sort conversations by last activity
+    """
+    __tablename__ = "conversations"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Participants (always user1_id < user2_id)
+    user1_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    user2_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    
+    # Timestamps
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+    
+    # Relationships
+    messages = db.relationship(
+        "Message",
+        backref="conversation",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+        order_by="Message.created_at"
+    )
+    
+    user1 = db.relationship("User", foreign_keys=[user1_id])
+    user2 = db.relationship("User", foreign_keys=[user2_id])
+    
+    __table_args__ = (
+        # Prevent duplicate conversations
+        db.UniqueConstraint("user1_id", "user2_id", name="unique_conversation"),
+        
+        # Prevent self-conversations
+        CheckConstraint("user1_id != user2_id", name="no_self_conversation"),
+        
+        # Ensure user1_id < user2_id
+        CheckConstraint("user1_id < user2_id", name="ordered_users"),
+        
+        # Indexes
+        Index("idx_conversations_user1", "user1_id"),
+        Index("idx_conversations_user2", "user2_id"),
+        Index("idx_conversations_updated", "updated_at"),
+    )
+    
+    def get_other_user_id(self, current_user_id):
+        """Get the ID of the other participant in the conversation"""
+        return self.user2_id if self.user1_id == current_user_id else self.user1_id
+    
+    def get_unread_count(self, user_id):
+        """Get number of unread messages for a specific user"""
+        return Message.query.filter_by(
+            conversation_id=self.id,
+            receiver_id=user_id,
+            is_read=False
+        ).count()
+    
+    def get_last_message(self):
+        """Get the most recent message in this conversation"""
+        return self.messages.order_by(Message.created_at.desc()).first()
+    
+    @classmethod
+    def get_or_create(cls, user1_id, user2_id):
+        """
+        Get existing conversation or create new one.
+        Automatically handles user ordering.
+        
+        Returns: (conversation, was_created)
+        """
+        # Ensure user1_id < user2_id
+        if user1_id > user2_id:
+            user1_id, user2_id = user2_id, user1_id
+        
+        conversation = cls.query.filter_by(
+            user1_id=user1_id,
+            user2_id=user2_id
+        ).first()
+        
+        if conversation:
+            return conversation, False
+        
+        # Create new conversation
+        conversation = cls(user1_id=user1_id, user2_id=user2_id)
+        db.session.add(conversation)
+        db.session.commit()
+        
+        return conversation, True
+    
+    @classmethod
+    def get_user_conversations(cls, user_id):
+        """
+        Get all conversations for a user, ordered by last activity.
+        
+        Returns: List of conversations sorted by updated_at DESC
+        """
+        return cls.query.filter(
+            or_(
+                cls.user1_id == user_id,
+                cls.user2_id == user_id
+            )
+        ).order_by(cls.updated_at.desc()).all()
+
+
+class Message(db.Model):
+    """
+    Individual message within a conversation.
+    
+    DESIGN DECISIONS:
+    - Stores both sender_id and receiver_id for easy querying
+    - is_read flag for read receipts
+    - read_at timestamp for when message was read
+    - CASCADE delete: If conversation is deleted, all messages are deleted
+    
+    USAGE:
+    - Send new messages
+    - Mark messages as read
+    - Get conversation history
+    - Count unread messages
+    """
+    __tablename__ = "messages"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Conversation reference
+    conversation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    
+    # Participants
+    sender_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    receiver_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    
+    # Content
+    content = db.Column(db.Text, nullable=False)
+    
+    # Status
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    read_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    
+    # Timestamp
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+    
+    # Relationships
+    sender = db.relationship("User", foreign_keys=[sender_id])
+    receiver = db.relationship("User", foreign_keys=[receiver_id])
+    
+    __table_args__ = (
+        # Prevent self-messages
+        CheckConstraint("sender_id != receiver_id", name="no_self_message"),
+        
+        # Indexes
+        Index("idx_messages_conversation", "conversation_id", "created_at"),
+        Index("idx_messages_sender", "sender_id"),
+        Index("idx_messages_receiver", "receiver_id"),
+        # Partial index for unread messages (PostgreSQL optimization)
+        Index(
+            "idx_messages_unread",
+            "receiver_id",
+            "is_read",
+            postgresql_where=(db.Column("is_read") == False)
+        ),
+    )
+    
+    def mark_as_read(self):
+        """Mark this message as read"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = datetime.now(timezone.utc)
+            db.session.commit()
+    
+    def to_dict(self):
+        """Convert message to dictionary for JSON response"""
+        return {
+            "id": self.id,
+            "conversation_id": self.conversation_id,
+            "sender_id": self.sender_id,
+            "receiver_id": self.receiver_id,
+            "content": self.content,
+            "is_read": self.is_read,
+            "read_at": self.read_at.isoformat() if self.read_at else None,
+            "created_at": self.created_at.isoformat(),
+            "sender_name": self.sender.full_name if self.sender else "Unknown",
+            "sender_avatar": self.sender.profile_picture if self.sender else None
+        }
+    
+    @classmethod
+    def mark_conversation_as_read(cls, conversation_id, user_id):
+        """
+        Mark all unread messages in a conversation as read for a specific user.
+        
+        Args:
+            conversation_id: The conversation ID
+            user_id: The user who is marking messages as read (receiver)
+        """
+        unread_messages = cls.query.filter_by(
+            conversation_id=conversation_id,
+            receiver_id=user_id,
+            is_read=False
+        ).all()
+        
+        now = datetime.now(timezone.utc)
+        for message in unread_messages:
+            message.is_read = True
+            message.read_at = now
+        
+        if unread_messages:
+            db.session.commit()
+        
+        return len(unread_messages)

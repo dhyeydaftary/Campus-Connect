@@ -13,7 +13,7 @@ from flask import (
 )
 
 from config import Config
-from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration, Connection, ConnectionRequest, Notification, Skill, Experience, Education, AdminLog, Announcement
+from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration, Connection, ConnectionRequest, Notification, Skill, Experience, Education, AdminLog, Announcement, Conversation, Message
 from sqlalchemy import func, or_, and_, DateTime
 from werkzeug.utils import secure_filename
 import os
@@ -27,6 +27,9 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from flask import send_file
+from flask_socketio import SocketIO
+from chat_routes import chat_bp
+from chat_socket import init_socket_events
 
 # --------------------------------------------------
 # CREATE APP & LOAD CONFIGURATION
@@ -45,6 +48,8 @@ if not app.config["SQLALCHEMY_DATABASE_URI"]:
 # Initialize extensions
 db.init_app(app)
 bcrypt.init_app(app)
+
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
 
 # --------------------------------------------------
 # HELPER FUNCTIONS
@@ -138,6 +143,9 @@ def get_content_activity():
         "posts": [posts_counts[d] for d in days],
         "events": [events_counts[d] for d in days],
     }
+
+app.register_blueprint(chat_bp)
+init_socket_events(socketio)
 
 
 # --------------------------------------------------
@@ -2888,4 +2896,4 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         seed_admin()
-    app.run(debug=True)
+    socketio.run(app, debug=True, host="0.0.0.0", port=5000)
