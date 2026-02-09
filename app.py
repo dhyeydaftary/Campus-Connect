@@ -2444,11 +2444,11 @@ def admin_create_event():
     try:
         event_date_str = data.get("event_date")
         if not event_date_str:
-             return jsonify({"error": "Event date required"}), 400
+            return jsonify({"error": "Event date required"}), 400
         
         # Handle ISO format
         dt = datetime.fromisoformat(event_date_str.replace('Z', '+00:00'))
-        event_date = dt.astimezone(timezone.utc).replace(tzinfo=None)
+        event_date = dt.astimezone(timezone.utc)
     except (ValueError, AttributeError):
         return jsonify({"error": "Invalid event_date format."}), 400
     
@@ -2709,7 +2709,7 @@ def admin_update_event(event_id):
             if 'Z' not in dt_str and '+' not in dt_str:
                 return jsonify({"error": "UTC Datetime required"}), 400
             dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
-            event.event_date = dt.astimezone(timezone.utc).replace(tzinfo=None)
+            event.event_date = dt.astimezone(timezone.utc)
         except ValueError:
             return jsonify({"error": "Invalid date format"}), 400
             
