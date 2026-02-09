@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timezone
 from sqlalchemy import Index, CheckConstraint, and_, or_, DateTime
+from sqlalchemy.exc import IntegrityError
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -1032,11 +1033,18 @@ class Conversation(db.Model):
             return conversation, False
         
         # Create new conversation
-        conversation = cls(user1_id=user1_id, user2_id=user2_id)
-        db.session.add(conversation)
-        db.session.commit()
-        
-        return conversation, True
+        try:
+            conversation = cls(user1_id=user1_id, user2_id=user2_id)
+            db.session.add(conversation)
+            db.session.commit()
+            return conversation, True
+        except IntegrityError:
+            db.session.rollback()
+            conversation = cls.query.filter_by(
+                user1_id=user1_id,
+                user2_id=user2_id
+            ).first()
+            return conversation, False
     
     @classmethod
     def get_user_conversations(cls, user_id):
