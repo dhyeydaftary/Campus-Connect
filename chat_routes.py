@@ -39,7 +39,7 @@ def get_chats():
     ).join(
         last_msg_subq, 
         Message.id == last_msg_subq.c.last_msg_id
-    ).subquery()
+    ).subquery().alias('last_msg_content_subq') # Alias for clarity
 
     # 3. Main Query
     results = db.session.query(
@@ -58,6 +58,8 @@ def get_chats():
     ).outerjoin(
         last_msg_content, Conversation.id == last_msg_content.c.conversation_id
     ).filter(
+        last_msg_content.c.content != None,  # Only include conversations with messages
+        User.account_type != 'admin',  # Exclude admin from chat list
         or_(Conversation.user1_id == user_id, Conversation.user2_id == user_id)
     ).order_by(Conversation.updated_at.desc()).all()
 
@@ -102,16 +104,32 @@ def start_chat():
     if not recipient:
         return jsonify({"error": "User not found"}), 404
 
-    # Use model method to get or create (handles bidirectional check)
-    conversation, created = Conversation.get_or_create(user_id, recipient_id)
+    # Check if conversation exists
+    u1_id, u2_id = (user_id, recipient_id) if user_id < int(recipient_id) else (recipient_id, user_id)
     
-    if not conversation:
-        return jsonify({"error": "Failed to create conversation"}), 500
+    conversation = Conversation.query.filter_by(
+        user1_id=u1_id,
+        user2_id=u2_id
+    ).first()
     
-    return jsonify({
-        "conversation_id": conversation.id,
-        "status": "created" if created else "exists"
-    }), 200 if not created else 201
+    if conversation:
+        # Get partner details
+        partner_id = conversation.user2_id if conversation.user1_id == user_id else conversation.user1_id
+        partner = db.session.get(User, partner_id)
+        return jsonify({
+            "conversation_id": conversation.id,
+            "status": "exists",
+            "partner_id": partner.id,
+            "partner_name": partner.full_name,
+            "partner_avatar": partner.profile_picture or f"https://ui-avatars.com/api/?name={partner.full_name}"
+        }), 200
+    else:
+        return jsonify({
+            "temp_user_id": recipient.id,
+            "temp_user_name": recipient.full_name,
+            "temp_user_avatar": recipient.profile_picture or f"https://ui-avatars.com/api/?name={recipient.full_name}",
+            "status": "new"
+        }), 200
 
 # 3) GET /api/messages/<conversation_id>
 @chat_bp.route('/api/messages/<int:conversation_id>', methods=['GET'])
@@ -128,10 +146,30 @@ def get_messages(conversation_id):
     if user_id not in [conversation.user1_id, conversation.user2_id]:
         return jsonify({"error": "Access denied"}), 403
         
-    messages = Message.query.options(joinedload(Message.sender)).filter_by(conversation_id=conversation_id)\
-        .order_by(Message.created_at.asc()).all()
+    # Pagination
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 50, type=int)
+    
+    pagination = Message.query.options(joinedload(Message.sender))\
+        .filter_by(conversation_id=conversation_id)\
+        .order_by(Message.created_at.asc())\
+        .paginate(page=page, per_page=limit, error_out=False)
         
-    return jsonify([m.to_dict() for m in messages]), 200
+    results = []
+    for msg in pagination.items:
+        results.append({
+            "id": msg.id,
+            "conversation_id": msg.conversation_id,
+            "sender_id": msg.sender_id,
+            "sender_name": msg.sender.full_name,
+            "sender_avatar": msg.sender.profile_picture or f"https://ui-avatars.com/api/?name={msg.sender.full_name}",
+            "content": msg.content,
+            "created_at": msg.created_at.isoformat(),
+            "is_read": msg.is_read,
+            "is_own": msg.sender_id == user_id
+        })
+        
+    return jsonify(results), 200
 
 # 4) GET /api/chats/unread-count
 @chat_bp.route('/api/chats/unread-count', methods=['GET'])
@@ -154,6 +192,36 @@ def get_total_unread_count():
     total = sum(counts.values())
     
     return jsonify({"per_conversation": counts, "total_unread": total}), 200
+
+# 5) GET /api/users/search
+@chat_bp.route('/api/users/search', methods=['GET'])
+def search_users_for_chat():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+        
+    # Search users by name, excluding current user
+    # Limit to 10 results for performance
+    users = User.query.filter(
+        User.id != user_id,
+        User.is_active == True,
+        User.account_type != 'admin',  # Exclude admin from search
+        or_(
+            User.first_name.ilike(f"%{query}%"),
+            User.last_name.ilike(f"%{query}%"),
+            User.major.ilike(f"%{query}%") # Optional: search by major too
+        )
+    ).limit(10).all()
+    
+    return jsonify([{
+        "id": u.id,
+        "name": u.full_name,
+        "avatar": u.profile_picture or f"https://ui-avatars.com/api/?name={u.full_name}"
+    } for u in users]), 200
 
 # 5) POST /api/messages/<conversation_id>/mark-read
 @chat_bp.route('/api/messages/<int:conversation_id>/mark-read', methods=['POST'])

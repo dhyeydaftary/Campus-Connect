@@ -192,6 +192,15 @@ def logout():
     return redirect(url_for("login_page"))
 
 
+@app.route("/messages")
+def messages_page():
+    if "user_id" not in session:
+        return redirect(url_for("login_page"))
+    
+    user = db.session.get(User, session["user_id"])
+    return render_template("messages.html", user=user, user_name=session.get("user_name"))
+
+
 # --------------------------------------------------
 # ADMIN PAGE ROUTES (HTML)
 # --------------------------------------------------
@@ -903,19 +912,7 @@ def get_suggestions():
         return jsonify({"error": "User not found"}), 404
     
     # Step 1: Get connected user IDs (bidirectional check)
-    connected_ids = []
-    connections = Connection.query.filter(
-        or_(
-            Connection.user_id == current_user_id,
-            Connection.connected_user_id == current_user_id
-        )
-    ).all()
-    
-    for conn in connections:
-        if conn.user_id == current_user_id:
-            connected_ids.append(conn.connected_user_id)
-        else:
-            connected_ids.append(conn.user_id)
+    connected_ids = current_user.get_connection_ids()
     
     # Step 2: Get pending request user IDs (both sent and received)
     pending_sent = [r.receiver_id for r in ConnectionRequest.query.filter_by(

@@ -67,6 +67,7 @@ CREATE INDEX idx_messages_conversation ON messages(conversation_id, created_at);
 CREATE INDEX idx_messages_sender ON messages(sender_id);
 CREATE INDEX idx_messages_receiver ON messages(receiver_id);
 CREATE INDEX idx_messages_unread ON messages(receiver_id, is_read) WHERE is_read = FALSE;
+CREATE INDEX idx_messages_conversation_id_id ON messages(conversation_id, id DESC);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- TRIGGER: Update conversation.updated_at when new message is sent
