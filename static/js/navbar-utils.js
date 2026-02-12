@@ -120,6 +120,29 @@ async function updateNotificationBadge() {
     }
 }
 
+async function updateMessageBadge() {
+    try {
+        const response = await fetch('/api/chats/unread-count');
+        if (response.ok) {
+            const data = await response.json();
+            const badge = document.getElementById('message-badge');
+            if (badge) {
+                const count = data.total_unread;
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.classList.remove('hidden');
+                    badge.classList.add('flex');
+                } else {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('flex');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error updating message badge:', error);
+    }
+}
+
 async function markNotificationRead(id) {
     try {
         await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
@@ -338,6 +361,7 @@ window.openSearchAnnouncement = function(id) {
 document.addEventListener('DOMContentLoaded', async function() {
     // Initial load
     updateNotificationBadge();
+    updateMessageBadge();
     
     // Poll every 30 seconds
     setInterval(updateNotificationBadge, 30000);
@@ -356,5 +380,6 @@ window.NavbarUtils = {
     loadNotifications,
     markNotificationRead,
     markAllAsRead,
-    clearAllNotifications
+    clearAllNotifications,
+    updateMessageBadge
 };

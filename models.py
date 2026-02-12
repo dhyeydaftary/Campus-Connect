@@ -109,20 +109,20 @@ class User(db.Model):
         Used for: Post filtering, suggestion exclusion
         Returns: List[int]
         """
-        connections = Connection.query.filter(
+        # Optimization: Fetch only IDs to avoid loading full objects
+        results = db.session.query(Connection.user_id, Connection.connected_user_id).filter(
             or_(
                 Connection.user_id == self.id,
                 Connection.connected_user_id == self.id
             )
         ).all()
         
-        # Extract the OTHER user's ID from each connection
         connection_ids = []
-        for conn in connections:
-            if conn.user_id == self.id:
-                connection_ids.append(conn.connected_user_id)
+        for uid, connected_uid in results:
+            if uid == self.id:
+                connection_ids.append(connected_uid)
             else:
-                connection_ids.append(conn.user_id)
+                connection_ids.append(uid)
         
         return connection_ids
 
@@ -1133,6 +1133,8 @@ class Message(db.Model):
             "is_read",
             postgresql_where=(db.Column("is_read") == False)
         ),
+        # Optimization for fetching last message in conversation
+        Index("idx_messages_conversation_id_id", "conversation_id", "id"),
     )
     
     def mark_as_read(self):
@@ -1166,18 +1168,16 @@ class Message(db.Model):
             conversation_id: The conversation ID
             user_id: The user who is marking messages as read (receiver)
         """
-        unread_messages = cls.query.filter_by(
+        now = datetime.now(timezone.utc)
+        
+        # Bulk update for performance
+        count = cls.query.filter_by(
             conversation_id=conversation_id,
             receiver_id=user_id,
             is_read=False
-        ).all()
+        ).update({'is_read': True, 'read_at': now}, synchronize_session=False)
         
-        now = datetime.now(timezone.utc)
-        for message in unread_messages:
-            message.is_read = True
-            message.read_at = now
-        
-        if unread_messages:
+        if count > 0:
             db.session.commit()
         
-        return len(unread_messages)
+        return count
