@@ -17,14 +17,22 @@ instance/
 .DS_Store
 
 # =========================
-# Flask user uploads (IMPORTANT)
+# User uploads (IMPORTANT)
 # =========================
-static/uploads/documents/*
-static/uploads/images/*
+static/uploads/**
 
-# Keep folder structure
-!static/uploads/documents/.gitkeep
-!static/uploads/images/.gitkeep
+# Allow folder structure
+!static/uploads/
+!static/uploads/chat/
+!static/uploads/chat/chat_docs/
+!static/uploads/chat/chat_images/
+!static/uploads/post/
+!static/uploads/post/post_docs/
+!static/uploads/post/post_images/
+!static/uploads/profile_photos/
+
+# Allow only .gitkeep files
+!static/uploads/**/.gitkeep
 
 # Local admin seeding script
 seed_admin.py
