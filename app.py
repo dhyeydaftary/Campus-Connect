@@ -81,7 +81,7 @@ def save_uploaded_file(file, file_type):
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f"{session['user_id']}_{timestamp}_{secure_filename(file.filename)}"
     
-    upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'images' if file_type == 'image' else 'documents')
+    upload_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'post', 'post_images' if file_type == 'image' else 'post_docs')
     os.makedirs(upload_dir, exist_ok=True)
     
     file_path = os.path.join(upload_dir, filename)
@@ -199,6 +199,14 @@ def messages_page():
     
     user = db.session.get(User, session["user_id"])
     return render_template("messages.html", user=user, user_name=session.get("user_name"))
+
+@app.route("/post/<int:post_id>")
+def post_page(post_id):
+    if "user_id" not in session:
+        return redirect(url_for("login_page"))
+    
+    user = db.session.get(User, session["user_id"])
+    return render_template("post.html", user=user, user_name=session.get("user_name"), post_id=post_id)
 
 
 # --------------------------------------------------
@@ -386,6 +394,7 @@ def api_posts():
 
         formatted_db_posts.append({
             "id": post.id,
+            "user_id": post.user_id,
             "username": user.full_name,
             "profileImage": f"https://ui-avatars.com/api/?name={user.full_name}",
             "postImages": [f"/static/{post.file_path}"] if post.file_path else ([post.image_url] if post.image_url else []),
@@ -413,6 +422,77 @@ def api_posts():
     })
 
 
+@app.route("/api/posts/<int:post_id>")
+def get_single_post_api(post_id):
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    likes_subq = (
+        db.session.query(Like.post_id, func.count(Like.id).label("likes"))
+        .filter(Like.post_id == post_id)
+        .group_by(Like.post_id)
+        .subquery()
+    )
+
+    comments_subq = (
+        db.session.query(Comment.post_id, func.count(Comment.id).label("comments"))
+        .filter(Comment.post_id == post_id)
+        .group_by(Comment.post_id)
+        .subquery()
+    )
+
+    post_data = (
+        db.session.query(
+            Post,
+            User,
+            func.coalesce(likes_subq.c.likes, 0).label("likes"),
+            func.coalesce(comments_subq.c.comments, 0).label("comments")
+        )
+        .join(User, Post.user_id == User.id)
+        .outerjoin(likes_subq, likes_subq.c.post_id == Post.id)
+        .outerjoin(comments_subq, comments_subq.c.post_id == Post.id)
+        .filter(Post.id == post_id)
+        .first()
+    )
+
+    if not post_data:
+        return jsonify({"error": "Post not found"}), 404
+
+    post, user, likes_count, comments_count = post_data
+
+    is_liked = Like.query.filter_by(
+        post_id=post.id,
+        user_id=session["user_id"]
+    ).first() is not None
+
+    formatted_post = {
+        "id": post.id,
+        "user_id": post.user_id,
+        "username": user.full_name,
+        "profileImage": f"https://ui-avatars.com/api/?name={user.full_name}",
+        "postImages": [f"/static/{post.file_path}"] if post.file_path else ([post.image_url] if post.image_url else []),
+        "currentImageIndex": 0,
+        "caption": post.caption,
+        "accountType": "student",
+        "collegeName": user.major,
+        "likesCount": likes_count,
+        "commentsCount": comments_count,
+        "comments": [],
+        "isLiked": is_liked,
+        "createdAt": post.created_at.isoformat(),
+        "file_path": post.file_path,
+        "file_type": post.file_type,
+        "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url,
+        "original_filename": get_clean_filename(post.file_path)
+    }
+
+    return jsonify({
+        "viewer": {
+            "id": session.get("user_id"),
+            "name": session.get("user_name")
+        },
+        "posts": [formatted_post]
+    })
 
 @app.route("/api/posts", methods=["POST"])
 def create_post():
@@ -1596,6 +1676,7 @@ def api_profile_posts(user_id):
 
         formatted_db_posts.append({
             "id": post.id,
+            "user_id": post.user_id,
             "username": user.full_name,
             "profileImage": f"https://ui-avatars.com/api/?name={user.full_name}",
             "postImages": [f"/static/{post.file_path}"] if post.file_path else ([post.image_url] if post.image_url else []),

@@ -266,8 +266,6 @@ class FeedLoader {
                                 <p class="text-sm text-gray-800">${c.text}</p>
                             </div>
                             <div class="flex items-center gap-4 mt-1 px-2">
-                                <button class="text-xs text-gray-500 hover:text-indigo-600 font-medium">Like</button>
-                                <button class="text-xs text-gray-500 hover:text-indigo-600 font-medium">Reply</button>
                                 <span class="text-xs text-gray-400">${window.PostUtils.timeAgo(c.createdAt)}</span>
                             </div>
                         </div>
@@ -287,9 +285,117 @@ class FeedLoader {
 
     sharePost(index) {
         const post = this.posts[index];
-        // Implement share functionality
-        console.log('Share post:', post.id);
-        this.showToast('Share functionality coming soon!', 'info');
+        if (!post) return;
+        
+        // Open Modal
+        const modal = document.getElementById('share-modal');
+        if (!modal) {
+            this.showToast('Share modal not found', 'error');
+            return;
+        }
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // Store current post data in modal for sending
+        modal.dataset.postData = JSON.stringify({
+            postId: post.id,
+            authorId: post.user_id || 0, // Assuming user_id is available in post object
+            authorName: post.username || post.full_name,
+            authorAvatar: post.profileImage || post.profile_picture,
+            image: (post.postImages && post.postImages[0]) || post.image_url || null,
+            caption: post.caption
+        });
+        
+        // Load connections
+        this.loadShareConnections();
+        
+        // Setup search listener
+        const searchInput = document.getElementById('share-search');
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.oninput = (e) => this.filterShareConnections(e.target.value);
+        }
+    }
+
+    async loadShareConnections() {
+        const list = document.getElementById('share-connections-list');
+        if (!list) return;
+        
+        list.innerHTML = '<div class="text-center py-4 text-gray-500"><i class="fas fa-spinner fa-spin"></i> Loading connections...</div>';
+        
+        try {
+            const res = await fetch('/api/connections/list');
+            if (!res.ok) throw new Error('Failed to load');
+            const data = await res.json();
+            
+            this.shareConnections = data.connections || [];
+            this.renderShareConnections(this.shareConnections);
+            
+        } catch (e) {
+            list.innerHTML = '<div class="text-center py-4 text-red-500">Failed to load connections</div>';
+        }
+    }
+
+    renderShareConnections(connections) {
+        const list = document.getElementById('share-connections-list');
+        if (!list) return;
+        
+        if (connections.length === 0) {
+            list.innerHTML = '<div class="text-center py-4 text-gray-500">No connections found</div>';
+            return;
+        }
+        
+        list.innerHTML = connections.map(conn => `
+            <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition" onclick="window.feedLoader.sendShare(${conn.id})">
+                <div class="flex items-center gap-3">
+                    <img src="${conn.profile_picture}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                    <div>
+                        <p class="font-semibold text-sm text-gray-900">${window.PostUtils.escapeHtml(conn.name)}</p>
+                        <p class="text-xs text-gray-500 truncate max-w-[150px]">${window.PostUtils.escapeHtml(conn.major || '')}</p>
+                    </div>
+                </div>
+                <button class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-full">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    filterShareConnections(query) {
+        if (!this.shareConnections) return;
+        const lower = query.toLowerCase();
+        const filtered = this.shareConnections.filter(c => c.name.toLowerCase().includes(lower));
+        this.renderShareConnections(filtered);
+    }
+
+    async sendShare(recipientId) {
+        const modal = document.getElementById('share-modal');
+        const postData = JSON.parse(modal.dataset.postData || '{}');
+        
+        // Construct share payload
+        const content = `[POST_SHARE]${JSON.stringify(postData)}`;
+        
+        try {
+            const res = await fetch('/api/chats/send_message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    recipient_id: recipientId,
+                    content: content
+                })
+            });
+            
+            if (res.ok) {
+                this.showToast('Post shared successfully!', 'success');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            } else {
+                throw new Error('Failed to share');
+            }
+        } catch (e) {
+            this.showToast('Failed to share post', 'error');
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════

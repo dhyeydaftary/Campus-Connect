@@ -1,7 +1,11 @@
-from flask import Blueprint, request, jsonify, session
-from models import db, User, Conversation, Message
+import os
+import json
+from flask import Blueprint, request, jsonify, session, current_app
+from models import db, User, Conversation, Message, Connection
+from werkzeug.utils import secure_filename
 from sqlalchemy import or_, and_, func, case, desc
 from sqlalchemy.orm import joinedload
+from datetime import datetime, timezone
 
 chat_bp = Blueprint('chat', __name__)
 
@@ -33,20 +37,24 @@ def get_chats():
         func.max(Message.id).label('last_msg_id')
     ).group_by(Message.conversation_id).subquery()
 
-    last_msg_content = db.session.query(
+    last_msg_details = db.session.query(
         Message.conversation_id,
-        Message.content
+        Message.content,
+        Message.sender_id,
+        Message.is_read
     ).join(
         last_msg_subq, 
         Message.id == last_msg_subq.c.last_msg_id
-    ).subquery().alias('last_msg_content_subq') # Alias for clarity
+    ).subquery().alias('last_msg_details_subq') # Alias for clarity
 
     # 3. Main Query
     results = db.session.query(
         Conversation, 
         User,
         func.coalesce(unread_subq.c.unread_count, 0),
-        last_msg_content.c.content
+        last_msg_details.c.content,
+        last_msg_details.c.sender_id,
+        last_msg_details.c.is_read
     ).join(
         User,
         or_(
@@ -56,24 +64,45 @@ def get_chats():
     ).outerjoin(
         unread_subq, Conversation.id == unread_subq.c.conversation_id
     ).outerjoin(
-        last_msg_content, Conversation.id == last_msg_content.c.conversation_id
+        last_msg_details, Conversation.id == last_msg_details.c.conversation_id
     ).filter(
-        last_msg_content.c.content != None,  # Only include conversations with messages
+        last_msg_details.c.content != None,  # Only include conversations with messages
         User.account_type != 'admin',  # Exclude admin from chat list
         or_(Conversation.user1_id == user_id, Conversation.user2_id == user_id)
     ).order_by(Conversation.updated_at.desc()).all()
 
     chats_data = []
-    for conversation, partner, unread, last_msg_text in results:
+    for conversation, partner, unread, last_msg_text, last_msg_sender_id, last_msg_is_read in results:
         
+        # Parse attachment for preview
+        display_message = last_msg_text
+        if last_msg_text and last_msg_text.startswith('[ATTACHMENT]'):
+            try:
+                data = json.loads(last_msg_text[12:])
+                if data.get('caption'):
+                    display_message = data.get('caption')
+                else:
+                    display_message = 'Sent a photo' if data.get('type') == 'image' else 'Sent a document'
+            except:
+                display_message = 'Sent an attachment'
+        elif display_message and display_message.startswith('[POST_SHARE]'):
+            try:
+                data = json.loads(display_message[12:])
+                author = data.get('authorName', 'someone')
+                display_message = f"Shared a post by {author}"
+            except:
+                display_message = "Shared a post"
+
         chats_data.append({
             "conversation_id": conversation.id,
             "partner_id": partner.id,
             "partner_name": partner.full_name,
             "partner_avatar": partner.profile_picture or f"https://ui-avatars.com/api/?name={partner.full_name}",
-            "last_message": last_msg_text,
+            "last_message": display_message,
             "last_message_at": conversation.updated_at.isoformat() if conversation.updated_at else None,
-            "unread_count": unread
+            "unread_count": unread,
+            "last_msg_is_own": last_msg_sender_id == user_id,
+            "last_msg_is_read": last_msg_is_read
         })
 
     return jsonify(chats_data), 200
@@ -124,12 +153,42 @@ def start_chat():
             "partner_avatar": partner.profile_picture or f"https://ui-avatars.com/api/?name={partner.full_name}"
         }), 200
     else:
+        # Create new conversation
+        new_conversation = Conversation(user1_id=u1_id, user2_id=u2_id)
+        db.session.add(new_conversation)
+        db.session.commit()
+
         return jsonify({
-            "temp_user_id": recipient.id,
-            "temp_user_name": recipient.full_name,
-            "temp_user_avatar": recipient.profile_picture or f"https://ui-avatars.com/api/?name={recipient.full_name}",
-            "status": "new"
-        }), 200
+            "conversation_id": new_conversation.id,
+            "status": "created",
+            "partner_id": recipient.id,
+            "partner_name": recipient.full_name,
+            "partner_avatar": recipient.profile_picture or f"https://ui-avatars.com/api/?name={recipient.full_name}"
+        }), 201
+
+# 2.5) GET /api/chats/<conversation_id> (Get details for specific chat, even if empty)
+@chat_bp.route('/api/chats/<int:conversation_id>', methods=['GET'])
+def get_chat_details(conversation_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    conversation = db.session.get(Conversation, conversation_id)
+    if not conversation:
+        return jsonify({"error": "Conversation not found"}), 404
+        
+    if user_id not in [conversation.user1_id, conversation.user2_id]:
+        return jsonify({"error": "Access denied"}), 403
+        
+    partner_id = conversation.user2_id if conversation.user1_id == user_id else conversation.user1_id
+    partner = db.session.get(User, partner_id)
+    
+    return jsonify({
+        "conversation_id": conversation.id,
+        "partner_id": partner.id,
+        "partner_name": partner.full_name,
+        "partner_avatar": partner.profile_picture or f"https://ui-avatars.com/api/?name={partner.full_name}",
+    }), 200
 
 # 3) GET /api/messages/<conversation_id>
 @chat_bp.route('/api/messages/<int:conversation_id>', methods=['GET'])
@@ -241,3 +300,98 @@ def mark_messages_read(conversation_id):
     count = Message.mark_conversation_as_read(conversation_id, user_id)
     
     return jsonify({"success": True, "marked_count": count}), 200
+
+# 6) POST /api/chat/upload
+@chat_bp.route('/api/chat/upload', methods=['POST'])
+def upload_chat_attachment():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    if file:
+        filename = secure_filename(file.filename)
+        import time
+        timestamp = int(time.time())
+        unique_filename = f"chat_{session['user_id']}_{timestamp}_{filename}"
+        
+        ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+        file_type = 'image' if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp'] else 'document'
+        
+        subfolder = 'chat_images' if file_type == 'image' else 'chat_docs'
+        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'chat', subfolder)
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        file.save(os.path.join(upload_folder, unique_filename))
+        
+        return jsonify({
+            "url": f"/static/uploads/chat/{subfolder}/{unique_filename}",
+            "type": file_type,
+            "original_name": filename
+        })
+
+# 7) POST /api/chats/send_message (HTTP endpoint for sharing/sending)
+@chat_bp.route('/api/chats/send_message', methods=['POST'])
+def send_message_http():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    data = request.get_json()
+    recipient_id = data.get('recipient_id')
+    content = data.get('content')
+    
+    if not recipient_id or not content:
+        return jsonify({"error": "Recipient and content required"}), 400
+        
+    try:
+        # Get or create conversation
+        u1_id, u2_id = (user_id, int(recipient_id)) if user_id < int(recipient_id) else (int(recipient_id), user_id)
+        
+        conversation = Conversation.query.filter_by(user1_id=u1_id, user2_id=u2_id).first()
+        
+        if not conversation:
+            conversation = Conversation(user1_id=u1_id, user2_id=u2_id)
+            db.session.add(conversation)
+            db.session.commit()
+            
+        # Create message
+        new_msg = Message(
+            conversation_id=conversation.id,
+            sender_id=user_id,
+            receiver_id=int(recipient_id),
+            content=content,
+            created_at=datetime.now(timezone.utc),
+            is_read=False
+        )
+        db.session.add(new_msg)
+        conversation.updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+        
+        # Emit socket event if socketio is available
+        socketio = current_app.extensions.get('socketio')
+        if socketio:
+            sender = db.session.get(User, user_id)
+            payload = {
+                "id": new_msg.id,
+                "conversation_id": conversation.id,
+                "sender_id": user_id,
+                "sender_name": sender.full_name,
+                "sender_avatar": sender.profile_picture or f"https://ui-avatars.com/api/?name={sender.full_name}",
+                "content": content,
+                "created_at": new_msg.created_at.isoformat(),
+                "is_read": False,
+                "is_own": False
+            }
+            socketio.emit('new_message', payload, room=f"chat_{conversation.id}")
+            
+        return jsonify({"success": True}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

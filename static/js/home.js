@@ -197,6 +197,44 @@ function closeComments(event) {
     }
 }
 
+// Logic: Submit Comment
+async function submitComment() {
+    const input = document.getElementById('comment-input');
+    const postId = input.dataset.postId;
+    const text = input.value.trim();
+    
+    if (!text || !postId) return;
+    
+    try {
+        const response = await fetch(`/api/posts/${postId}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        });
+        
+        if (!response.ok) throw new Error('Failed to post comment');
+        
+        input.value = '';
+        
+        // Refresh comments
+        if (window.feedLoader) {
+            const postIndex = window.feedLoader.posts.findIndex(p => p.id == postId);
+            if (postIndex >= 0) {
+                // Update count locally
+                const post = window.feedLoader.posts[postIndex];
+                if (post.commentsCount !== undefined) post.commentsCount++;
+                else if (post.comments_count !== undefined) post.comments_count++;
+                
+                window.feedLoader.renderPosts();
+                window.feedLoader.openComments(postIndex);
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error posting comment:', error);
+        showToast('Failed to post comment', 'error');
+    }
+}
 
 // ============================================
 // EVENTS SYSTEM

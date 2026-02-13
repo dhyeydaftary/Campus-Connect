@@ -343,6 +343,22 @@
         </div>
     </div>
 
+    <!-- Share Post Modal -->
+    <div id="share-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50" onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-white w-full max-w-md rounded-xl shadow-xl flex flex-col max-h-[80vh] mx-4">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-gray-900">Share Post</h3>
+                <button onclick="document.getElementById('share-modal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4 border-b border-gray-100">
+                <input type="text" id="share-search" placeholder="Search connections..." class="w-full px-4 py-2 bg-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            </div>
+            <div id="share-connections-list" class="flex-1 overflow-y-auto p-2 space-y-1 min-h-[200px]">
+                <!-- Connections loaded via JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 

@@ -182,7 +182,7 @@ async function renderConnections() {
             </div>
           </div>
           <div class="flex gap-2 ml-4">
-            <button class="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2">
+            <button onclick="startMessage(${conn.id}, this)" class="message-btn px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2" data-user-id="${conn.id}">
               <i class="fas fa-paper-plane"></i>
             </button>
             ${isOwnProfile ? `
@@ -220,6 +220,9 @@ async function renderConnections() {
             </div>
           </div>
           <div class="flex gap-2 ml-4">
+            <button onclick="startMessage(${req.sender.id}, this)" class="message-btn px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2" data-user-id="${req.sender.id}">
+              <i class="fas fa-paper-plane"></i>
+            </button>
             <button onclick="acceptConnectionRequest(${req.request_id})" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Accept</button>
             <button onclick="rejectConnectionRequest(${req.request_id})" class="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">Reject</button>
           </div>
@@ -252,9 +255,14 @@ async function renderConnections() {
               <p class="text-sm text-muted-foreground truncate">${req.receiver.email}</p>
             </div>
           </div>
-          <button class="ml-4 px-4 py-2 border border-border rounded-lg text-sm font-medium text-muted-foreground cursor-default bg-muted/50">
-            Request Sent
-          </button>
+          <div class="flex gap-2 ml-4">
+            <button onclick="startMessage(${req.receiver.id}, this)" class="message-btn px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2" data-user-id="${req.receiver.id}">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+            <button class="px-4 py-2 border border-border rounded-lg text-sm font-medium text-muted-foreground cursor-default bg-muted/50">
+              Request Sent
+            </button>
+          </div>
         </div>
       `).join('');
 
@@ -281,9 +289,14 @@ async function renderConnections() {
               <p class="text-sm text-muted-foreground truncate">${user.email}</p>
             </div>
           </div>
-          <button onclick="sendConnectionRequest(${user.id})" class="ml-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-            Connect
-          </button>
+          <div class="flex gap-2 ml-4">
+            <button onclick="startMessage(${user.id}, this)" class="message-btn px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2" data-user-id="${user.id}">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+            <button onclick="sendConnectionRequest(${user.id})" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+              Connect
+            </button>
+          </div>
         </div>
       `).join('');
     }
@@ -1108,7 +1121,8 @@ function renderProfileActions() {
         ${connectButtonText}
       </button>
       <button
-        class="px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2">
+        onclick="startMessage(${profileData.user.id}, this)"
+        class="message-btn px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2" data-user-id="${profileData.user.id}">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -1172,6 +1186,40 @@ function setupAvatarUpload(isOwnProfile) {
                 container.classList.remove('opacity-50');
             }
         });
+    }
+}
+
+async function startMessage(userId, btnElement) {
+    // UI Loading state
+    const originalContent = btnElement.innerHTML;
+    btnElement.disabled = true;
+    btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const response = await fetch('/api/chats/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipient_id: userId })
+        });
+
+        if (response.status === 403) {
+            alert("You must be connected to message this user");
+            return;
+        }
+
+        if (!response.ok) throw new Error('Failed to start chat');
+
+        const data = await response.json();
+        window.location.href = `/messages?conversation=${data.conversation_id}`;
+
+    } catch (error) {
+        console.error(error);
+        alert('Error starting chat');
+    } finally {
+        if (btnElement) {
+            btnElement.disabled = false;
+            btnElement.innerHTML = originalContent;
+        }
     }
 }
 
@@ -1252,7 +1300,7 @@ async function submitComment() {
     if (!text || !postId) return;
     
     try {
-        const response = await fetch(`/api/posts/${postId}/comment`, {
+        const response = await fetch(`/api/posts/${postId}/comments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text })
@@ -1264,6 +1312,12 @@ async function submitComment() {
         
         const postIndex = window.feedLoader.posts.findIndex(p => p.id == postId);
         if (postIndex >= 0) {
+            // Update count locally
+            const post = window.feedLoader.posts[postIndex];
+            if (post.commentsCount !== undefined) post.commentsCount++;
+            else if (post.comments_count !== undefined) post.comments_count++;
+            
+            window.feedLoader.renderPosts();
             window.feedLoader.openComments(postIndex);
         }
         
