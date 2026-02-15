@@ -1,3 +1,6 @@
+let currentStatus = 'upcoming';
+let currentEvents = [];
+
 document.addEventListener('DOMContentLoaded', () => {
     loadEvents();
     setupFormHandlers();
@@ -30,18 +33,40 @@ function parseAsUTC(dateStr) {
     return new Date(dateStr.replace(' ', 'T') + 'Z');
 }
 
-function loadEvents() {
-    fetch('/admin/api/events/upcoming')
-        .then(res => res.json())
-        .then(data => renderEvents(data, 'upcoming-events-list', true));
+function switchTab(status) {
+    if (currentStatus === status) return;
+    currentStatus = status;
 
-    fetch('/admin/api/events/past')
-        .then(res => res.json())
-        .then(data => renderEvents(data, 'past-events-list', false));
+    // Update Tab UI
+    const upcomingTab = document.getElementById('tab-upcoming');
+    const pastTab = document.getElementById('tab-past');
+    const activeClass = "px-4 py-2 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 focus:outline-none transition-colors duration-200";
+    const inactiveClass = "px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors duration-200";
+
+    if (status === 'upcoming') {
+        upcomingTab.className = activeClass;
+        pastTab.className = inactiveClass;
+    } else {
+        upcomingTab.className = inactiveClass;
+        pastTab.className = activeClass;
+    }
+
+    loadEvents();
 }
 
-function renderEvents(events, containerId, isUpcoming) {
-    const container = document.getElementById(containerId);
+function loadEvents() {
+    const container = document.getElementById('events-list');
+    container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+
+    fetch(`/admin/api/events/list?status=${currentStatus}`)
+        .then(res => res.json())
+        .then(data => renderEvents(data));
+}
+
+function renderEvents(events) {
+    currentEvents = events;
+    const container = document.getElementById('events-list');
+    const isUpcoming = currentStatus === 'upcoming';
     container.innerHTML = '';
 
     if (events.length === 0) {
@@ -87,6 +112,10 @@ function renderEvents(events, containerId, isUpcoming) {
         `;
         container.appendChild(strip);
     });
+}
+
+function resetForm() {
+    document.getElementById('event-form').reset();
 }
 
 // --- CREATE EVENT ---
@@ -184,15 +213,8 @@ function setupFormHandlers() {
 // Let's fetch fresh list and cache it.
 
 async function openEditModal(id) {
-    // Find event in DOM or fetch. Since we don't have a "get single event" API in the prompt requirements,
-    // we will rely on the data we have or add a get route.
-    // However, the prompt asked for "Update upcoming event" API.
-    // I'll iterate through the list data which I should store.
-    
-    // Re-fetch list to get data (or store it globally)
-    const res = await fetch('/admin/api/events/upcoming');
-    const events = await res.json();
-    const event = events.find(e => e.id === id);
+    // Use locally cached events
+    const event = currentEvents.find(e => e.id === id);
 
     if (!event) return;
 
@@ -215,15 +237,7 @@ async function openEditModal(id) {
 async function openViewModal(id) {
     // Fetch details + participants
     // We can use the list data for basic details
-    const resList = await fetch('/admin/api/events/upcoming'); // Check upcoming
-    let events = await resList.json();
-    let event = events.find(e => e.id === id);
-    
-    if (!event) {
-        const resPast = await fetch('/admin/api/events/past'); // Check past
-        events = await resPast.json();
-        event = events.find(e => e.id === id);
-    }
+    const event = currentEvents.find(e => e.id === id);
 
     if (!event) return;
 

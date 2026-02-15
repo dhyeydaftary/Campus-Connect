@@ -2302,8 +2302,9 @@ def admin_dashboard_overview():
         total_users = User.query.count()
         active_users = User.query.filter_by(is_active=True).count()
         blocked_users = User.query.filter_by(is_active=False).count()
+        official_users = User.query.filter_by(account_type="official").count()
         total_posts = Post.query.count()
-        total_events = Event.query.count()
+        active_events = Event.get_active_count()
         total_official_and_club = User.query.filter(
             User.account_type.in_(["official", "club"])
         ).count()
@@ -2384,9 +2385,10 @@ def admin_dashboard_overview():
         return jsonify({
             "totalUsers": total_users,
             "activeUsers": active_users,
+            "officialUsers": official_users,
             "blockedUsers": blocked_users,
             "totalPosts": total_posts,
-            "totalEvents": total_events,
+            "activeEvents": active_events,
             "roleDistribution": role_distribution,
             "userGrowth": user_growth,
             "contentActivity": content_activity,
@@ -2741,18 +2743,17 @@ def seed_admin():
 # ADMIN EVENT MANAGEMENT ROUTES (TASK 1)
 # --------------------------------------------------
 
-@app.route("/admin/api/events/upcoming")
-def admin_get_upcoming_events():
+@app.route("/admin/api/events/list")
+def admin_get_events_list():
     admin_required()
+    status = request.args.get("status", "upcoming")
     now = datetime.now(timezone.utc)
-    events = Event.query.filter(Event.event_date >= now).order_by(Event.event_date.asc()).all()
-    return jsonify([_format_admin_event(e) for e in events])
-
-@app.route("/admin/api/events/past")
-def admin_get_past_events():
-    admin_required()
-    now = datetime.now(timezone.utc)
-    events = Event.query.filter(Event.event_date < now).order_by(Event.event_date.desc()).all()
+    
+    if status == "past":
+        events = Event.query.filter(Event.event_date < now).order_by(Event.event_date.desc()).all()
+    else:
+        events = Event.query.filter(Event.event_date >= now).order_by(Event.event_date.asc()).all()
+        
     return jsonify([_format_admin_event(e) for e in events])
 
 def _format_admin_event(event):

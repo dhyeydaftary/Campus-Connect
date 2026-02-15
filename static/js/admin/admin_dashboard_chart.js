@@ -21,10 +21,10 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             setText("total-users", data.totalUsers);
-            setText("active-users", data.activeUsers);
+            setText("official-users", data.officialUsers);
             setText("blocked-users", data.blockedUsers);
             setText("total-posts", data.totalPosts);
-            setText("total-events", data.totalEvents);
+            setText("active-events", data.activeEvents);
 
             /* ===============================
                 CONTENT ACTIVITY (WORKING)
