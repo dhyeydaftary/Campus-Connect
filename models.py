@@ -703,6 +703,11 @@ class Event(db.Model):
         """Number of interested users"""
         return self.registrations.filter_by(status='interested').count()
     
+    @classmethod
+    def get_active_count(cls):
+        """Count of upcoming, non-cancelled events"""
+        return cls.query.filter(cls.event_date >= datetime.now(timezone.utc), cls.is_cancelled == False).count()
+
     __table_args__ = (
         # For "upcoming events" query
         Index("idx_events_date", "event_date"),  # 🆕

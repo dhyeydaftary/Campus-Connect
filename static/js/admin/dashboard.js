@@ -6,10 +6,10 @@ async function initDashboard() {
 
     // Update KPIs
     document.getElementById('total-users').textContent = data.totalUsers.toLocaleString();
-    document.getElementById('active-users').textContent = data.activeUsers.toLocaleString();
+    document.getElementById('official-users').textContent = data.officialUsers.toLocaleString();
     document.getElementById('blocked-users').textContent = data.blockedUsers.toLocaleString();
     document.getElementById('total-posts').textContent = data.totalPosts.toLocaleString();
-    document.getElementById('total-events').textContent = data.totalEvents.toLocaleString();
+    document.getElementById('active-events').textContent = data.activeEvents.toLocaleString();
     // User Growth Chart
     const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
     userGrowthChart = new Chart(userGrowthCtx, {

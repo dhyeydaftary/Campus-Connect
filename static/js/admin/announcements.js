@@ -13,7 +13,7 @@ function injectTabs() {
                 Active Announcements
             </button>
             <button id="tab-deleted" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors duration-200">
-                Recycle Bin <i class="fas fa-trash-alt ml-1"></i>
+                Past Announcements <i class="fas fa-history ml-1"></i>
             </button>
         </div>
     `;
@@ -78,7 +78,7 @@ function renderAnnouncements(announcements) {
     if (announcements.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                ${currentStatus === 'active' ? 'No active announcements.' : 'Recycle bin is empty.'}
+                ${currentStatus === 'active' ? 'No active announcements.' : 'No past announcements found.'}
             </div>
         `;
         return;
@@ -91,8 +91,8 @@ function renderAnnouncements(announcements) {
                 <button onclick="editAnnouncement(${ann.id})" class="text-blue-600 hover:text-blue-800 p-1" title="Edit">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteAnnouncement(${ann.id})" class="text-red-600 hover:text-red-800 p-1" title="Move to Recycle Bin">
-                    <i class="fas fa-trash"></i>
+                <button onclick="deleteAnnouncement(${ann.id})" class="text-red-600 hover:text-red-800 p-1" title="Move to Past">
+                    <i class="fas fa-archive"></i>
                 </button>
             `;
         } else {
@@ -224,18 +224,18 @@ function injectDeleteModal() {
     <div id="delete-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
         <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden transform transition-all">
             <div class="p-6">
-                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
-                    <i class="fas fa-triangle-exclamation text-red-600 text-2xl"></i>
+                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-yellow-100 rounded-full mb-4">
+                    <i class="fas fa-archive text-yellow-600 text-2xl"></i>
                 </div>
-                <h3 class="text-lg font-medium text-center text-gray-900 mb-2">Move to Recycle Bin</h3>
-                <p class="text-sm text-center text-gray-500">Are you sure you want to remove this announcement? You can restore it later from the Recycle Bin.</p>
+                <h3 class="text-lg font-medium text-center text-gray-900 mb-2">Archive Announcement</h3>
+                <p class="text-sm text-center text-gray-500">Are you sure you want to archive this announcement? It will be moved to Past Announcements.</p>
             </div>
             <div class="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-2">
                 <button onclick="closeDeleteModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                     Cancel
                 </button>
-                <button id="confirm-delete-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                    Move to Bin
+                <button id="confirm-delete-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                    Archive
                 </button>
                 
             </div>
