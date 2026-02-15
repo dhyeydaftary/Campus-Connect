@@ -20,7 +20,12 @@ class User(db.Model):
     
     # Authentication
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(255), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)
+    
+    # OTP & Student Details
+    enrollment_no = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    branch = db.Column(db.String(100), nullable=False, index=True)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
     
     # Profile
     first_name = db.Column(db.String(50), nullable=False)
@@ -71,7 +76,12 @@ class User(db.Model):
 
     def check_password(self, password: str) -> bool:
         """Verify password"""
-        return bcrypt.check_password_hash(self.password_hash, password)
+        if not self.password_hash:
+            return False
+        try:
+            return bcrypt.check_password_hash(self.password_hash, password)
+        except ValueError:
+            return False
     
     def get_connection_count(self):
         """
@@ -149,6 +159,31 @@ class User(db.Model):
         return user
 
 
+class OTPVerification(db.Model):
+    """
+    🆕 Handles OTP-based authentication.
+    Linked to User via enrollment_no.
+    """
+    __tablename__ = "otp_verifications"
+
+    id = db.Column(db.Integer, primary_key=True)
+    enrollment_no = db.Column(
+        db.String(50),
+        db.ForeignKey("users.enrollment_no", ondelete="CASCADE"),
+        nullable=False
+    )
+    otp = db.Column(db.String(6), nullable=False)
+    expiry_time = db.Column(db.DateTime(timezone=True), nullable=False)
+    is_used = db.Column(db.Boolean, default=False, nullable=False)
+    attempts = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    __table_args__ = (
+        Index("idx_otp_enrollment", "enrollment_no"),
+        Index("idx_otp_expiry", "expiry_time"),
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # SOCIAL GRAPH TABLES (🆕 NEW)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -178,7 +213,7 @@ class Connection(db.Model):
     QUERYING:
     To check if A and B are connected:
     WHERE (user_id = A AND connected_user_id = B) 
-       OR (user_id = B AND connected_user_id = A)
+        OR (user_id = B AND connected_user_id = A)
     
     POSTGRESQL OPTIMIZATION:
     - Add CHECK constraint: user_id < connected_user_id

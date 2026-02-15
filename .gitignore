@@ -34,5 +34,12 @@ static/uploads/**
 # Allow only .gitkeep files
 !static/uploads/**/.gitkeep
 
-# Local admin seeding script
+# Local seeding scripts
 seed_admin.py
+seed_users.py
+
+# Local database reset script
+reset_db.py
+
+# Local database file
+students.csv
