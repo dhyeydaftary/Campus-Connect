@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(override=True)
 
 from flask import (
     Flask,
@@ -12,14 +12,17 @@ from flask import (
     abort
 )
 
+from flask_mail import Mail, Message as EmailMessage
 from config import Config
-from models import db, bcrypt, User, Post, Like, Comment, Event, EventRegistration, Connection, ConnectionRequest, Notification, Skill, Experience, Education, AdminLog, Announcement, Conversation, Message
+from models import *
 from sqlalchemy import func, or_, and_, DateTime
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timezone, timedelta
 import re
 import time
+import random
+import string
 
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
@@ -48,8 +51,9 @@ if not app.config["SQLALCHEMY_DATABASE_URI"]:
 # Initialize extensions
 db.init_app(app)
 bcrypt.init_app(app)
+mail = Mail(app)
 
-socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
+socketio = SocketIO(app, cors_allowed_origins=[], manage_session=False) # In production, list specific domains
 
 # --------------------------------------------------
 # HELPER FUNCTIONS
@@ -156,6 +160,7 @@ init_socket_events(socketio)
 def home():
     return render_template("landing.html")
 
+
 @app.route("/login")
 def login_page():
     return render_template("login.html")
@@ -163,7 +168,8 @@ def login_page():
 
 @app.route("/signup")
 def signup_page():
-    return render_template("signup.html")
+    # 🚫 No signup page allowed in this system
+    return redirect(url_for("login_page"))
 
 
 @app.route("/home")
@@ -268,54 +274,163 @@ def profile_page(user_id):
 # API ROUTES (JSON)
 # --------------------------------------------------
 
-@app.route("/api/signup", methods=["POST"])
-def signup():
-    data = request.json
+def generate_otp():
+    """Generate a 6-digit numeric OTP"""
+    return ''.join(random.choices(string.digits, k=6))
 
-    required_fields = ["first_name", "last_name", "email", "password", "university", "major", "batch"]
-    if not data or not all(k in data for k in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
-
-    email = data["email"].strip().lower()
-
-    if User.query.filter_by(email=email).first():
-        return jsonify({"error": "User already exists"}), 409
+def send_otp(email, otp):
+    """
+    Send OTP via email or print to console in development.
+    """
+    if app.debug:
+        print(f"\n[DEV MODE OTP] {email}: {otp}\n")
+        return True
 
     try:
-        new_user = User.create_from_json(data)
-        db.session.add(new_user)
-        db.session.commit()
-        return jsonify({"message": "User registered successfully"}), 201
-
-    except Exception:
-        db.session.rollback()
-        return jsonify({"error": "Internal server error"}), 500
-
+        msg = EmailMessage("Campus Connect Login OTP", recipients=[email])
+        msg.body = f"Your OTP for Campus Connect login is: {otp}\n\nThis OTP is valid for 10 minutes."
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f"❌ Error sending email: {e}")
+        return False
 
 
-@app.route("/api/login", methods=["POST"])
-def login():
+@app.route("/api/auth/enrollment-suggestions", methods=["POST"])
+def get_enrollment_suggestions():
+    """Fetch enrollment suggestions based on branch and partial input"""
     data = request.json
+    branch = data.get("branch", "").strip()
+    query = data.get("query", "").strip()
 
-    if not data:
-        return jsonify({"error": "Invalid request"}), 400
+    if not branch or not query:
+        return jsonify({"suggestions": []})
 
-    email = data.get("email", "").strip().lower()
-    password = data.get("password")
+    # Filter users by branch and partial enrollment number
+    # Limit to 5 suggestions for performance
+    users = User.query.filter(
+        User.branch == branch,
+        User.enrollment_no.ilike(f"{query}%"),
+        User.is_active == True
+    ).limit(5).all()
 
-    if not email or not password:
-        return jsonify({"error": "Email and password required"}), 400
+    suggestions = [u.enrollment_no for u in users]
+    return jsonify({"suggestions": suggestions})
 
-    user = User.query.filter_by(email=email).first()
 
-    if not user or not user.check_password(password):
-        return jsonify({"error": "Invalid email or password"}), 401
+@app.route("/api/auth/student-details", methods=["POST"])
+def get_student_details():
+    """Fetch student name and email by enrollment number"""
+    data = request.json
+    enrollment_no = data.get("enrollment_no", "").strip()
 
-    # Check if user account is active
+    user = User.query.filter_by(enrollment_no=enrollment_no).first()
+
+    if not user:
+        return jsonify({"error": "Student not found"}), 404
+
+    return jsonify({
+        "full_name": user.full_name,
+        "email": user.email,
+        "has_password": user.password_hash is not None
+    })
+
+
+@app.route("/api/auth/request-otp", methods=["POST"])
+def request_otp():
+    """Step 1: Validate user and send OTP"""
+    data = request.json
+    enrollment_no = data.get("enrollment_no", "").strip()
+    branch = data.get("branch", "").strip()
+
+    if not enrollment_no or not branch:
+        return jsonify({"error": "Enrollment number and branch are required"}), 400
+
+    # Find user (must match both enrollment and branch for security)
+    user = User.query.filter_by(enrollment_no=enrollment_no).first()
+
+    if not user:
+        return jsonify({"error": "Student not found. Please contact administration."}), 404
+    
+    # Case-insensitive branch check
+    if user.branch.lower() != branch.lower():
+        return jsonify({"error": "Enrollment number does not match the selected branch."}), 400
+
     if not user.is_active:
-        return jsonify({"error": "Account has been disabled. Please contact administrator."}), 403
+        return jsonify({"error": "Account is disabled."}), 403
+
+    # 🔒 Security: Prevent OTP login if password is already set
+    if user.password_hash is not None:
+        return jsonify({"error": "Password already set. Please login with password."}), 400
+
+    # 🔒 Security: Rate Limiting (1 OTP per minute)
+    last_otp = OTPVerification.query.filter_by(enrollment_no=user.enrollment_no).order_by(OTPVerification.created_at.desc()).first()
+    if last_otp and last_otp.created_at > datetime.now(timezone.utc) - timedelta(minutes=1):
+        return jsonify({"error": "Please wait 1 minute before requesting a new OTP."}), 429
+
+    # Generate and save OTP
+    otp_code = generate_otp()
+    expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
+
+    otp_entry = OTPVerification(
+        enrollment_no=user.enrollment_no,
+        otp=otp_code,
+        expiry_time=expiry
+    )
+    db.session.add(otp_entry)
+    db.session.commit()
+
+    # Send Email
+    if not send_otp(user.email, otp_code):
+        return jsonify({"error": "Failed to send OTP. Please try again."}), 500
+
+    return jsonify({
+        "message": "OTP sent successfully",
+        "email": user.email,
+        "expiry_time": expiry.isoformat()
+    }), 200
+
+
+@app.route("/api/auth/verify-otp", methods=["POST"])
+def verify_otp():
+    """Step 2: Verify OTP and log in"""
+    data = request.json
+    enrollment_no = data.get("enrollment_no", "").strip()
+    otp_code = data.get("otp", "").strip()
+
+    # 🔒 Security: Fetch active OTP record first to handle attempts
+    otp_record = OTPVerification.query.filter_by(
+        enrollment_no=enrollment_no,
+        is_used=False
+    ).filter(OTPVerification.expiry_time > datetime.now(timezone.utc)).with_for_update().first()
+
+    if not otp_record:
+        return jsonify({"error": "No active OTP found or OTP expired"}), 400
+
+    # 🔒 Security: Check attempts
+    if otp_record.attempts >= 5:
+        return jsonify({"error": "Too many failed attempts. Please request a new OTP."}), 400
+
+    # 🔒 Security: Verify Code
+    if otp_record.otp != otp_code:
+        otp_record.attempts += 1
+        db.session.commit()
+        return jsonify({"error": "Invalid or expired OTP"}), 400
+
+    # Mark OTP as used
+    otp_record.is_used = True
+    
+    # Get User
+    user = User.query.filter_by(enrollment_no=enrollment_no).first()
+    
+    # Mark user as verified if first time
+    if not user.is_verified:
+        user.is_verified = True
+        
+    db.session.commit()
 
     # Create session
+    session.clear() # 🔒 Security: Prevent session fixation
     session["user_id"] = user.id
     session["user_name"] = user.full_name
     session["account_type"] = user.account_type
@@ -329,6 +444,145 @@ def login():
         "redirect_url": redirect_url
     }), 200
 
+
+@app.route("/api/auth/login", methods=["POST"])
+def login_with_password():
+    """Unified Password Login for Admin and Students"""
+    data = request.json
+    role = data.get("role")
+    password = data.get("password")
+
+    user = None
+    
+    if role == "admin":
+        email = data.get("email", "").strip().lower()
+        user = User.query.filter_by(email=email, account_type="admin").first()
+    elif role == "student":
+        enrollment = data.get("enrollment_no", "").strip()
+        user = User.query.filter_by(enrollment_no=enrollment, account_type="student").first()
+    
+    if not user or not user.check_password(password):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    if not user.is_active:
+        return jsonify({"error": "Account is disabled"}), 403
+
+    session.clear() # 🔒 Security: Prevent session fixation
+    session["user_id"] = user.id
+    session["user_name"] = user.full_name
+    session["account_type"] = user.account_type
+
+    return jsonify({
+        "message": "Login successful",
+        "redirect_url": "/admin/dashboard" if user.account_type == "admin" else "/home"
+    }), 200
+
+
+@app.route("/api/auth/forgot-password/request-otp", methods=["POST"])
+def forgot_password_request_otp():
+    """Forgot Password Step 1: Request OTP"""
+    data = request.json
+    identifier = data.get("identifier", "").strip()
+    
+    # Default expiry (5 mins) to return even if user not found
+    expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
+    
+    if not identifier:
+        return jsonify({"message": "If an account exists, an OTP has been sent.", "expiry_time": expiry.isoformat()}), 200
+        
+    # Find user by Enrollment OR Email
+    user = User.query.filter(
+        or_(User.enrollment_no == identifier, User.email == identifier)
+    ).first()
+    
+    # Security: Always return 200 to prevent user enumeration
+    if user and user.is_active:
+        # Rate limiting: Check last OTP time
+        last_otp = OTPVerification.query.filter_by(enrollment_no=user.enrollment_no).order_by(OTPVerification.created_at.desc()).first()
+        if last_otp and last_otp.created_at > datetime.now(timezone.utc) - timedelta(minutes=1):
+             return jsonify({"message": "If an account exists, an OTP has been sent.", "expiry_time": expiry.isoformat()}), 200
+             
+        otp_code = generate_otp()
+        
+        otp_entry = OTPVerification(
+            enrollment_no=user.enrollment_no,
+            otp=otp_code,
+            expiry_time=expiry
+        )
+        db.session.add(otp_entry)
+        db.session.commit()
+        
+        send_otp(user.email, otp_code)
+        
+    return jsonify({"message": "If an account exists, an OTP has been sent.", "expiry_time": expiry.isoformat()}), 200
+
+
+@app.route("/api/auth/forgot-password/verify-otp", methods=["POST"])
+def forgot_password_verify_otp():
+    """Forgot Password Step 2: Verify OTP (UI Check)"""
+    data = request.json
+    identifier = data.get("identifier", "").strip()
+    otp_code = data.get("otp", "").strip()
+    
+    user = User.query.filter(
+        or_(User.enrollment_no == identifier, User.email == identifier)
+    ).first()
+    
+    if not user:
+        return jsonify({"error": "Invalid OTP"}), 400
+        
+    otp_record = OTPVerification.query.filter_by(
+        enrollment_no=user.enrollment_no,
+        is_used=False
+    ).filter(OTPVerification.expiry_time > datetime.now(timezone.utc)).order_by(OTPVerification.created_at.desc()).first()
+    
+    if not otp_record:
+        return jsonify({"error": "Invalid or expired OTP"}), 400
+        
+    if otp_record.attempts >= 5:
+        return jsonify({"error": "Too many failed attempts"}), 400
+        
+    if otp_record.otp != otp_code:
+        otp_record.attempts += 1
+        db.session.commit()
+        return jsonify({"error": "Invalid OTP"}), 400
+        
+    return jsonify({"message": "OTP Verified"}), 200
+
+
+@app.route("/api/auth/forgot-password/reset-password", methods=["POST"])
+def forgot_password_reset():
+    """Forgot Password Step 3: Reset Password"""
+    data = request.json
+    identifier = data.get("identifier", "").strip()
+    otp_code = data.get("otp", "").strip()
+    new_password = data.get("new_password", "")
+    
+    if len(new_password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+        
+    user = User.query.filter(
+        or_(User.enrollment_no == identifier, User.email == identifier)
+    ).first()
+    
+    if not user:
+        return jsonify({"error": "Invalid request"}), 400
+        
+    # Re-verify OTP (Critical for security)
+    otp_record = OTPVerification.query.filter_by(
+        enrollment_no=user.enrollment_no,
+        is_used=False
+    ).filter(OTPVerification.expiry_time > datetime.now(timezone.utc)).order_by(OTPVerification.created_at.desc()).first()
+    
+    if not otp_record or otp_record.otp != otp_code:
+        return jsonify({"error": "Invalid or expired OTP"}), 400
+        
+    # Reset Password
+    user.set_password(new_password)
+    otp_record.is_used = True
+    db.session.commit()
+    
+    return jsonify({"message": "Password reset successfully"}), 200
 
 
 @app.route("/api/posts")
@@ -1017,7 +1271,7 @@ def get_suggestions():
         User.account_type != 'admin',
         User.university == current_user.university,
         User.major == current_user.major
-    ).limit(5).all()
+    ).order_by(func.random()).limit(5).all()
     
     # Priority 2: If not enough, add same university (any major)
     if len(suggestions) < 5:
@@ -1026,7 +1280,7 @@ def get_suggestions():
             User.account_type != 'admin',
             User.id.notin_([s.id for s in suggestions]),
             User.university == current_user.university
-        ).limit(5 - len(suggestions)).all()
+        ).order_by(func.random()).limit(5 - len(suggestions)).all()
         suggestions.extend(additional)
     
     # Priority 3: If still not enough, add anyone else
@@ -1035,7 +1289,7 @@ def get_suggestions():
             User.id.notin_(exclude_ids),
             User.account_type != 'admin',
             User.id.notin_([s.id for s in suggestions])
-        ).limit(5 - len(suggestions)).all()
+        ).order_by(func.random()).limit(5 - len(suggestions)).all()
         suggestions.extend(additional)
     
     # Step 5: Format response
@@ -1911,6 +2165,7 @@ def get_profile_data(user_id):
             'batch': profile_user.batch,
             'bio': getattr(profile_user, 'bio', None),
             'profile_picture': getattr(profile_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={profile_user.full_name}",
+            'has_password': profile_user.password_hash is not None,
             'member_since': profile_user.created_at.strftime('%B %Y')
         },
         'is_own_profile': is_own_profile,
@@ -2274,6 +2529,40 @@ def update_bio():
     db.session.commit()
 
     return jsonify({"message": "Bio updated", "bio": bio})
+
+
+@app.route("/api/profile/update-password", methods=["POST"])
+def update_password():
+    """Update user password securely"""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    user = db.session.get(User, session["user_id"])
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    data = request.json
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
+    
+    if not new_password or len(new_password) < 6:
+        return jsonify({"error": "New password must be at least 6 characters"}), 400
+        
+    if new_password != confirm_password:
+        return jsonify({"error": "Passwords do not match"}), 400
+        
+    # If user has a password set, verify it
+    if user.password_hash:
+        if not current_password:
+            return jsonify({"error": "Current password is required"}), 400
+        if not user.check_password(current_password):
+            return jsonify({"error": "Incorrect current password"}), 400
+            
+    user.set_password(new_password)
+    db.session.commit()
+    
+    return jsonify({"message": "Password updated successfully"}), 200
 
 
 # --------------------------------------------------
@@ -2713,31 +3002,45 @@ def admin_download_logs():
 
 
 def seed_admin():
-    admin = User.query.filter_by(account_type="admin").first()
-    if admin:
-        return
-
-    email = os.environ.get("ADMIN_EMAIL")
+    email = os.environ.get("ADMIN_EMAIL", "").strip()
     password = os.environ.get("ADMIN_PASSWORD")
 
     if not email or not password:
+        return
+    print(f"⚙️ Seeding admin with email: {email}")
+
+    admin = User.query.filter_by(account_type="admin").first()
+    if admin:
+        # Update existing admin to ensure credentials match .env and hash is correct
+        admin.email = email.lower()
+        admin.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        db.session.commit()
+        print("✅ Admin account updated")
         return
 
     admin = User(
         first_name="Admin",
         last_name="User",
-        email=email,
-        password_hash=bcrypt.generate_password_hash(password),
+        email=email.lower(),
+        password_hash=bcrypt.generate_password_hash(password).decode('utf-8'),
         university="Campus Connect University",
         major="Administration",
         batch="N/A",
         account_type="admin",
-        is_active=True
+        is_active=True,
+        is_verified=True,  # Admin is trusted by default
+        enrollment_no="ADMIN001", # 🔧 Fix: Required field
+        branch="ADMINISTRATION"   # 🔧 Fix: Required field
     )
 
     db.session.add(admin)
     db.session.commit()
     print("✅ Default admin created")
+
+@app.cli.command("seed-admin")
+def seed_admin_command():
+    """Seeds/Updates the admin user via CLI using .env credentials."""
+    seed_admin()
 
 # --------------------------------------------------
 # ADMIN EVENT MANAGEMENT ROUTES (TASK 1)
@@ -2972,7 +3275,12 @@ def search_all():
 # --------------------------------------------------
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-        seed_admin()
+    # Prevent double execution with Flask reloader
+    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        with app.app_context():
+            db.create_all()
+            seed_admin()
+            from seed_users import seed_users
+            seed_users()
+        
     socketio.run(app, debug=True, host="0.0.0.0", port=5000)

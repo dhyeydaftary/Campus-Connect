@@ -379,6 +379,34 @@ async function openEditModal(type) {
       `;
       break;
 
+    case 'password':
+      title.textContent = 'Change Password';
+      const hasPassword = profileData.user.has_password;
+      content.innerHTML = `
+        <div class="space-y-4">
+          ${hasPassword ? `
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-1">Current Password</label>
+            <input type="password" id="currentPassword" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background focus:ring-2 focus:ring-primary/20 outline-none">
+          </div>
+          ` : `
+          <div class="bg-indigo-50 text-indigo-700 p-3 rounded-lg text-sm flex items-start gap-2">
+            <i class="fas fa-info-circle mt-0.5"></i>
+            <span>Set a password to enable password login instead of OTP.</span>
+          </div>
+          `}
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-1">New Password</label>
+            <input type="password" id="newPassword" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Min 6 characters">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-1">Confirm New Password</label>
+            <input type="password" id="confirmPassword" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background focus:ring-2 focus:ring-primary/20 outline-none">
+          </div>
+        </div>
+      `;
+      break;
+
     case 'skills':
       title.textContent = 'Edit Skills';
       const skills = profileData.skills || [];
@@ -508,6 +536,40 @@ async function saveModal() {
           document.getElementById('aboutText').textContent = bio || 'No bio available.';
           document.getElementById('aboutTabText').textContent = bio || 'No bio available.';
         }
+        break;
+
+      case 'password':
+        const currentPwdInput = document.getElementById('currentPassword');
+        const currentPassword = currentPwdInput ? currentPwdInput.value : null;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (newPassword !== confirmPassword) {
+            showToast('Passwords do not match', 'error');
+            return;
+        }
+        if (newPassword.length < 6) {
+            showToast('Password must be at least 6 characters', 'error');
+            return;
+        }
+
+        const pwdResponse = await fetch('/api/profile/update-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                current_password: currentPassword,
+                new_password: newPassword,
+                confirm_password: confirmPassword
+            })
+        });
+
+        if (!pwdResponse.ok) {
+            const data = await pwdResponse.json();
+            showToast(data.error || 'Failed to update password', 'error');
+            return;
+        }
+        
+        profileData.user.has_password = true; // Update local state
         break;
 
       case 'skills':
@@ -1088,7 +1150,12 @@ function renderProfileActions() {
     if (educationEditButton) educationEditButton.classList.remove('hidden');
 
     // Show edit profile button for own profile
-    actionsContainer.innerHTML = '';
+    actionsContainer.innerHTML = `
+      <button onclick="openEditModal('password')" 
+        class="px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2 text-sm">
+        <i class="fas fa-key"></i> Password
+      </button>
+    `;
   } else {
     // Hide edit buttons for other profiles
     if (aboutEditButton) aboutEditButton.classList.add('hidden');
