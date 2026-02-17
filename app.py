@@ -2717,6 +2717,7 @@ def admin_get_users():
         "username": user.full_name,
         "email": user.email,
         "role": user.account_type, # Frontend expects 'role'
+        "branch": user.branch,
         "status": "active" if user.is_active else "blocked", # Frontend expects 'status' string
         "joinDate": user.created_at.strftime('%Y-%m-%d')
     } for user in users]), 200

@@ -71,7 +71,8 @@ window.toggleUser = async function(userId) {
 function filterAndRenderUsers() {
     const searchTerm = document.getElementById('search-input').value.toLowerCase();
     const roleFilter = document.getElementById('role-filter').value;
-    let filtered = allUsers;
+    const branchFilter = document.getElementById('branch-filter').value;
+    let filtered = [...allUsers];
     if (searchTerm) {
         filtered = filtered.filter(user =>
             user.username.toLowerCase().includes(searchTerm) ||
@@ -81,11 +82,31 @@ function filterAndRenderUsers() {
     if (roleFilter) {
         filtered = filtered.filter(user => user.role === roleFilter);
     }
+    if (branchFilter) {
+        filtered = filtered.filter(user => user.branch === branchFilter);
+    }
+
+    // Default sort: Name (A-Z)
+    filtered.sort((a, b) => a.username.localeCompare(b.username));
+
     renderUsers(filtered);
 }
 // Initialize page
 async function initUsers() {
     allUsers = await API.getUsers();
+
+    // Initial sort
+    allUsers.sort((a, b) => a.username.localeCompare(b.username));
+
+    // Populate branch filter dynamically based on available users
+    const branches = [...new Set(allUsers.map(u => u.branch).filter(b => b))].sort();
+    const branchSelect = document.getElementById('branch-filter');
+    branches.forEach(branch => {
+        const option = document.createElement('option');
+        option.value = branch;
+        option.textContent = branch;
+        branchSelect.appendChild(option);
+    });
 
     document.getElementById('users-loading').style.display = 'none';
     document.getElementById('users-table').style.display = 'table';
@@ -94,6 +115,7 @@ async function initUsers() {
     // Add event listeners for filters
     document.getElementById('search-input').addEventListener('input', filterAndRenderUsers);
     document.getElementById('role-filter').addEventListener('change', filterAndRenderUsers);
+    document.getElementById('branch-filter').addEventListener('change', filterAndRenderUsers);
 }
 document.addEventListener('DOMContentLoaded', initUsers);
 
