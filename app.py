@@ -33,6 +33,7 @@ from flask import send_file
 from flask_socketio import SocketIO
 from chat_routes import chat_bp
 from chat_socket import init_socket_events
+from comment_queue import comment_queue_service
 
 # --------------------------------------------------
 # CREATE APP & LOAD CONFIGURATION
@@ -52,6 +53,9 @@ if not app.config["SQLALCHEMY_DATABASE_URI"]:
 db.init_app(app)
 bcrypt.init_app(app)
 mail = Mail(app)
+
+# Initialize Queue Service
+comment_queue_service.init_app(app)
 
 socketio = SocketIO(app, cors_allowed_origins=[], manage_session=False) # In production, list specific domains
 
@@ -158,19 +162,11 @@ init_socket_events(socketio)
 
 @app.route("/")
 def home():
-    if "user_id" in session:
-        if session.get("account_type") == "admin":
-            return redirect(url_for("admin_dashboard_page"))
-        return redirect(url_for("home_page"))
     return render_template("landing.html")
 
 
 @app.route("/login")
 def login_page():
-    if "user_id" in session:
-        if session.get("account_type") == "admin":
-            return redirect(url_for("admin_dashboard_page"))
-        return redirect(url_for("home_page"))
     return render_template("login.html")
 
 
@@ -971,7 +967,15 @@ def add_comment(post_id):
     db.session.add(comment)
     db.session.commit()
 
-    return jsonify({"message": "Comment added"}), 201
+    # QUEUE INTEGRATION: Offload notification/spam check to background queue
+    comment_queue_service.enqueue({
+        'comment_id': comment.id,
+        'text': comment.text,
+        'user_id': session["user_id"],
+        'post_id': post_id
+    })
+
+    return jsonify({"message": "Comment added (processing in background)"}), 201
 
 
 # --------------------------------------------------
@@ -3251,12 +3255,5 @@ if __name__ == "__main__":
             seed_admin()
             from seed_users import seed_users
             seed_users()
-            try:
-                from seed_users import seed_users
-                seed_users()
-            except ImportError:
-                print("⚠️ seed_users.py not found, skipping user seeding.")
-            except Exception as e:
-                print(f"⚠️ Error seeding users: {e}")
         
     socketio.run(app, debug=True, host="0.0.0.0", port=5000)
