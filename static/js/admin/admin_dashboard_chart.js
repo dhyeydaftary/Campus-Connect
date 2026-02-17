@@ -147,31 +147,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
             }
-
-            /* ===============================
-                TOP ACCOUNTS
-            =============================== */
-            if (Array.isArray(data.topAccounts)) {
-                const container = document.getElementById("top-accounts");
-                if (container) {
-                    container.innerHTML = "";
-                    data.topAccounts.forEach(acc => {
-                        const div = document.createElement("div");
-                        div.className = "account-item";
-                        div.innerHTML = `
-                            <div class="account-avatar">${acc.name[0]}</div>
-                            <div class="account-info">
-                                <div class="account-name">${acc.name}</div>
-                                <div class="account-type">${acc.type}</div>
-                            </div>
-                            <div class="account-followers">
-                                ${acc.followers.toLocaleString()} followers
-                            </div>
-                        `;
-                        container.appendChild(div);
-                    });
-                }
-            }
         })
         .catch(err => {
             console.error("Dashboard failed:", err);
