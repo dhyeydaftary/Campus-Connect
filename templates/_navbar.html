@@ -23,12 +23,12 @@
             <!-- Right Icons -->
             <div class="flex items-center space-x-6">
                 <!-- Home -->
-                <a href="/home" class="text-indigo-600 hover:text-indigo-700">
+                <a href="/home" class="{{ 'text-indigo-600' if request.path == '/home' else 'text-gray-600 hover:text-indigo-600' }} relative">
                     <i class="fas fa-home text-xl"></i>
                 </a>
 
                 <!-- Messages -->
-                <a href="/messages" class="text-gray-600 hover:text-indigo-600 relative">
+                <a href="/messages" class="{{ 'text-indigo-600' if request.path == '/messages' else 'text-gray-600 hover:text-indigo-600' }} relative">
                     <i class="fas fa-comment-dots text-xl"></i>
                     <span id="message-badge"
                         class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
