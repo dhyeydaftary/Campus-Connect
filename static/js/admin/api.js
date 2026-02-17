@@ -27,13 +27,6 @@ const mockData = {
             posts: [3200, 4100, 3800, 4500, 5200, 4800],
             events: [45, 52, 48, 61, 58, 72]
         },
-        topAccounts: [
-            { name: 'student Council', type: 'Official', followers: 8542 },
-            { name: 'Tech club', type: 'club', followers: 5234 },
-            { name: 'Sports Association', type: 'Official', followers: 4892 },
-            { name: 'Art Society', type: 'club', followers: 3654 },
-            { name: 'Drama club', type: 'club', followers: 2987 }
-        ],
         systemHealth: {
             api: { status: 'online', latency: 45 },
             database: { status: 'online', latency: 12 },

@@ -158,11 +158,19 @@ init_socket_events(socketio)
 
 @app.route("/")
 def home():
+    if "user_id" in session:
+        if session.get("account_type") == "admin":
+            return redirect(url_for("admin_dashboard_page"))
+        return redirect(url_for("home_page"))
     return render_template("landing.html")
 
 
 @app.route("/login")
 def login_page():
+    if "user_id" in session:
+        if session.get("account_type") == "admin":
+            return redirect(url_for("admin_dashboard_page"))
+        return redirect(url_for("home_page"))
     return render_template("login.html")
 
 
@@ -2630,39 +2638,6 @@ def admin_dashboard_overview():
         content_activity = get_content_activity()
         
         # ================================================================
-        # E) TOP OFFICIAL/CLUB ACCOUNTS BY EVENTS CREATED
-        # ================================================================
-        # Get users with account_type in ['official', 'club']
-        # Count their events and sort by count descending
-        top_creators_query = db.session.query(
-            User.id,
-            User.first_name,
-            User.last_name,
-            User.email,
-            User.account_type,
-            func.count(Event.id).label('events_count')
-        ).join(
-            Event, User.id == Event.user_id, isouter=True
-        ).filter(
-            User.account_type.in_(["official", "club"])
-        ).group_by(
-            User.id, User.first_name, User.last_name, User.email, User.account_type
-        ).order_by(
-            func.count(Event.id).desc()
-        ).limit(10).all()
-        
-        top_creators = [
-            {
-                "id": user_id,
-                "name": f"{first_name} {last_name}",
-                "type": account_type.capitalize(), # Frontend expects capitalized or specific format
-                "followers": events_count # Mapping events count to 'followers' for frontend compatibility
-            }
-            for user_id, first_name, last_name, email, account_type, events_count 
-            in top_creators_query
-        ]
-        
-        # ================================================================
         # FINAL RESPONSE
         # ================================================================
         return jsonify({
@@ -2674,8 +2649,7 @@ def admin_dashboard_overview():
             "activeEvents": active_events,
             "roleDistribution": role_distribution,
             "userGrowth": user_growth,
-            "contentActivity": content_activity,
-            "topAccounts": top_creators
+            "contentActivity": content_activity
         }), 200
         
     except Exception as e:
@@ -3277,5 +3251,12 @@ if __name__ == "__main__":
             seed_admin()
             from seed_users import seed_users
             seed_users()
+            try:
+                from seed_users import seed_users
+                seed_users()
+            except ImportError:
+                print("⚠️ seed_users.py not found, skipping user seeding.")
+            except Exception as e:
+                print(f"⚠️ Error seeding users: {e}")
         
     socketio.run(app, debug=True, host="0.0.0.0", port=5000)

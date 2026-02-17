@@ -135,18 +135,6 @@ async function initDashboard() {
         }
     });
 
-    // Top Accounts
-    const topAccountsHtml = data.topAccounts.map(account => `
-        <div class="account-item">
-            <div class="account-avatar">${account.name.charAt(0)}</div>
-            <div class="account-info">
-                <div class="account-name">${account.name}</div>
-                <div class="account-type">${account.type}</div>
-            </div>
-            <div class="account-followers">${account.followers.toLocaleString()} followers</div>
-        </div>
-    `).join('');
-    document.getElementById('top-accounts').innerHTML = topAccountsHtml;
     // System Health
     const healthHtml = Object.entries(data.systemHealth).map(([key, info]) => `
         <div class="status-indicator">
