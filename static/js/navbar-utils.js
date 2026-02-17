@@ -16,6 +16,17 @@ function toggleProfileDropdown() {
     }
 }
 
+function toggleMobileSearch() {
+    const searchBar = document.getElementById('mobile-search-bar');
+    if (searchBar) {
+        searchBar.classList.toggle('hidden');
+        if (!searchBar.classList.contains('hidden')) {
+            const input = document.getElementById('mobile-search-input');
+            if (input) setTimeout(() => input.focus(), 100);
+        }
+    }
+}
+
 // Close dropdown when clicking outside
 document.addEventListener('click', function (event) {
     const dropdown = document.getElementById('profile-dropdown');
@@ -209,68 +220,66 @@ document.addEventListener('click', function (event) {
 let lastSearchResults = { users: [], announcements: [] };
 
 function initSearch() {
-    // Robust selector strategy to find the search input
-    const searchInput = 
-        document.getElementById('search-input') || 
-        document.querySelector('input[type="search"]') || 
-        document.querySelector('input[name="q"]') ||
-        document.querySelector('input[placeholder*="Search"]');
+    // Find all search inputs (desktop and mobile)
+    const searchInputs = document.querySelectorAll('.global-search-input');
     
-    if (!searchInput) return;
-
-    // Prevent duplicate initialization
-    if (document.getElementById('search-results-dropdown')) return;
-
-    // Create results container
-    const resultsContainer = document.createElement('div');
-    resultsContainer.id = 'search-results-dropdown';
-    resultsContainer.className = 'absolute top-full left-0 w-full bg-white rounded-lg shadow-xl border border-gray-200 mt-2 hidden z-[100] overflow-hidden';
-    
-    // Append to parent (assuming parent is relative)
-    if (searchInput.parentElement) {
-        searchInput.parentElement.style.position = 'relative';
-        searchInput.parentElement.appendChild(resultsContainer);
-    }
+    if (searchInputs.length === 0) return;
 
     let debounceTimer;
 
-    // Prevent form submission on Enter
-    searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const query = e.target.value.trim();
-            if (query.length >= 2) {
-                performSearch(query, resultsContainer);
+    searchInputs.forEach(searchInput => {
+        // Prevent duplicate initialization
+        if (searchInput.dataset.searchInitialized) return;
+        searchInput.dataset.searchInitialized = 'true';
+
+        // Create results container for this specific input
+        const resultsContainer = document.createElement('div');
+        resultsContainer.className = 'absolute top-full left-0 w-full bg-white rounded-xl shadow-xl border border-gray-100 mt-2 hidden z-[100] overflow-hidden';
+        
+        // Append to parent
+        if (searchInput.parentElement) {
+            searchInput.parentElement.style.position = 'relative';
+            searchInput.parentElement.appendChild(resultsContainer);
+        }
+
+        // Prevent form submission on Enter
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = e.target.value.trim();
+                if (query.length >= 2) {
+                    performSearch(query, resultsContainer);
+                }
             }
-        }
-    });
+        });
 
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim();
-        
-        clearTimeout(debounceTimer);
-        
-        if (query.length < 2) {
-            resultsContainer.classList.add('hidden');
-            resultsContainer.innerHTML = '';
-            return;
-        }
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            clearTimeout(debounceTimer);
+            
+            if (query.length < 2) {
+                resultsContainer.classList.add('hidden');
+                resultsContainer.innerHTML = '';
+                return;
+            }
 
-        debounceTimer = setTimeout(() => performSearch(query, resultsContainer), 300);
-    });
+            debounceTimer = setTimeout(() => performSearch(query, resultsContainer), 300);
+        });
 
-    // Close on click outside
-    document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
-            resultsContainer.classList.add('hidden');
-        }
-    });
+        // Close on click outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+                resultsContainer.classList.add('hidden');
+            }
+        });
 
-    // Re-open if input has value and is focused
-    searchInput.addEventListener('focus', () => {
-        if (searchInput.value.trim().length >= 2 && resultsContainer.children.length > 0) {
-            resultsContainer.classList.remove('hidden');
-        }
+        // Re-open if input has value and is focused
+        searchInput.addEventListener('focus', () => {
+            if (searchInput.value.trim().length >= 2 && resultsContainer.children.length > 0) {
+                resultsContainer.classList.remove('hidden');
+            }
+        });
     });
 }
 
@@ -376,6 +385,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 window.NavbarUtils = {
     toggleProfileDropdown,
+    toggleMobileSearch,
     toggleNotifications,
     loadNotifications,
     markNotificationRead,

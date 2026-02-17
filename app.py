@@ -166,12 +166,6 @@ def login_page():
     return render_template("login.html")
 
 
-@app.route("/signup")
-def signup_page():
-    # 🚫 No signup page allowed in this system
-    return redirect(url_for("login_page"))
-
-
 @app.route("/home")
 def home_page():
     # Protect home route
@@ -1148,7 +1142,7 @@ def seed_post():
     user = User.query.first()
 
     if not user:
-        return "No users found. Signup first.", 400
+        return "No users found in the database.", 400
 
     post = Post(
         user_id=user.id,
@@ -1167,7 +1161,7 @@ def seed_events():
     """Development route to seed sample events"""
     user = User.query.first()
     if not user:
-        return "No users found. Signup first.", 400
+        return "No users found in the database.", 400
     
     from datetime import timedelta
     

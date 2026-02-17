@@ -1,0 +1,52 @@
+/* Navbar Custom Styles */
+.nav-avatar {
+    transition: transform 0.2s ease;
+}
+.nav-avatar:hover {
+    transform: scale(1.05);
+}
+
+/* Custom Scrollbar for Notifications */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f9fafb;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Animation for Mobile Search */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.animate-fade-in-down {
+    animation: fadeInDown 0.2s ease-out forwards;
+}
+
+/* Animation for Dropdowns */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+.animate-fade-in-up {
+    animation: fadeInUp 0.15s ease-out forwards;
+}

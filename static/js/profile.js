@@ -1151,8 +1151,8 @@ function renderProfileActions() {
 
     // Show edit profile button for own profile
     actionsContainer.innerHTML = `
-      <button onclick="openEditModal('password')" 
-        class="px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2 text-sm">
+      <button onclick="openEditModal('password')"
+        class="w-full sm:w-auto px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2 text-sm">
         <i class="fas fa-key"></i> Password
       </button>
     `;
@@ -1165,14 +1165,14 @@ function renderProfileActions() {
 
     // Show connection/message buttons for other profiles
     let connectButtonText = 'Connect';
-    let connectButtonClass = 'px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2';
+    let connectButtonClass = 'w-full sm:w-auto px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2';
 
     if (connectionStatus === 'pending_sent') {
       connectButtonText = 'Request Sent';
       connectButtonClass += ' opacity-50 cursor-not-allowed';
     } else if (connectionStatus === 'pending_received') {
       connectButtonText = 'Accept Request';
-      connectButtonClass = 'px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2';
+      connectButtonClass = 'w-full sm:w-auto px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2';
     } else if (connectionStatus === 'connected') {
       connectButtonText = 'Connected';
       connectButtonClass += ' opacity-50 cursor-not-allowed';
@@ -1189,7 +1189,7 @@ function renderProfileActions() {
       </button>
       <button
         onclick="startMessage(${profileData.user.id}, this)"
-        class="message-btn px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2" data-user-id="${profileData.user.id}">
+        class="message-btn w-full sm:w-auto px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2" data-user-id="${profileData.user.id}">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
