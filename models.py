@@ -136,29 +136,6 @@ class User(db.Model):
         
         return connection_ids
 
-    @classmethod
-    def create_from_json(cls, data: dict):
-        """Create user from JSON data (registration)"""
-        email = data.get("email", "").strip().lower()
-        password = data.get("password")
-
-        if not email:
-            raise ValueError("Email is required")
-        if not password:
-            raise ValueError("Password is required")
-
-        user = cls(
-            first_name=data.get("first_name"),
-            last_name=data.get("last_name"),
-            email=email,
-            university=data.get("university"),
-            major=data.get("major"),
-            batch=data.get("batch")
-        )
-        user.set_password(password)
-        return user
-
-
 class OTPVerification(db.Model):
     """
     🆕 Handles OTP-based authentication.
