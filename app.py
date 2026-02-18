@@ -2511,6 +2511,7 @@ def admin_get_users():
     return jsonify([{
         "id": user.id,
         "username": user.full_name,
+        "profile_picture": _get_user_avatar(user),
         "email": user.email,
         "role": user.account_type, # Frontend expects 'role'
         "branch": user.branch,
