@@ -1,3 +1,11 @@
+"""
+Main Flask application file for Campus Connect.
+
+This file initializes the Flask app, extensions (SQLAlchemy, Bcrypt, Mail, SocketIO),
+and defines all routes for the application, including page rendering, API endpoints,
+and admin functionalities. It also includes helper functions and CLI commands.
+"""
+
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
@@ -15,7 +23,7 @@ from flask import (
 from flask_mail import Mail, Message as EmailMessage
 from config import Config
 from models import *
-from sqlalchemy import func, or_, and_, DateTime
+from sqlalchemy import func, or_, and_
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timezone, timedelta
@@ -35,13 +43,12 @@ from chat_routes import chat_bp
 from chat_socket import init_socket_events
 from comment_queue import comment_queue_service
 
-# --------------------------------------------------
-# CREATE APP & LOAD CONFIGURATION
-# --------------------------------------------------
+# ==============================================================================
+# APP INITIALIZATION & CONFIGURATION
+# ==============================================================================
 
 app = Flask(__name__)
 app.config.from_object(Config)  # This loads ALL config from config.py
-START_TIME = datetime.now(timezone.utc)
 
 if not app.secret_key:
     raise RuntimeError("SECRET_KEY not set. Check .env file.")
@@ -54,19 +61,18 @@ db.init_app(app)
 bcrypt.init_app(app)
 mail = Mail(app)
 
-# Initialize Queue Service
+# Initialize background job queue for non-blocking tasks like notifications.
 comment_queue_service.init_app(app)
 
 socketio = SocketIO(app, cors_allowed_origins=[], manage_session=False) # In production, list specific domains
 
-# --------------------------------------------------
-# HELPER FUNCTIONS
-# --------------------------------------------------
+# ==============================================================================
+# HELPER FUNCTIONS & DECORATORS
+# ==============================================================================
 
 def admin_required():
     """
-    Admin access guard function.
-    Checks if the current user is an admin, otherwise aborts with 403.
+    Decorator to protect routes that require administrator privileges.
     """
     if "user_id" not in session:
         abort(redirect(url_for("login_page")))  # Redirect to login if not authenticated
@@ -74,14 +80,12 @@ def admin_required():
     if session.get("account_type") != "admin":
         abort(403)  # Forbidden - not an admin
 
-
-def allowed_file(filename, allowed_extensions):
-    """Check if file extension is allowed"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
-
 def save_uploaded_file(file, file_type):
-    """Save uploaded file and return path"""
+    """
+    Saves an uploaded file to a designated directory with a unique filename.
+
+    Returns: The relative path to the saved file, or None if the file is invalid.
+    """
     if not file or file.filename == '':
         return None
     
@@ -99,7 +103,10 @@ def save_uploaded_file(file, file_type):
 
 
 def get_clean_filename(file_path):
-    """Extract original filename from the unique system filename"""
+    """
+    Extracts the original filename from the system-generated unique filename.
+    The pattern is expected to be: {userID}_{timestamp}_{original_filename}.
+    """
     if not file_path:
         return None
     filename = os.path.basename(file_path)
@@ -109,7 +116,20 @@ def get_clean_filename(file_path):
         return match.group(1)
     return filename
 
+def _get_user_avatar(user):
+    """Returns user's profile picture URL or a default avatar."""
+    if not user:
+        return None
+    return getattr(user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={user.full_name}"
+
 def get_content_activity():
+    """
+    Calculates content activity (posts and events) for the last 7 days.
+
+    Returns:
+        A dictionary containing labels for the last 7 days and corresponding
+        counts for posts and events created on each day.
+    """
     today_utc = datetime.now(timezone.utc).date()
     days = [today_utc - timedelta(days=i) for i in range(6, -1, -1)]
 
@@ -152,27 +172,67 @@ def get_content_activity():
         "events": [events_counts[d] for d in days],
     }
 
+def _format_post_for_api(post_data_tuple, current_user_id):
+    """
+    Standardizes the format of a post object for API responses.
+
+    Args:
+        post_data_tuple: A tuple containing (Post, User, likes_count, comments_count).
+        current_user_id: The ID of the user viewing the post, to check 'isLiked' status.
+    """
+    post, user, likes_count, comments_count = post_data_tuple
+
+    is_liked = False
+    if current_user_id:
+        is_liked = Like.query.filter_by(
+            post_id=post.id,
+            user_id=current_user_id
+        ).first() is not None
+
+    return {
+        "id": post.id,
+        "user_id": post.user_id,
+        "username": user.full_name,
+        "profileImage": _get_user_avatar(user),
+        "postImages": [f"/static/{post.file_path}"] if post.file_path else ([post.image_url] if post.image_url else []),
+        "currentImageIndex": 0,
+        "caption": post.caption,
+        "accountType": user.account_type,
+        "collegeName": user.major,
+        "likesCount": likes_count,
+        "commentsCount": comments_count,
+        "comments": [], # Intentionally empty for performance; fetched on demand
+        "isLiked": is_liked,
+        "createdAt": post.created_at.isoformat(),
+        "file_path": post.file_path,
+        "file_type": post.file_type,
+        "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url,
+        "original_filename": get_clean_filename(post.file_path)
+    }
+
+
 app.register_blueprint(chat_bp)
 init_socket_events(socketio)
 
-
-# --------------------------------------------------
-# PAGE ROUTES (HTML)
-# --------------------------------------------------
+# ==============================================================================
+# HTML PAGE RENDERING ROUTES
+# ==============================================================================
 
 @app.route("/")
 def home():
+    """Renders the public landing page."""
     return render_template("landing.html")
 
 
 @app.route("/login")
 def login_page():
+    """Renders the login/authentication page."""
     return render_template("login.html")
 
 
 @app.route("/home")
 def home_page():
-    # Protect home route
+    """Renders the main home feed for authenticated users."""
     if "user_id" not in session:
         return redirect(url_for("login_page"))
 
@@ -183,68 +243,66 @@ def home_page():
     if session.get("account_type") == "admin":
         return redirect(url_for("admin_dashboard_page"))
 
-    return render_template(
-        "home.html",
-        user=user,
-        user_name=session.get("user_name")
-    )
+    return render_template("home.html", user=user, user_name=user.full_name)
 
 
 @app.route("/logout")
 def logout():
+    """Clears the user session and redirects to the login page."""
     session.clear()
     return redirect(url_for("login_page"))
 
 
 @app.route("/messages")
 def messages_page():
+    """Renders the private messaging interface."""
     if "user_id" not in session:
         return redirect(url_for("login_page"))
-    
     user = db.session.get(User, session["user_id"])
-    return render_template("messages.html", user=user, user_name=session.get("user_name"))
+    return render_template("messages.html", user=user)
 
 @app.route("/post/<int:post_id>")
 def post_page(post_id):
+    """Renders the detailed view for a single post."""
     if "user_id" not in session:
         return redirect(url_for("login_page"))
-    
     user = db.session.get(User, session["user_id"])
-    return render_template("post.html", user=user, user_name=session.get("user_name"), post_id=post_id)
+    return render_template("post.html", user=user, post_id=post_id)
 
-
-# --------------------------------------------------
-# ADMIN PAGE ROUTES (HTML)
-# --------------------------------------------------
 
 @app.route("/admin/dashboard")
 def admin_dashboard_page():
+    """Renders the main admin dashboard page."""
     admin_required()
     return render_template("admin/dashboard.html")
 
 @app.route("/admin/users")
 def admin_users_page():
+    """Renders the admin page for user management."""
     admin_required()
     return render_template("admin/users.html")
 
 @app.route("/admin/events")
 def admin_events_page():
+    """Renders the admin page for event management."""
     admin_required()
     return render_template("admin/events.html")
 
 @app.route("/admin/announcements")
 def admin_announcements_page():
+    """Renders the admin page for announcement management."""
     admin_required()
     return render_template("admin/announcements.html")
 
 @app.route("/admin/logs")
 def admin_logs_page():
+    """Renders the admin page for viewing audit logs."""
     admin_required()
     return render_template("admin/logs.html")
 
 @app.route("/profile/<int:user_id>")
 def profile_page(user_id):
-    """Profile page route - renders the profile HTML template"""
+    """Renders the user profile page."""
     if "user_id" not in session:
         return redirect(url_for("login_page"))
     
@@ -263,14 +321,13 @@ def profile_page(user_id):
         "profile.html",
         profile_user=profile_user,
         user=current_user,
-        user_name=session.get("user_name"),
         is_own_profile=is_own_profile,
         current_user_id=session["user_id"]
     )
 
-# --------------------------------------------------
-# API ROUTES (JSON)
-# --------------------------------------------------
+# ==============================================================================
+# AUTHENTICATION API ROUTES
+# ==============================================================================
 
 def generate_otp():
     """Generate a 6-digit numeric OTP"""
@@ -280,6 +337,7 @@ def send_otp(email, otp):
     """
     Send OTP via email or print to console in development.
     """
+    # In debug mode, print OTP to console to avoid sending emails during development.
     if app.debug:
         print(f"\n[DEV MODE OTP] {email}: {otp}\n")
         return True
@@ -296,7 +354,7 @@ def send_otp(email, otp):
 
 @app.route("/api/auth/enrollment-suggestions", methods=["POST"])
 def get_enrollment_suggestions():
-    """Fetch enrollment suggestions based on branch and partial input"""
+    """Fetches enrollment number suggestions for the login form."""
     data = request.json
     branch = data.get("branch", "").strip()
     query = data.get("query", "").strip()
@@ -318,7 +376,7 @@ def get_enrollment_suggestions():
 
 @app.route("/api/auth/student-details", methods=["POST"])
 def get_student_details():
-    """Fetch student name and email by enrollment number"""
+    """Fetches student details (name, email) based on enrollment number."""
     data = request.json
     enrollment_no = data.get("enrollment_no", "").strip()
 
@@ -336,7 +394,7 @@ def get_student_details():
 
 @app.route("/api/auth/request-otp", methods=["POST"])
 def request_otp():
-    """Step 1: Validate user and send OTP"""
+    """Handles the first step of OTP-based login: validating the user and sending an OTP."""
     data = request.json
     enrollment_no = data.get("enrollment_no", "").strip()
     branch = data.get("branch", "").strip()
@@ -357,11 +415,11 @@ def request_otp():
     if not user.is_active:
         return jsonify({"error": "Account is disabled."}), 403
 
-    # 🔒 Security: Prevent OTP login if password is already set
+    # Security: Prevent OTP login if a password is set, forcing password-based login.
     if user.password_hash is not None:
         return jsonify({"error": "Password already set. Please login with password."}), 400
 
-    # 🔒 Security: Rate Limiting (1 OTP per minute)
+    # Security: Simple rate limiting to prevent OTP spam.
     last_otp = OTPVerification.query.filter_by(enrollment_no=user.enrollment_no).order_by(OTPVerification.created_at.desc()).first()
     if last_otp and last_otp.created_at > datetime.now(timezone.utc) - timedelta(minutes=1):
         return jsonify({"error": "Please wait 1 minute before requesting a new OTP."}), 429
@@ -391,12 +449,12 @@ def request_otp():
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
 def verify_otp():
-    """Step 2: Verify OTP and log in"""
+    """Handles the second step of OTP-based login: verifying the OTP and creating a session."""
     data = request.json
     enrollment_no = data.get("enrollment_no", "").strip()
     otp_code = data.get("otp", "").strip()
 
-    # 🔒 Security: Fetch active OTP record first to handle attempts
+    # Security: Use `with_for_update()` to lock the row during verification to prevent race conditions.
     otp_record = OTPVerification.query.filter_by(
         enrollment_no=enrollment_no,
         is_used=False
@@ -405,11 +463,11 @@ def verify_otp():
     if not otp_record:
         return jsonify({"error": "No active OTP found or OTP expired"}), 400
 
-    # 🔒 Security: Check attempts
+    # Security: Brute-force protection by limiting attempts per OTP.
     if otp_record.attempts >= 5:
         return jsonify({"error": "Too many failed attempts. Please request a new OTP."}), 400
 
-    # 🔒 Security: Verify Code
+    # Security: Verify Code
     if otp_record.otp != otp_code:
         otp_record.attempts += 1
         db.session.commit()
@@ -427,8 +485,8 @@ def verify_otp():
         
     db.session.commit()
 
-    # Create session
-    session.clear() # 🔒 Security: Prevent session fixation
+    # Security: Clear the session before populating it to prevent session fixation.
+    session.clear()
     session["user_id"] = user.id
     session["user_name"] = user.full_name
     session["account_type"] = user.account_type
@@ -445,7 +503,7 @@ def verify_otp():
 
 @app.route("/api/auth/login", methods=["POST"])
 def login_with_password():
-    """Unified Password Login for Admin and Students"""
+    """Handles password-based login for both students and administrators."""
     data = request.json
     role = data.get("role")
     password = data.get("password")
@@ -465,7 +523,8 @@ def login_with_password():
     if not user.is_active:
         return jsonify({"error": "Account is disabled"}), 403
 
-    session.clear() # 🔒 Security: Prevent session fixation
+    # Security: Prevent session fixation.
+    session.clear()
     session["user_id"] = user.id
     session["user_name"] = user.full_name
     session["account_type"] = user.account_type
@@ -478,7 +537,7 @@ def login_with_password():
 
 @app.route("/api/auth/forgot-password/request-otp", methods=["POST"])
 def forgot_password_request_otp():
-    """Forgot Password Step 1: Request OTP"""
+    """Handles the first step of the 'Forgot Password' flow."""
     data = request.json
     identifier = data.get("identifier", "").strip()
     
@@ -493,13 +552,13 @@ def forgot_password_request_otp():
         or_(User.enrollment_no == identifier, User.email == identifier)
     ).first()
     
-    # Security: Always return 200 to prevent user enumeration
+    # Security: Always return a generic 200 OK response to prevent user enumeration attacks.
     if user and user.is_active:
         # Rate limiting: Check last OTP time
         last_otp = OTPVerification.query.filter_by(enrollment_no=user.enrollment_no).order_by(OTPVerification.created_at.desc()).first()
         if last_otp and last_otp.created_at > datetime.now(timezone.utc) - timedelta(minutes=1):
-             return jsonify({"message": "If an account exists, an OTP has been sent.", "expiry_time": expiry.isoformat()}), 200
-             
+            return jsonify({"message": "If an account exists, an OTP has been sent.", "expiry_time": expiry.isoformat()}), 200
+            
         otp_code = generate_otp()
         
         otp_entry = OTPVerification(
@@ -517,7 +576,7 @@ def forgot_password_request_otp():
 
 @app.route("/api/auth/forgot-password/verify-otp", methods=["POST"])
 def forgot_password_verify_otp():
-    """Forgot Password Step 2: Verify OTP (UI Check)"""
+    """Verifies the OTP during the 'Forgot Password' flow before showing the password reset form."""
     data = request.json
     identifier = data.get("identifier", "").strip()
     otp_code = data.get("otp", "").strip()
@@ -550,7 +609,7 @@ def forgot_password_verify_otp():
 
 @app.route("/api/auth/forgot-password/reset-password", methods=["POST"])
 def forgot_password_reset():
-    """Forgot Password Step 3: Reset Password"""
+    """Handles the final step of the 'Forgot Password' flow: setting the new password."""
     data = request.json
     identifier = data.get("identifier", "").strip()
     otp_code = data.get("otp", "").strip()
@@ -566,7 +625,7 @@ def forgot_password_reset():
     if not user:
         return jsonify({"error": "Invalid request"}), 400
         
-    # Re-verify OTP (Critical for security)
+    # Security: The OTP must be re-verified on the server during the final reset step.
     otp_record = OTPVerification.query.filter_by(
         enrollment_no=user.enrollment_no,
         is_used=False
@@ -583,12 +642,16 @@ def forgot_password_reset():
     return jsonify({"message": "Password reset successfully"}), 200
 
 
+# ==============================================================================
+# POST & FEED API ROUTES
+# ==============================================================================
+
 @app.route("/api/posts")
 def api_posts():
+    """Fetches a paginated feed of posts, ranked by a simple algorithm."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    # Fetch all posts from DB
     page = int(request.args.get("page", 1))
     limit = int(request.args.get("limit", 5))
     offset = (page - 1) * limit
@@ -622,6 +685,9 @@ def api_posts():
         .outerjoin(likes_subq, likes_subq.c.post_id == Post.id)
         .outerjoin(comments_subq, comments_subq.c.post_id == Post.id)
         .order_by(
+            # Simple ranking algorithm: prioritizes likes and comments,
+            # while penalizing older posts to keep the feed fresh.
+            # Weights: Likes=3, Comments=5, TimeDecay=1/hour.
             (
                 func.coalesce(likes_subq.c.likes, 0) * 3 +
                 func.coalesce(comments_subq.c.comments, 0) * 5 -
@@ -633,49 +699,18 @@ def api_posts():
         .all()
     )
 
-
-
-    formatted_db_posts = []
-
-    for post, user, likes_count, comments_count in db_posts:
-
-        is_liked = Like.query.filter_by(
-            post_id=post.id,
-            user_id=session["user_id"]
-        ).first() is not None
-
-        formatted_db_posts.append({
-            "id": post.id,
-            "user_id": post.user_id,
-            "username": user.full_name,
-            "profileImage": f"https://ui-avatars.com/api/?name={user.full_name}",
-            "postImages": [f"/static/{post.file_path}"] if post.file_path else ([post.image_url] if post.image_url else []),
-            "currentImageIndex": 0,
-            "caption": post.caption,
-            "accountType": "student",
-            "collegeName": user.major,  # FIXED: was user.branch
-            "likesCount": likes_count,
-            "commentsCount": comments_count,
-            "comments": [],
-            "isLiked": is_liked,
-            "createdAt": post.created_at.isoformat(),
-            "file_path": post.file_path,
-            "file_type": post.file_type,
-            "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url,
-            "original_filename": get_clean_filename(post.file_path)
-        })
-
     return jsonify({
         "viewer": {
             "id": session.get("user_id"),
             "name": session.get("user_name")
         },
-        "posts": formatted_db_posts
+        "posts": [_format_post_for_api(p, session["user_id"]) for p in db_posts]
     })
 
 
 @app.route("/api/posts/<int:post_id>")
 def get_single_post_api(post_id):
+    """Fetches the data for a single, specific post."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -712,71 +747,20 @@ def get_single_post_api(post_id):
 
     post, user, likes_count, comments_count = post_data
 
-    is_liked = Like.query.filter_by(
-        post_id=post.id,
-        user_id=session["user_id"]
-    ).first() is not None
-
-    formatted_post = {
-        "id": post.id,
-        "user_id": post.user_id,
-        "username": user.full_name,
-        "profileImage": f"https://ui-avatars.com/api/?name={user.full_name}",
-        "postImages": [f"/static/{post.file_path}"] if post.file_path else ([post.image_url] if post.image_url else []),
-        "currentImageIndex": 0,
-        "caption": post.caption,
-        "accountType": "student",
-        "collegeName": user.major,
-        "likesCount": likes_count,
-        "commentsCount": comments_count,
-        "comments": [],
-        "isLiked": is_liked,
-        "createdAt": post.created_at.isoformat(),
-        "file_path": post.file_path,
-        "file_type": post.file_type,
-        "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url,
-        "original_filename": get_clean_filename(post.file_path)
-    }
+    formatted_post = _format_post_for_api(post_data, session["user_id"])
 
     return jsonify({
         "viewer": {
             "id": session.get("user_id"),
             "name": session.get("user_name")
         },
-        "posts": [formatted_post]
+        "posts": [formatted_post] # Keep as a list for frontend consistency
     })
 
-@app.route("/api/posts", methods=["POST"])
-def create_post():
-    if "user_id" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    data = request.json
-    caption = data.get("caption")
-    image_url = data.get("image_url")
-
-    if not caption or not image_url:
-        return jsonify({"error": "Caption and image required"}), 400
-
-    post = Post(
-        user_id=session["user_id"],
-        caption=caption,
-        image_url=image_url
-    )
-
-    db.session.add(post)
-    db.session.commit()
-
-    return jsonify({"message": "Post created"}), 201
-
-
-# --------------------------------------------------
-# NEW FILE UPLOAD POST CREATION
-# --------------------------------------------------
 
 @app.route("/api/posts/create", methods=["POST"])
 def create_post_with_file():
-    """Create a post with file upload support"""
+    """Creates a new post, supporting text, photo, and document uploads."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -850,7 +834,7 @@ def create_post_with_file():
 
 @app.route("/api/posts/<int:post_id>/download")
 def download_post_attachment(post_id):
-    """Download post attachment with original filename"""
+    """Allows users to download a document attached to a post."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -875,6 +859,7 @@ def download_post_attachment(post_id):
 
 @app.route("/api/posts/<int:post_id>/like", methods=["POST"])
 def toggle_like(post_id):
+    """Toggles a user's 'like' on a post and creates/removes notifications."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -930,6 +915,7 @@ def toggle_like(post_id):
 
 @app.route("/api/posts/<int:post_id>/comments")
 def get_comments(post_id):
+    """Fetches all comments for a given post."""
     comments = (
         db.session.query(Comment, User)
         .join(User, Comment.user_id == User.id)
@@ -951,6 +937,7 @@ def get_comments(post_id):
 
 @app.route("/api/posts/<int:post_id>/comments", methods=["POST"])
 def add_comment(post_id):
+    """Adds a new comment to a post and enqueues a background job for processing."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -967,7 +954,7 @@ def add_comment(post_id):
     db.session.add(comment)
     db.session.commit()
 
-    # QUEUE INTEGRATION: Offload notification/spam check to background queue
+    # Offload notification creation and spam checks to a background worker.
     comment_queue_service.enqueue({
         'comment_id': comment.id,
         'text': comment.text,
@@ -978,13 +965,13 @@ def add_comment(post_id):
     return jsonify({"message": "Comment added (processing in background)"}), 201
 
 
-# --------------------------------------------------
-# EVENTS API
-# --------------------------------------------------
+# ==============================================================================
+# EVENTS API ROUTES
+# ==============================================================================
 
 @app.route("/api/events")
 def get_events():
-    """Get all upcoming events with user registration status"""
+    """Fetches all upcoming events and the current user's registration status for each."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1025,7 +1012,7 @@ def get_events():
 
 @app.route("/api/events/<int:event_id>/register", methods=["POST"])
 def register_for_event(event_id):
-    """Register for an event (Going or Interested)"""
+    """Registers, unregisters, or updates a user's status for an event ('going' or 'interested')."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1036,16 +1023,13 @@ def register_for_event(event_id):
     if status not in ['going', 'interested']:
         return jsonify({"error": "Invalid status. Must be 'going' or 'interested'"}), 400
     
-    # HARDENING: Use with_for_update() to lock the event row.
+    # Security: Use `with_for_update()` to lock the event row during the transaction.
     # This prevents race conditions where two users join the last seat simultaneously.
-    # 1. Single locked query
     event = db.session.query(Event).with_for_update().filter_by(id=event_id).first()
     
-    # 2. Null check immediately
     if not event:
         return jsonify({"error": "Event not found"}), 404
     
-    # 3. Cancellation check
     if event.is_cancelled:
         return jsonify({"error": "Cannot register for a cancelled event"}), 400
     
@@ -1070,10 +1054,7 @@ def register_for_event(event_id):
         else:
             # Different status - update
             # If changing from interested to going, check seats
-            if status == 'going':
-                # Optimization: Check seats efficiently without triggering extra queries if possible
-                # event.available_seats triggers a query. We can do it manually or use the property.
-                # Since we are inside a lock, we must be careful.
+            if status == 'going':                
                 current_going = event.registrations.filter_by(status='going').count()
                 if (event.total_seats - current_going) <= 0:
                     return jsonify({"error": "No seats available"}), 400
@@ -1101,8 +1082,7 @@ def register_for_event(event_id):
     
     db.session.commit()
     
-    # Calculate final counts for response
-    # We query these to ensure accuracy after the transaction
+    # Re-query counts after the transaction to ensure the response is accurate.
     final_going = event.registrations.filter_by(status='going').count()
     final_interested = event.registrations.filter_by(status='interested').count()
     final_available = max(0, event.total_seats - final_going)
@@ -1116,9 +1096,13 @@ def register_for_event(event_id):
     }), status_code
 
 
+# ==============================================================================
+# ANNOUNCEMENTS & SUGGESTIONS API
+# ==============================================================================
+
 @app.route("/api/announcements", methods=["GET"])
 def get_announcements():
-    """Get announcements for students and admin"""
+    """Fetches active announcements for all users."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1145,103 +1129,10 @@ def get_announcements():
     
     return jsonify(announcements_data)
 
-# --------------------------------------------------
-# DEVELOPMENT ROUTES
-# --------------------------------------------------
-
-@app.route("/dev/seed-post")
-def seed_post():
-    user = User.query.first()
-
-    if not user:
-        return "No users found in the database.", 400
-
-    post = Post(
-        user_id=user.id,
-        caption="First post on Campus Connect 🚀",
-        image_url="https://picsum.photos/600"
-    )
-
-    db.session.add(post)
-    db.session.commit()
-
-    return "Post created successfully"
-
-
-@app.route("/dev/seed-events")
-def seed_events():
-    """Development route to seed sample events"""
-    user = User.query.first()
-    if not user:
-        return "No users found in the database.", 400
-    
-    from datetime import timedelta
-    
-    # Clear existing events
-    Event.query.delete()
-    
-    events = [
-        Event(
-            title="Tech Career Fair 2024",
-            description="Meet top tech companies and explore internship opportunities. Leading tech giants will be present!",
-            location="Main Auditorium",
-            event_date=datetime.now(timezone.utc) + timedelta(days=1),
-            total_seats=200,
-            user_id=user.id
-        ),
-        Event(
-            title="Hackathon 2024",
-            description="48-hour coding marathon. Build innovative solutions and win amazing prizes!",
-            location="CS Lab Building",
-            event_date=datetime.now(timezone.utc) + timedelta(days=7),
-            total_seats=100,
-            user_id=user.id
-        ),
-        Event(
-            title="Guest Lecture: AI & ML",
-            description="Industry expert discusses latest trends in artificial intelligence and machine learning",
-            location="Seminar Hall 3",
-            event_date=datetime.now(timezone.utc) + timedelta(days=14),
-            total_seats=150,
-            user_id=user.id
-        ),
-        Event(
-            title="Campus Placement Drive",
-            description="Multiple companies conducting interviews. Dress formally!",
-            location="Conference Room A",
-            event_date=datetime.now(timezone.utc) + timedelta(days=21),
-            total_seats=80,
-            user_id=user.id
-        ),
-        Event(
-            title="Workshop: Web Development",
-            description="Hands-on workshop covering modern web technologies - React, Node.js, and more",
-            location="Computer Lab 2",
-            event_date=datetime.now(timezone.utc) + timedelta(days=10),
-            total_seats=50,
-            user_id=user.id
-        )
-    ]
-    
-    for event in events:
-        db.session.add(event)
-    
-    db.session.commit()
-    return f"Successfully seeded {len(events)} events!"
-
-
-@app.route("/dev/reset-registrations")
-def reset_registrations():
-    """Development route to reset all event registrations"""
-    EventRegistration.query.delete()
-    db.session.commit()
-    return "All event registrations have been reset!"
-
 
 @app.route("/api/suggestions", methods=["GET"])
 def get_suggestions():
-    """Get user suggestions - exclude connected users and pending requests"""
-    
+    """Generates a list of connection suggestions for the current user."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1251,10 +1142,10 @@ def get_suggestions():
     if not current_user:
         return jsonify({"error": "User not found"}), 404
     
-    # Step 1: Get connected user IDs (bidirectional check)
+    # 1. Get IDs of users who are already connected.
     connected_ids = current_user.get_connection_ids()
     
-    # Step 2: Get pending request user IDs (both sent and received)
+    # 2. Get IDs of users with pending requests (both sent and received).
     pending_sent = [r.receiver_id for r in ConnectionRequest.query.filter_by(
         sender_id=current_user_id, 
         status='pending'
@@ -1265,10 +1156,10 @@ def get_suggestions():
         status='pending'
     ).all()]
     
-    # Step 3: Combine all exclusions
+    # 3. Combine all users to be excluded from suggestions.
     exclude_ids = set(connected_ids + pending_sent + pending_received + [current_user_id])
     
-    # Step 4: Query suggestions (prioritize same university/major)
+    # 4. Query for suggestions with a priority system.
     suggestions = []
     
     # Priority 1: Same university + same major
@@ -1299,7 +1190,7 @@ def get_suggestions():
         suggestions.extend(additional)
     
     # Step 5: Format response
-    result = []
+    result = [] # Renamed from 'suggestions' to avoid confusion with the query result
     for user in suggestions:
         result.append({
             "id": user.id,
@@ -1308,16 +1199,19 @@ def get_suggestions():
             "university": user.university,
             "major": user.major,
             "batch": user.batch,
-            "profile_picture": getattr(user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={user.full_name}"
+            "profile_picture": _get_user_avatar(user)
         })
     
     return jsonify({"suggestions": result})
 
 
+# ==============================================================================
+# CONNECTIONS API ROUTES
+# ==============================================================================
+
 @app.route("/api/connections/request", methods=["POST"])
 def send_connection_request():
-    """Send a connection request to another user"""
-    
+    """Sends a connection request to another user or re-sends a rejected one."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1329,7 +1223,6 @@ def send_connection_request():
     
     sender_id = session["user_id"]
     
-    # Can't send request to yourself
     if sender_id == receiver_id:
         return jsonify({"error": "Cannot connect with yourself"}), 400
     
@@ -1429,8 +1322,7 @@ def send_connection_request():
 
 @app.route("/api/connections/accept/<int:request_id>", methods=["POST"])
 def accept_connection_request(request_id):
-    """Accept a connection request"""
-    
+    """Accepts a pending connection request."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1487,8 +1379,7 @@ def accept_connection_request(request_id):
 
 @app.route("/api/connections/reject/<int:request_id>", methods=["POST"])
 def reject_connection_request(request_id):
-    """Reject a connection request"""
-    
+    """Rejects a pending connection request."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1518,8 +1409,7 @@ def reject_connection_request(request_id):
 
 @app.route("/api/connections/pending", methods=["GET"])
 def get_pending_requests():
-    """Get pending connection requests for current user"""
-    
+    """Fetches all connection requests received by the current user that are pending."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1543,7 +1433,7 @@ def get_pending_requests():
                     "email": sender.email,
                     "university": sender.university,
                     "major": sender.major,
-                    "profile_picture": getattr(sender, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={sender.full_name}"
+                    "profile_picture": _get_user_avatar(sender)
                 },
                 "created_at": req.created_at.strftime("%Y-%m-%d %H:%M:%S")
             })
@@ -1553,8 +1443,7 @@ def get_pending_requests():
 
 @app.route("/api/connections/sent", methods=["GET"])
 def get_sent_requests():
-    """Get connection requests sent by current user"""
-    
+    """Fetches all connection requests sent by the current user that are still pending."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1578,7 +1467,7 @@ def get_sent_requests():
                     "email": receiver.email,
                     "university": receiver.university,
                     "major": receiver.major,
-                    "profile_picture": getattr(receiver, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={receiver.full_name}"
+                    "profile_picture": _get_user_avatar(receiver)
                 },
                 "created_at": req.created_at.strftime("%Y-%m-%d %H:%M:%S")
             })
@@ -1588,7 +1477,7 @@ def get_sent_requests():
 
 @app.route("/api/connections/<int:user_id>", methods=["DELETE"])
 def remove_connection(user_id):
-    """Remove a connection with another user"""
+    """Removes a connection between the current user and another user."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1623,10 +1512,13 @@ def remove_connection(user_id):
     return jsonify({"success": True, "message": "Connection removed"})
 
 
+# ==============================================================================
+# NOTIFICATIONS API ROUTES
+# ==============================================================================
+
 @app.route("/api/notifications", methods=["GET"])
 def get_notifications():
-    """Get notifications for current user"""
-    
+    """Fetches the latest notifications for the current user."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1647,7 +1539,7 @@ def get_notifications():
                 actor = {
                     "id": actor_user.id,
                     "name": actor_user.full_name,
-                    "profile_picture": getattr(actor_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={actor_user.full_name}"
+                    "profile_picture": _get_user_avatar(actor_user)
                 }
         
         result.append({
@@ -1671,8 +1563,7 @@ def get_notifications():
 
 @app.route("/api/notifications/unread-count", methods=["GET"])
 def get_unread_count():
-    """Get count of unread notifications"""
-    
+    """Fetches only the count of unread notifications, for badge updates."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1688,8 +1579,7 @@ def get_unread_count():
 
 @app.route("/api/connections/list", methods=["GET"])
 def get_connections_list():
-    """Get list of all connections for current user"""
-    
+    """Fetches a simple list of all of the current user's connections."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1717,7 +1607,7 @@ def get_connections_list():
                 "university": other_user.university,
                 "major": other_user.major,
                 "batch": other_user.batch,
-                "profile_picture": getattr(other_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={other_user.full_name}",
+                "profile_picture": _get_user_avatar(other_user),
                 "connected_since": conn.connected_at.strftime("%B %Y")
             })
     
@@ -1726,8 +1616,7 @@ def get_connections_list():
 
 @app.route("/api/notifications/mark-read/<int:notification_id>", methods=["POST"])
 def mark_notification_read(notification_id):
-    """Mark a single notification as read"""
-    
+    """Marks a single notification as read."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1749,8 +1638,7 @@ def mark_notification_read(notification_id):
 
 @app.route("/api/notifications/mark-all-read", methods=["POST"])
 def mark_all_notifications_read():
-    """Mark all notifications as read"""
-    
+    """Marks all of the user's unread notifications as read."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1768,8 +1656,7 @@ def mark_all_notifications_read():
 
 @app.route("/api/notifications/clear", methods=["POST"])
 def clear_notifications():
-    """Delete all notifications for the current user"""
-    
+    """Deletes all notifications for the current user."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1781,9 +1668,13 @@ def clear_notifications():
     return jsonify({"success": True})
 
 
+# ==============================================================================
+# PROFILE API ROUTES
+# ==============================================================================
+
 @app.route("/api/profile/completion", methods=["GET"])
 def get_profile_completion():
-    """Calculate profile completion percentage and missing fields"""
+    """Calculates a profile completion score and suggests actions for improvement."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -1839,8 +1730,7 @@ def get_profile_completion():
 
 @app.route("/api/profile/me", methods=["GET"])
 def get_my_profile():
-    """Get current user's profile with real counts"""
-    
+    """Fetches a lightweight summary of the current user's profile for the navbar."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -1863,7 +1753,7 @@ def get_my_profile():
         "id": user.id,
         "name": user.full_name,
         "email": user.email,
-        "profile_picture": getattr(user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={user.full_name}",
+        "profile_picture": _get_user_avatar(user),
         "university": user.university,
         "major": user.major,
         "batch": user.batch,
@@ -1877,7 +1767,7 @@ def get_my_profile():
 
 @app.route("/api/profile/<int:user_id>/posts")
 def api_profile_posts(user_id):
-    """Get posts for a specific user's profile - same format as /api/posts"""
+    """Fetches a paginated feed of posts created by a specific user."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -1926,51 +1816,20 @@ def api_profile_posts(user_id):
         .all()
     )
 
-    formatted_db_posts = []
-
-    for post, user, likes_count, comments_count in db_posts:
-        is_liked = Like.query.filter_by(
-            post_id=post.id,
-            user_id=session["user_id"]
-        ).first() is not None
-
-        formatted_db_posts.append({
-            "id": post.id,
-            "user_id": post.user_id,
-            "username": user.full_name,
-            "profileImage": f"https://ui-avatars.com/api/?name={user.full_name}",
-            "postImages": [f"/static/{post.file_path}"] if post.file_path else ([post.image_url] if post.image_url else []),
-            "currentImageIndex": 0,
-            "caption": post.caption,
-            "accountType": "student",
-            "collegeName": user.major,
-            "likesCount": likes_count,
-            "commentsCount": comments_count,
-            "comments": [],
-            "isLiked": is_liked,
-            "createdAt": post.created_at.isoformat(),
-            "file_path": post.file_path,
-            "file_type": post.file_type,
-            "image_url": f"/static/{post.file_path}" if post.file_path else post.image_url,
-            "original_filename": get_clean_filename(post.file_path)
-        })
-
     return jsonify({
         "viewer": {
             "id": session.get("user_id"),
             "name": session.get("user_name")
         },
-        "posts": formatted_db_posts
+        "posts": [_format_post_for_api(p, session["user_id"]) for p in db_posts]
     })
 
 
 @app.route("/api/profile/<int:user_id>", methods=["GET"])
 def get_profile_data(user_id):
-    """Get profile data as JSON (for JavaScript to consume)"""
-
-    # TEMPORARY: Allow viewing without login for testing
-    # if "user_id" not in session:
-    #     return jsonify({"error": "Unauthorized"}), 401
+    """Fetches a comprehensive dataset for a user's profile page."""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
 
     current_user_id = session.get("user_id", None)  # None if not logged in
 
@@ -1987,7 +1846,7 @@ def get_profile_data(user_id):
     connection_status = None
     pending_request_id = None
 
-    if not is_own_profile and current_user_id:  # Only check connections if logged in
+    if not is_own_profile and current_user_id:
         # Check if connected
         existing_connection = Connection.query.filter(
             or_(
@@ -2019,8 +1878,7 @@ def get_profile_data(user_id):
                 pending_request_id = received_request.id
             else:
                 connection_status = 'not_connected'
-    elif not current_user_id:
-        # Not logged in - show as not connected
+    elif not current_user_id: # Not logged in
         connection_status = 'not_connected'
 
     # Get connection count and list
@@ -2032,7 +1890,7 @@ def get_profile_data(user_id):
     )
     connection_count = connections_query.count()
     
-    # Get counts for other tabs (only if own profile)
+    # Get counts for connection request tabs (only visible on own profile).
     received_count = 0
     sent_count = 0
     
@@ -2046,7 +1904,6 @@ def get_profile_data(user_id):
             sender_id=user_id,
             status='pending'
         ).count()
-        # Suggestions count is dynamic/expensive, usually fetched on demand or estimated
 
     # Get connections list
     connections_data = []
@@ -2060,12 +1917,13 @@ def get_profile_data(user_id):
                 'email': other_user.email,
                 'major': other_user.major,
                 'university': other_user.university,
-                'profile_picture': getattr(other_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={other_user.full_name}",
+                'profile_picture': _get_user_avatar(other_user),
                 'connected_since': conn.connected_at.strftime('%B %Y')
             })
 
     # Get mutual connections (if not own profile)
     mutual_connections = []
+    mutual_connections_count = 0
     if not is_own_profile:
         # Get current user's connections
         current_user_connections = Connection.query.filter(
@@ -2095,6 +1953,7 @@ def get_profile_data(user_id):
 
         # Find mutual connections
         mutual_ids = current_user_connection_ids.intersection(profile_user_connection_ids)
+        mutual_connections_count = len(mutual_ids)
         for mutual_id in mutual_ids:
             mutual_user = db.session.get(User, mutual_id)
             if mutual_user:
@@ -2102,7 +1961,7 @@ def get_profile_data(user_id):
                     'id': mutual_user.id,
                     'full_name': mutual_user.full_name,
                     'major': mutual_user.major,
-                    'profile_picture': getattr(mutual_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={mutual_user.full_name}"
+                    'profile_picture': _get_user_avatar(mutual_user)
                 })
 
     # Get user's posts with counts
@@ -2160,7 +2019,6 @@ def get_profile_data(user_id):
             'year': edu.year
         })
 
-    # Return all data as JSON
     return jsonify({
         'user': {
             'id': profile_user.id,
@@ -2170,7 +2028,7 @@ def get_profile_data(user_id):
             'major': profile_user.major,
             'batch': profile_user.batch,
             'bio': getattr(profile_user, 'bio', None),
-            'profile_picture': getattr(profile_user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={profile_user.full_name}",
+            'profile_picture': _get_user_avatar(profile_user),
             'has_password': profile_user.password_hash is not None,
             'member_since': profile_user.created_at.strftime('%B %Y')
         },
@@ -2181,20 +2039,21 @@ def get_profile_data(user_id):
             'connections_count': connection_count,
             'posts_count': post_count,
             'received_count': received_count,
-            'sent_count': sent_count
+            'sent_count': sent_count,
+            'mutual_connections_count': mutual_connections_count
         },
         'posts': posts_data,
         'connections': connections_data,
         'mutual_connections': mutual_connections,
-        'skills': skills_data,  # ← NEW
-        'experiences': experiences_data,  # ← NEW
-        'educations': educations_data  # ← NEW
+        'skills': skills_data,
+        'experiences': experiences_data,
+        'educations': educations_data
     })
 
 
 @app.route("/api/profile/photo", methods=["POST"])
 def upload_profile_photo():
-    """Upload and update user profile photo"""
+    """Handles the upload and update of a user's profile photo."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -2232,13 +2091,13 @@ def upload_profile_photo():
     })
 
 
-# --------------------------------------------------
-# PROFILE MANAGEMENT API
-# --------------------------------------------------
+# ==============================================================================
+# PROFILE DETAIL MANAGEMENT API (Skills, Experience, etc.)
+# ==============================================================================
 
 @app.route("/api/profile/skills", methods=["GET", "POST", "PUT", "DELETE"])
 def manage_skills():
-    """Manage user skills"""
+    """Provides full CRUD functionality for a user's skills."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -2318,7 +2177,7 @@ def manage_skills():
 
 @app.route("/api/profile/experiences", methods=["GET", "POST", "PUT", "DELETE"])
 def manage_experiences():
-    """Manage user experiences"""
+    """Provides full CRUD functionality for a user's work experiences."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -2429,7 +2288,7 @@ def manage_experiences():
 
 @app.route("/api/profile/educations", methods=["GET", "POST", "PUT", "DELETE"])
 def manage_educations():
-    """Manage user educations"""
+    """Provides full CRUD functionality for a user's education history."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -2519,7 +2378,7 @@ def manage_educations():
 
 @app.route("/api/profile/bio", methods=["PUT"])
 def update_bio():
-    """Update user bio"""
+    """Updates the 'bio' field for the current user."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -2539,7 +2398,7 @@ def update_bio():
 
 @app.route("/api/profile/update-password", methods=["POST"])
 def update_password():
-    """Update user password securely"""
+    """Allows a logged-in user to update their password."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
@@ -2571,44 +2430,28 @@ def update_password():
     return jsonify({"message": "Password updated successfully"}), 200
 
 
-# --------------------------------------------------
-# ADMIN ROUTES - USER MANAGEMENT & EVENT CREATION
-# --------------------------------------------------
+# ==============================================================================
+# ADMIN API ROUTES
+# ==============================================================================
 
 @app.route("/admin/api/dashboard/overview", methods=["GET"])
 def admin_dashboard_overview():
     """
-    STEP 5: Admin Dashboard Aggregation API
-    
-    Returns comprehensive analytics for admin dashboard:
-    - KPI counts (users, posts, events)
-    - User role distribution
-    - User growth over time
-    - Content activity metrics
-    - Top content creators
-    - System health status
+    Aggregates and returns a wide range of analytics for the admin dashboard.
     """
     admin_required()
     
     try:
-        # ================================================================
-        # A) KPI COUNTS
-        # ================================================================
+        # --- Key Performance Indicators (KPIs) ---
         total_users = User.query.count()
         active_users = User.query.filter_by(is_active=True).count()
         blocked_users = User.query.filter_by(is_active=False).count()
         official_users = User.query.filter_by(account_type="official").count()
         total_posts = Post.query.count()
         active_events = Event.get_active_count()
-        total_official_and_club = User.query.filter(
-            User.account_type.in_(["official", "club"])
-        ).count()
-        
-        # ================================================================
-        # B) USER ROLE DISTRIBUTION
-        # ================================================================
+
+        # --- User Role Distribution ---
         # Group users by account_type and count
-        # Ensure we map to keys expected by frontend if needed, or use strict role names
         role_distribution_query = db.session.query(
             User.account_type,
             func.count(User.id).label('count')
@@ -2618,10 +2461,7 @@ def admin_dashboard_overview():
             role: count for role, count in role_distribution_query
         }
         
-        # ================================================================
-        # C) USER GROWTH DATA
-        # ================================================================
-        # Group users by registration date (daily)
+        # --- User Growth Data (Daily) ---
         user_growth_query = db.session.query(
             func.date(User.created_at).label('date'),
             func.count(User.id).label('count')
@@ -2635,15 +2475,8 @@ def admin_dashboard_overview():
             for date, count in user_growth_query
         ]
         
-        # ================================================================
-        # D) CONTENT ACTIVITY
-        # ================================================================
-        
+        # --- Content Activity (Last 7 Days) ---
         content_activity = get_content_activity()
-        
-        # ================================================================
-        # FINAL RESPONSE
-        # ================================================================
         return jsonify({
             "totalUsers": total_users,
             "activeUsers": active_users,
@@ -2670,16 +2503,7 @@ def admin_dashboard_overview():
 
 @app.route("/admin/api/users", methods=["GET"])
 def admin_get_users():
-    """
-    STEP 3.1: Get list of all users for admin management.
-    
-    Returns:
-        - id: User ID
-        - username: User's full name
-        - email: User's email
-        - account_type: student/admin/official/club
-        - is_active: Whether user can login
-    """
+    """Fetches a list of all users for the admin user management table."""
     admin_required()
     
     users = User.query.all()
@@ -2697,16 +2521,7 @@ def admin_get_users():
 
 @app.route("/admin/api/users/<int:user_id>/toggle", methods=["POST"])
 def admin_toggle_user_status(user_id):
-    """
-    STEP 3.2: Toggle user's is_active status.
-    
-    Rules:
-        - Admin cannot disable themselves
-        - Action is logged in AdminLog
-    
-    Returns:
-        - Updated user status
-    """
+    """Toggles a user's active/blocked status and logs the action."""
     admin_required()
     
     # Prevent admin from disabling themselves
@@ -2742,13 +2557,7 @@ def admin_toggle_user_status(user_id):
 
 @app.route("/admin/api/events/meta", methods=["GET"])
 def admin_get_event_creators():
-    """
-    STEP 4.1: Get list of users who can be event creators.
-    
-    Returns:
-        - Users with account_type = 'official' or 'club'
-        - These are the users admin can create events on behalf of
-    """
+    """Fetches metadata for the event creation form, including eligible event creators."""
     admin_required()
     
     eligible_users = User.query.filter(
@@ -2767,16 +2576,12 @@ def admin_get_event_creators():
 
 @app.route("/admin/api/events/create", methods=["POST"])
 def admin_create_event():
-    """
-    STEP 4.2: Admin creates event on behalf of another user.
-    """
+    """Allows an admin to create an event, optionally on behalf of an official/club account."""
     admin_required()
     
     data = request.json
     
-    # Validate required fields
-    # Frontend sends 'targetEntity' as ID
-    # Fallback to current admin if not provided (Option B)
+    # The event owner is the selected target entity, or the admin themselves if none is chosen.
     target_user_id = data.get("targetEntity")
     if not target_user_id:
         target_user_id = session["user_id"]
@@ -2789,8 +2594,7 @@ def admin_create_event():
     if target_user.account_type not in ["official", "club", "admin"]:
         return jsonify({"error": "Target user must be official, club, or admin"}), 400
     
-    # Parse event_date
-    # Fix: Use event_date directly (simplified logic)
+    # Parse ISO-formatted date string from the frontend.
     try:
         event_date_str = data.get("event_date")
         if not event_date_str:
@@ -2802,7 +2606,7 @@ def admin_create_event():
     except (ValueError, AttributeError):
         return jsonify({"error": "Invalid event_date format."}), 400
     
-    # Create event with target_user_id as the owner
+    # Create the event, assigning ownership to the target user.
     event = Event(
         title=data.get("title").strip(),
         description=data.get("description").strip(),
@@ -2843,6 +2647,7 @@ def admin_create_event():
 
 @app.route("/admin/api/announcements", methods=["GET"])
 def admin_get_announcements():
+    """Fetches announcements for the admin panel, filterable by status."""
     admin_required()
     status = request.args.get("status", "active")
     
@@ -2865,6 +2670,7 @@ def admin_get_announcements():
 
 @app.route("/admin/api/announcements", methods=["POST"])
 def admin_create_announcement():
+    """Creates a new announcement and logs the admin action."""
     admin_required()
     data = request.json
     title = data.get("title")
@@ -2894,6 +2700,7 @@ def admin_create_announcement():
 
 @app.route("/admin/api/announcements/<int:id>", methods=["PUT"])
 def admin_update_announcement(id):
+    """Updates the title or content of an existing announcement."""
     admin_required()
     data = request.json
     
@@ -2911,19 +2718,20 @@ def admin_update_announcement(id):
 
 @app.route("/admin/api/announcements/<int:id>", methods=["DELETE"])
 def admin_delete_announcement(id):
+    """Soft-deletes an announcement by changing its status to 'deleted'."""
     admin_required()
     
     announcement = db.session.get(Announcement, id)
     if not announcement:
         return jsonify({"error": "Announcement not found"}), 404
         
-    # Soft delete
     announcement.status = 'deleted'
     db.session.commit()
     return jsonify({"success": True, "message": "Announcement moved to recycle bin"})
 
 @app.route("/admin/api/announcements/<int:id>/restore", methods=["POST"])
 def admin_restore_announcement(id):
+    """Restores a soft-deleted announcement by setting its status back to 'active'."""
     admin_required()
     
     announcement = db.session.get(Announcement, id)
@@ -2937,6 +2745,7 @@ def admin_restore_announcement(id):
 
 @app.route("/admin/api/logs", methods=["GET"])
 def admin_get_logs():
+    """Fetches the latest admin audit logs."""
     admin_required()
     logs = AdminLog.query.order_by(AdminLog.created_at.desc()).limit(50).all()
     return jsonify([{
@@ -2950,7 +2759,7 @@ def admin_get_logs():
 
 @app.route("/admin/api/logs/download", methods=["GET"])
 def admin_download_logs():
-    """Download logs as a text file"""
+    """Generates and serves all admin logs as a downloadable text file."""
     admin_required()
     
     logs = AdminLog.query.order_by(AdminLog.created_at.desc()).all()
@@ -2975,6 +2784,11 @@ def admin_download_logs():
 
 
 def seed_admin():
+    """
+    Seeds or updates the primary admin user from .env variables.
+    This ensures the admin account is always available and credentials are
+    synchronized with the environment configuration on startup.
+    """
     email = os.environ.get("ADMIN_EMAIL", "").strip()
     password = os.environ.get("ADMIN_PASSWORD")
 
@@ -3002,8 +2816,8 @@ def seed_admin():
         account_type="admin",
         is_active=True,
         is_verified=True,  # Admin is trusted by default
-        enrollment_no="ADMIN001", # 🔧 Fix: Required field
-        branch="ADMINISTRATION"   # 🔧 Fix: Required field
+        enrollment_no="ADMIN001",
+        branch="ADMINISTRATION"
     )
 
     db.session.add(admin)
@@ -3015,12 +2829,13 @@ def seed_admin_command():
     """Seeds/Updates the admin user via CLI using .env credentials."""
     seed_admin()
 
-# --------------------------------------------------
-# ADMIN EVENT MANAGEMENT ROUTES (TASK 1)
-# --------------------------------------------------
+# ==============================================================================
+# ADMIN-SPECIFIC API ROUTES (Extended Functionality)
+# ==============================================================================
 
 @app.route("/admin/api/events/list")
 def admin_get_events_list():
+    """Fetches a list of events for the admin panel, filterable by status (upcoming/past)."""
     admin_required()
     status = request.args.get("status", "upcoming")
     now = datetime.now(timezone.utc)
@@ -3033,6 +2848,7 @@ def admin_get_events_list():
     return jsonify([_format_admin_event(e) for e in events])
 
 def _format_admin_event(event):
+    """Helper to format an event object for the admin events list API."""
     dt_iso = event.event_date.isoformat()
     if event.event_date.tzinfo is None:
         dt_iso += "Z"
@@ -3050,6 +2866,7 @@ def _format_admin_event(event):
 
 @app.route("/admin/api/events/<int:event_id>", methods=["PUT"])
 def admin_update_event(event_id):
+    """Updates the details of an existing event."""
     admin_required()
     event = db.session.get(Event, event_id)
     if not event:
@@ -3081,9 +2898,7 @@ def admin_update_event(event_id):
 
 @app.route("/admin/api/users/<int:user_id>/details")
 def admin_get_user_details(user_id):
-    """
-    STEP 3.3: Get full details for a specific user (Admin only)
-    """
+    """Fetches detailed information and stats for a specific user."""
     admin_required()
     
     user = db.session.get(User, user_id)
@@ -3110,7 +2925,7 @@ def admin_get_user_details(user_id):
         "university": user.university,
         "major": user.major,
         "batch": user.batch,
-        "profile_picture": getattr(user, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={user.full_name}",
+        "profile_picture": _get_user_avatar(user),
         "joined_date": user.created_at.strftime('%B %d, %Y'),
         "stats": {
             "posts": posts_count,
@@ -3120,6 +2935,7 @@ def admin_get_user_details(user_id):
 
 @app.route("/admin/api/events/<int:event_id>/participants")
 def admin_get_event_participants(event_id):
+    """Fetches a list of users who have registered as 'going' to a specific event."""
     admin_required()
     event = db.session.get(Event, event_id)
     if not event:
@@ -3145,6 +2961,7 @@ def admin_get_event_participants(event_id):
 
 @app.route("/admin/api/events/<int:event_id>/download")
 def admin_download_event_pdf(event_id):
+    """Generates and serves a PDF report of an event's participants."""
     admin_required()
     event = db.session.get(Event, event_id)
     if not event:
@@ -3190,16 +3007,12 @@ def admin_download_event_pdf(event_id):
     buffer.seek(0)
     return send_file(buffer, as_attachment=True, download_name=f"event_{event_id}.pdf", mimetype='application/pdf')
 
-# --------------------------------------------------
-# SEARCH API
-# --------------------------------------------------
-
+# ==============================================================================
+# GLOBAL SEARCH API
+# ==============================================================================
 @app.route("/api/search", methods=["GET"])
 def search_all():
-    """
-    Global search endpoint.
-    Searches Users, Posts, and Announcements.
-    """
+    """Performs a global search across users and announcements."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
         
@@ -3231,7 +3044,7 @@ def search_all():
             "id": u.id,
             "name": u.full_name,
             "major": u.major,
-            "profile_picture": getattr(u, 'profile_picture', None) or f"https://ui-avatars.com/api/?name={u.full_name}"
+            "profile_picture": _get_user_avatar(u)
         } for u in users],
         "announcements": [{
             "id": a.id,
@@ -3243,17 +3056,14 @@ def search_all():
         } for a in announcements]
     })
 
-# --------------------------------------------------
-# APP ENTRY POINT
-# --------------------------------------------------
-
+# ==============================================================================
+# APPLICATION RUNNER
+# ==============================================================================
 if __name__ == "__main__":
-    # Prevent double execution with Flask reloader
+    # Initialize the database and seed the admin user on first run.
     if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         with app.app_context():
             db.create_all()
             seed_admin()
-            from seed_users import seed_users
-            seed_users()
         
     socketio.run(app, debug=True, host="0.0.0.0", port=5000)

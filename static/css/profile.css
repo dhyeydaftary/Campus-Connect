@@ -1,5 +1,9 @@
-/* Additional styles beyond Tailwind */
-/* Tab styling */
+/*
+    Custom Styles for Profile Page
+    This file contains animations, custom component styles, and overrides
+    that are not covered by the default Tailwind CSS configuration.
+*/
+/* --- Tab Navigation Styling --- */
 .tab-btn {
     color: hsl(240, 5%, 46%);
 }
@@ -26,7 +30,7 @@
     display: block;
 }
 
-/* Smooth transitions */
+/* --- Content Fade-in Animation --- */
 .tab-content {
     animation: fadeIn 0.2s ease-out;
 }
@@ -43,7 +47,7 @@
     }
 }
 
-/* Modal animation */
+/* --- Modal Slide-up Animation --- */
 #editModal>div:last-child>div {
     animation: slideUp 0.2s ease-out;
 }
@@ -60,7 +64,7 @@
     }
 }
 
-/* Toast animation */
+/* --- Toast Notification Animations --- */
 .toast {
     animation: toastIn 0.3s ease-out;
 }
@@ -93,7 +97,7 @@
     }
 }
 
-/* Custom scrollbar */
+/* --- Custom Webkit Scrollbar Styling --- */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -113,7 +117,7 @@
     background: hsl(240, 10%, 70%);
 }
 
-/* Form inputs */
+/* --- Form Input Focus Styling --- */
 input[type="text"],
 textarea {
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -126,35 +130,23 @@ textarea:focus {
     box-shadow: 0 0 0 3px hsla(238, 73%, 67%, 0.1);
 }
 
-/* Skill badge hover */
-.skill-badge {
-    transition: background-color 0.2s, transform 0.2s;
-}
-
-.skill-badge:hover {
-    transform: translateY(-1px);
-}
-
-/* Post card hover */
-.post-card {
+/* --- Card Hover Effects --- */
+.skill-badge,
+.post-card,
+.connection-card {
     transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.skill-badge:hover,
+.connection-card:hover {
+    transform: translateY(-2px);
 }
 
 .post-card:hover {
     box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.12), 0 12px 32px -12px rgba(0, 0, 0, 0.08);
 }
 
-/* Connection card hover */
-.connection-card {
-    transition: box-shadow 0.2s, transform 0.2s;
-}
-
-.connection-card:hover {
-    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.12), 0 12px 32px -12px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
-}
-
-/* Like button animation */
+/* --- Like Button Animation --- */
 .like-btn.liked svg {
     animation: likePopup 0.3s ease-out;
 }
@@ -173,7 +165,7 @@ textarea:focus {
     }
 }
 
-/* Responsive Utilities */
+/* --- General Utilities --- */
 .animate-fade-in {
     animation: fadeIn 0.3s ease-out forwards;
 }
@@ -181,7 +173,7 @@ textarea:focus {
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(5px);
     }
     to {
         opacity: 1;
@@ -189,6 +181,7 @@ textarea:focus {
     }
 }
 
+/* Utility to hide scrollbars */
 .no-scrollbar::-webkit-scrollbar {
     display: none;
 }

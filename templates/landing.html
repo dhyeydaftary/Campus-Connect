@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+<!--
+    Public Landing Page
+    This is the main marketing page for Campus Connect, displayed to unauthenticated
+    visitors. It provides an overview of the platform's features and a primary
+    call-to-action to log in.
+-->
 <html lang="en">
 
 <head>
@@ -17,8 +22,10 @@
 <body class="bg-white text-gray-900 overflow-x-hidden">
 
     <div class="min-h-screen">
+        <!-- Hero Section -->
         <section class="relative min-h-screen flex items-center overflow-hidden gradient-hero">
             <div class="absolute inset-0 opacity-10">
+                <!-- Decorative background pattern using an inline SVG -->
                 <div class="absolute inset-0"
                     style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');">
                 </div>
@@ -54,6 +61,7 @@
                 </div>
             </div>
 
+            <!-- "Scroll Down" indicator -->
             <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce">
                 <div class="w-6 h-10 rounded-full border-2 border-white/40 flex items-start justify-center pt-2">
                     <div class="w-1.5 h-3 rounded-full bg-white/60"></div>
@@ -61,6 +69,7 @@
             </div>
         </section>
 
+        <!-- Features Section -->
         <section class="py-24 bg-white">
             <div class="container mx-auto px-4">
                 <div class="text-center mb-16">
@@ -72,11 +81,13 @@
                     </p>
                 </div>
 
+                <!-- Feature cards are dynamically generated and injected here by landing.js -->
                 <div id="feature-grid" class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
                 </div>
             </div>
         </section>
 
+        <!-- Call to Action (CTA) Section -->
         <section class="py-20 gradient-primary">
             <div class="container mx-auto px-4 text-center">
                 <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -93,6 +104,7 @@
             </div>
         </section>
 
+        <!-- Footer -->
         <footer class="py-8 bg-gray-900">
             <div class="container mx-auto px-4 text-center">
                 <p class="text-gray-400">

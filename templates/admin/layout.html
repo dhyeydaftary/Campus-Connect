@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+<!--
+    Admin Panel Base Layout
+    This is the main HTML skeleton for all pages within the admin dashboard.
+    It includes the shared sidebar, top navigation bar, and defines content
+    blocks that child templates will populate.
+-->
 <html lang="en">
 
 <head>
@@ -25,10 +30,12 @@
     <main class="main-content">
         <!-- Top Navbar (Shared) -->
         <header class="top-navbar">
+            <!-- The title for the current page, defined by child templates -->
             <h1 class="page-title">{% block header_title %}Dashboard{% endblock %}</h1>
             <div class="navbar-right">
                 <a href="{{ url_for('logout') }}" class="text-sm font-medium text-red-600 hover:text-red-800 mr-6">Logout</a>
                 <div class="admin-profile">
+                    <!-- Displays the logged-in admin's initials and name from the session -->
                     <div class="admin-avatar">{{ session.get('user_name', 'AD')[:2]|upper }}</div>
                     <div class="admin-info">
                         <span class="admin-name">{{ session.get('user_name', 'Admin User') }}</span>
@@ -37,21 +44,14 @@
                 </div>
             </div>
         </header>
+        <!-- Main content area, populated by child templates -->
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Shared Admin API -->
+    <!-- Shared JavaScript for admin API interactions -->
     <script src="{{ url_for('static', filename='js/admin/api.js') }}"></script>
 
-    <script>
-        // Fix branding link to point to dashboard (since sidebar is shared)
-        document.addEventListener('DOMContentLoaded', () => {
-            const brandLink = document.querySelector('aside a');
-            if (brandLink) brandLink.href = "{{ url_for('admin_dashboard_page') }}";
-        });
-    </script>
-
-    <!-- Page-specific JS -->
+    <!-- Block for page-specific JavaScript files -->
     {% block scripts %}{% endblock %}
 
 </body>

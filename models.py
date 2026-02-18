@@ -13,7 +13,8 @@ bcrypt = Bcrypt()
 # ═══════════════════════════════════════════════════════════════════════════
 
 class User(db.Model):
-
+    """Represents a user in the system. This is the central model for authentication, profile information, and relationships."""
+    
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -86,7 +87,6 @@ class User(db.Model):
     def get_connection_count(self):
         """
         Get total number of ACCEPTED connections.
-        
         Query pattern: Connection is bidirectional, stored as one row.
         Check both user_id and connected_user_id columns.
         """
@@ -115,7 +115,6 @@ class User(db.Model):
     def get_connection_ids(self):
         """
         Get list of all user IDs this user is connected with.
-        
         Used for: Post filtering, suggestion exclusion
         Returns: List[int]
         """
@@ -136,11 +135,35 @@ class User(db.Model):
         
         return connection_ids
 
+    @classmethod
+    def create_from_json(cls, data: dict):
+        """Create user from JSON data (registration)"""
+        email = data.get("email", "").strip().lower()
+        password = data.get("password")
+
+        if not email:
+            raise ValueError("Email is required")
+        if not password:
+            raise ValueError("Password is required")
+
+        user = cls(
+            first_name=data.get("first_name"),
+            last_name=data.get("last_name"),
+            email=email,
+            university=data.get("university"),
+            major=data.get("major"),
+            batch=data.get("batch")
+        )
+        user.set_password(password)
+        return user
+
+
 class OTPVerification(db.Model):
     """
-    🆕 Handles OTP-based authentication.
+    Stores One-Time Passwords (OTPs) for user verification and password resets.
     Linked to User via enrollment_no.
     """
+
     __tablename__ = "otp_verifications"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -162,41 +185,10 @@ class OTPVerification(db.Model):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# SOCIAL GRAPH TABLES (🆕 NEW)
+# SOCIAL GRAPH TABLES
 # ═══════════════════════════════════════════════════════════════════════════
 
 class Connection(db.Model):
-    """
-    🆕 Represents ACCEPTED connections (friendships) between users.
-    
-    WHY THIS TABLE EXISTS:
-    - Your UI shows connection counts: "245 Connections"
-    - Need to filter posts to show only from connections
-    - Need to power "Suggested for You" (exclude connected users)
-    
-    DESIGN DECISION: Bidirectional stored as single row
-    
-    When User A connects with User B, we store ONE row:
-    - Option 1: (user_id=A, connected_user_id=B)
-    - Option 2: (user_id=B, connected_user_id=A)
-    
-    We use Option 1 where user_id < connected_user_id (enforced in app logic)
-    
-    WHY NOT TWO ROWS?
-    - Saves 50% storage
-    - Prevents inconsistency (one row deleted, other remains)
-    - Standard pattern for symmetric relationships
-    
-    QUERYING:
-    To check if A and B are connected:
-    WHERE (user_id = A AND connected_user_id = B) 
-        OR (user_id = B AND connected_user_id = A)
-    
-    POSTGRESQL OPTIMIZATION:
-    - Add CHECK constraint: user_id < connected_user_id
-    - Add GIN index for array operations
-    - Consider materialized view for connection counts
-    """
     __tablename__ = "connections"
     
     id = db.Column(db.Integer, primary_key=True)
@@ -230,51 +222,7 @@ class Connection(db.Model):
 
 
 class ConnectionRequest(db.Model):
-    """
-    🆕 Tracks connection requests between users.
-    
-    WHY THIS TABLE EXISTS:
-    - Users need to send/receive connection requests
-    - Need to track pending/accepted/rejected states
-    - Powers notification system
-    
-    STATE MACHINE:
-    1. User A sends request → status='pending'
-    2. User B accepts → Create Connection record, update status='accepted'
-    3. User B rejects → Update status='rejected'
-    
-    BUSINESS RULES:
-    - Only ONE request allowed between two users at a time
-    - Cannot send request if already connected
-    - Cannot send request if you blocked them
-    - Cannot send request if they blocked you
-    
-    WORKFLOW EXAMPLE:
-    
-    1. Check if connection exists:
-       SELECT * FROM connections 
-       WHERE (user_id=A AND connected_user_id=B) 
-          OR (user_id=B AND connected_user_id=A)
-       
-    2. Check if request exists:
-       SELECT * FROM connection_requests
-       WHERE (sender_id=A AND receiver_id=B)
-          OR (sender_id=B AND receiver_id=A)
-       
-    3. If neither exists, create request:
-       INSERT INTO connection_requests 
-       (sender_id, receiver_id, status) 
-       VALUES (A, B, 'pending')
-    
-    4. On accept:
-       - INSERT INTO connections (user_id, connected_user_id)
-       - UPDATE connection_requests SET status='accepted', responded_at=NOW()
-       - INSERT INTO notifications for sender
-    
-    INDEXES:
-    - (receiver_id, status) for "show my pending requests"
-    - (sender_id, receiver_id) for "already sent?" checks
-    """
+
     __tablename__ = "connection_requests"
     
     id = db.Column(db.Integer, primary_key=True)
@@ -314,61 +262,7 @@ class ConnectionRequest(db.Model):
 
 
 class Notification(db.Model):
-    """
-    🆕 User notification system.
-    
-    WHY THIS TABLE EXISTS:
-    - Users need alerts for likes, comments, connection requests
-    - Real-time notification badge ("You have 5 new notifications")
-    - Activity feed
-    
-    NOTIFICATION TYPES:
-    - 'connection_request': Someone sent you a connection request
-    - 'connection_accepted': Your request was accepted
-    - 'post_like': Someone liked your post
-    - 'post_comment': Someone commented on your post
-    - 'event_reminder': Event you registered for is coming up
-    - 'event_update': Event you registered for was updated
-    - 'mention': Someone mentioned you (future feature)
-    
-    POLYMORPHIC DESIGN:
-    - type + reference_id + actor_id = complete context
-    - reference_id points to: request_id, post_id, comment_id, event_id
-    - actor_id = who performed the action (null for system notifications)
-    
-    EXAMPLE:
-    User B likes User A's post (post_id=123):
-    
-    INSERT INTO notifications (
-        user_id=A,  -- recipient
-        type='post_like',
-        message='John Doe liked your post',
-        reference_id=123,  -- post_id
-        actor_id=B  -- who liked it
-    )
-    
-    QUERY PATTERNS:
-    
-    1. Get unread count:
-       SELECT COUNT(*) FROM notifications
-       WHERE user_id = X AND is_read = false
-    
-    2. Get recent notifications:
-       SELECT * FROM notifications
-       WHERE user_id = X
-       ORDER BY created_at DESC
-       LIMIT 20
-    
-    3. Mark all as read:
-       UPDATE notifications
-       SET is_read = true
-       WHERE user_id = X AND is_read = false
-    
-    CLEANUP STRATEGY:
-    - Delete read notifications older than 30 days (cron job)
-    - Keep unread notifications indefinitely
-    - Archive important notifications (connection accepted)
-    """
+
     __tablename__ = "notifications"
     
     id = db.Column(db.Integer, primary_key=True)
@@ -405,47 +299,7 @@ class Notification(db.Model):
 
 
 class UserBlock(db.Model):
-    """
-    🆕 User blocking/reporting system.
-    
-    WHY THIS TABLE EXISTS:
-    - Safety: Users can block abusive accounts
-    - Privacy: Blocked users cannot see your content
-    - Moderation: Track reported users
-    
-    BLOCKING BEHAVIOR:
-    When User A blocks User B:
-    - B cannot see A's posts
-    - B cannot send connection request to A
-    - B cannot comment on A's posts
-    - Existing connection is removed
-    - Pending request is rejected
-    
-    UNIDIRECTIONAL:
-    A blocks B ≠ B blocks A
-    Each requires separate row
-    
-    QUERY PATTERNS:
-    
-    1. Check if A blocked B:
-       SELECT * FROM user_blocks
-       WHERE blocker_id = A AND blocked_id = B
-    
-    2. Get all users I blocked:
-       SELECT blocked_id FROM user_blocks
-       WHERE blocker_id = A
-    
-    3. Filter posts (exclude blocked users):
-       SELECT * FROM posts
-       WHERE user_id NOT IN (
-           SELECT blocked_id FROM user_blocks
-           WHERE blocker_id = current_user
-       )
-    
-    POSTGRESQL OPTIMIZATION:
-    - Add partial index: WHERE is_active = true
-    - Use array aggregation for batch checks
-    """
+
     __tablename__ = "user_blocks"
     
     id = db.Column(db.Integer, primary_key=True)
@@ -485,35 +339,7 @@ class UserBlock(db.Model):
 # ═══════════════════════════════════════════════════════════════════════════
 
 class Post(db.Model):
-    """
-    User-generated content.
-    
-    CHANGES FROM ORIGINAL:
-    - Added: visibility field (public/connections/private)
-    - Added: Indexes for performance
-    - Added: updated_at for edit tracking
-    
-    QUERY PATTERNS:
-    
-    1. Get user's posts:
-       SELECT * FROM posts
-       WHERE user_id = X
-       ORDER BY created_at DESC
-    
-    2. Get feed (posts from connections):
-       SELECT p.* FROM posts p
-       JOIN connections c ON (
-           (c.user_id = current_user AND p.user_id = c.connected_user_id)
-           OR (c.connected_user_id = current_user AND p.user_id = c.user_id)
-       )
-       WHERE p.visibility IN ('public', 'connections')
-       ORDER BY p.created_at DESC
-    
-    3. Get public posts:
-       SELECT * FROM posts
-       WHERE visibility = 'public'
-       ORDER BY created_at DESC
-    """
+
     __tablename__ = "posts"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -535,7 +361,7 @@ class Post(db.Model):
         db.String(20), 
         default='connections', 
         nullable=False
-    )  # 🆕 'public', 'connections', 'private'
+    )  # 'public', 'connections', 'private'
     
     # Timestamps
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -551,25 +377,7 @@ class Post(db.Model):
 
 
 class Like(db.Model):
-    """
-    Post engagement tracking.
-    
-    CHANGES FROM ORIGINAL:
-    - Added: Index on post_id for counting
-    
-    QUERY PATTERNS:
-    
-    1. Count likes on post:
-       SELECT COUNT(*) FROM likes WHERE post_id = X
-    
-    2. Check if user liked post:
-       SELECT * FROM likes WHERE user_id = A AND post_id = X
-    
-    3. Get users who liked post:
-       SELECT u.* FROM users u
-       JOIN likes l ON l.user_id = u.id
-       WHERE l.post_id = X
-    """
+
     __tablename__ = "likes"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -590,36 +398,15 @@ class Like(db.Model):
         db.UniqueConstraint("user_id", "post_id", name="unique_user_post_like"),
         
         # For counting likes per post
-        Index("idx_likes_post", "post_id"),  # 🆕
+        Index("idx_likes_post", "post_id"),
         
         # For getting user's liked posts
-        Index("idx_likes_user", "user_id"),  # 🆕
+        Index("idx_likes_user", "user_id"),
     )
 
 
 class Comment(db.Model):
-    """
-    Post discussions.
-    
-    CHANGES FROM ORIGINAL:
-    - Added: parent_comment_id for threaded replies
-    - Added: Indexes for performance
-    
-    QUERY PATTERNS:
-    
-    1. Get top-level comments:
-       SELECT * FROM comments
-       WHERE post_id = X AND parent_comment_id IS NULL
-       ORDER BY created_at DESC
-    
-    2. Get replies to comment:
-       SELECT * FROM comments
-       WHERE parent_comment_id = Y
-       ORDER BY created_at ASC
-    
-    3. Count comments on post:
-       SELECT COUNT(*) FROM comments WHERE post_id = X
-    """
+
     __tablename__ = "comments"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -637,7 +424,7 @@ class Comment(db.Model):
         db.Integer,
         db.ForeignKey("comments.id", ondelete="CASCADE"),
         nullable=True
-    )  # 🆕 For threaded replies
+    )
     
     text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -649,29 +436,23 @@ class Comment(db.Model):
         backref=db.backref("parent", remote_side=[id]),
         lazy="dynamic",
         cascade="all, delete-orphan"
-    )  # 🆕
+    )
     
     __table_args__ = (
         # For getting comments on a post
-        Index("idx_comments_post_created", "post_id", "created_at"),  # 🆕
+        Index("idx_comments_post_created", "post_id", "created_at"),
         
         # For getting replies to a comment
-        Index("idx_comments_parent", "parent_comment_id"),  # 🆕
+        Index("idx_comments_parent", "parent_comment_id"),
     )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# EVENT TABLES (ENHANCED)
+# EVENT TABLES 
 # ═══════════════════════════════════════════════════════════════════════════
 
 class Event(db.Model):
-    """
-    Event management.
-    
-    CHANGES FROM ORIGINAL:
-    - Added: Indexes for date queries
-    - Added: is_cancelled field
-    """
+
     __tablename__ = "events"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -680,7 +461,7 @@ class Event(db.Model):
     location = db.Column(db.String(100), nullable=False)
     event_date = db.Column(DateTime(timezone=True), nullable=False)
     total_seats = db.Column(db.Integer, nullable=False, default=100)
-    is_cancelled = db.Column(db.Boolean, default=False, nullable=False)  # 🆕
+    is_cancelled = db.Column(db.Boolean, default=False, nullable=False)
 
     user_id = db.Column(
         db.Integer,
@@ -722,20 +503,15 @@ class Event(db.Model):
 
     __table_args__ = (
         # For "upcoming events" query
-        Index("idx_events_date", "event_date"),  # 🆕
+        Index("idx_events_date", "event_date"), 
         
         # For "my events" query
-        Index("idx_events_user_date", "user_id", "event_date"),  # 🆕
+        Index("idx_events_user_date", "user_id", "event_date"),
     )
 
 
 class EventRegistration(db.Model):
-    """
-    User event participation.
-    
-    CHANGES FROM ORIGINAL:
-    - Added: Index on (event_id, status) for seat counting
-    """
+
     __tablename__ = "event_registrations"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -757,7 +533,7 @@ class EventRegistration(db.Model):
         db.UniqueConstraint("event_id", "user_id", name="unique_event_user"),
         
         # For counting going/interested users
-        Index("idx_registrations_event_status", "event_id", "status"),  # 🆕
+        Index("idx_registrations_event_status", "event_id", "status"),  
     )
 
 
@@ -766,13 +542,7 @@ class EventRegistration(db.Model):
 # ═══════════════════════════════════════════════════════════════════════════
 
 class Skill(db.Model):
-    """
-    User skills for profile display.
-    
-    USAGE:
-    - Display user's technical and soft skills
-    - Skills shown as tags/badges on profile
-    """
+
     __tablename__ = "skills"
     
     id = db.Column(db.Integer, primary_key=True)
@@ -796,13 +566,7 @@ class Skill(db.Model):
 
 
 class Experience(db.Model):
-    """
-    User work experience, internships, and projects.
-    
-    USAGE:
-    - Display professional experience on profile
-    - Shows timeline of user's career/academic journey
-    """
+
     __tablename__ = "experiences"
     
     id = db.Column(db.Integer, primary_key=True)
@@ -832,13 +596,7 @@ class Experience(db.Model):
 
 
 class Education(db.Model):
-    """
-    User education history.
 
-    USAGE:
-    - Display educational background on profile
-    - Shows degrees, institutions, and graduation years
-    """
     __tablename__ = "educations"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -865,13 +623,14 @@ class Education(db.Model):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# ANNOUNCEMENTS TABLE (🆕 NEW)
+# ANNOUNCEMENTS TABLE
 # ═══════════════════════════════════════════════════════════════════════════
 
 class Announcement(db.Model):
     """
-    System-wide announcements created by admins.
+    Represents a system-wide announcement created by an administrator.
     """
+
     __tablename__ = "announcements"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -886,18 +645,11 @@ class Announcement(db.Model):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# ADMIN LOG TABLE - ADD THIS TO models.py
+# ADMIN LOG TABLE
 # ═══════════════════════════════════════════════════════════════════════════
 
 class AdminLog(db.Model):
-    """
-    Tracks admin actions for audit trail.
-    
-    USAGE:
-    - Log when admin toggles user status
-    - Log when admin creates events on behalf of others
-    - Provides accountability and audit trail
-    """
+
     __tablename__ = "admin_logs"
     
     id = db.Column(db.Integer, primary_key=True)
@@ -936,27 +688,20 @@ class AdminLog(db.Model):
     )
 
 
-"""
-═══════════════════════════════════════════════════════════════════════════
-DIRECT MESSAGING MODELS
-Add these classes to the end of models.py
-═══════════════════════════════════════════════════════════════════════════
-"""
+# ═══════════════════════════════════════════════════════════════════════════
+# DIRECT MESSAGING MODELS
+# ═══════════════════════════════════════════════════════════════════════════
 
 class Conversation(db.Model):
     """
     Represents a one-to-one conversation between two users.
-    
-    DESIGN DECISIONS:
-    - user1_id < user2_id enforced to prevent duplicate conversations
-    - updated_at is automatically updated when new messages are sent (via trigger)
-    - CASCADE delete: If user is deleted, all their conversations are deleted
     
     USAGE:
     - Get all conversations for a user
     - Find existing conversation between two users
     - Sort conversations by last activity
     """
+
     __tablename__ = "conversations"
     
     id = db.Column(db.Integer, primary_key=True)
@@ -1080,20 +825,11 @@ class Conversation(db.Model):
 
 class Message(db.Model):
     """
-    Individual message within a conversation.
+    Represents an individual message sent within a conversation.
     
-    DESIGN DECISIONS:
-    - Stores both sender_id and receiver_id for easy querying
-    - is_read flag for read receipts
-    - read_at timestamp for when message was read
-    - CASCADE delete: If conversation is deleted, all messages are deleted
-    
-    USAGE:
-    - Send new messages
-    - Mark messages as read
-    - Get conversation history
-    - Count unread messages
+    Includes sender/receiver IDs, content, and read-receipt status.
     """
+
     __tablename__ = "messages"
     
     id = db.Column(db.Integer, primary_key=True)

@@ -2,7 +2,10 @@
 let currentAnnouncements = [];
 let currentStatus = 'active'; // 'active' or 'deleted'
 
-// Inject Tabs for Recycle Bin
+/**
+ * Injects the 'Active' and 'Past Announcements' tabs into the DOM if they don't exist.
+ * This allows users to switch between viewing active and soft-deleted announcements.
+ */
 function injectTabs() {
     const listContainer = document.getElementById('announcements-list');
     if (!listContainer || document.getElementById('announcement-tabs')) return;
@@ -24,6 +27,10 @@ function injectTabs() {
     document.getElementById('tab-deleted').addEventListener('click', () => switchTab('deleted'));
 }
 
+/**
+ * Handles the UI and logic for switching between the 'active' and 'deleted' announcement tabs.
+ * @param {'active' | 'deleted'} status - The status to switch to.
+ */
 window.switchTab = function(status) {
     if (currentStatus === status) return; // Prevent reload if same tab
     currentStatus = status;
@@ -43,6 +50,9 @@ window.switchTab = function(status) {
     loadAnnouncements();
 }
 
+/**
+ * Fetches announcements from the API based on the current status ('active' or 'deleted') and renders them.
+ */
 async function loadAnnouncements() {
     const container = document.getElementById('announcements-list');
     
@@ -70,7 +80,11 @@ async function loadAnnouncements() {
         if (container) container.style.opacity = '1';
     }
 }
-// Render announcements list
+
+/**
+ * Renders a list of announcement objects into the DOM.
+ * @param {Array<object>} announcements - The array of announcement objects to render.
+ */
 function renderAnnouncements(announcements) {
     currentAnnouncements = announcements;
     const container = document.getElementById('announcements-list');
@@ -125,12 +139,19 @@ function renderAnnouncements(announcements) {
         </div>
     `).join('');
 }
-// Character counter
+
+/**
+ * Updates the character count display for the announcement text area.
+ */
 function updateCharCount() {
     const text = document.getElementById('announcement-text').value;
     document.getElementById('char-count').textContent = text.length;
 }
-// Handle form submit
+
+/**
+ * Handles the submission of the new announcement form.
+ * @param {Event} e - The form submission event.
+ */
 async function handleSubmit(e) {
     e.preventDefault();
     const title = document.getElementById('announcement-title').value.trim();
@@ -173,7 +194,10 @@ async function handleSubmit(e) {
     `;
 }
 
-// Edit/Delete Logic
+/**
+ * Opens the edit modal and populates it with the data of the selected announcement.
+ * @param {number} id - The ID of the announcement to edit.
+ */
 window.editAnnouncement = function(id) {
     const ann = currentAnnouncements.find(a => a.id === id);
     if (!ann) return;
@@ -185,10 +209,16 @@ window.editAnnouncement = function(id) {
     document.getElementById('edit-modal').style.display = 'flex';
 }
 
+/**
+ * Closes the announcement edit modal.
+ */
 window.closeEditModal = function() {
     document.getElementById('edit-modal').style.display = 'none';
 }
 
+/**
+ * Event listener for the edit form submission to update an announcement.
+ */
 document.getElementById('edit-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const id = document.getElementById('edit-id').value;
@@ -214,9 +244,14 @@ document.getElementById('edit-form').addEventListener('submit', async function(e
     }
 });
 
-// Delete Modal Logic
+/**
+ * Logic for handling the delete/archive confirmation modal.
+ */
 let announcementToDeleteId = null;
 
+/**
+ * Injects the delete confirmation modal into the DOM if it doesn't exist.
+ */
 function injectDeleteModal() {
     if (document.getElementById('delete-modal')) return;
     
@@ -251,6 +286,10 @@ function injectDeleteModal() {
     });
 }
 
+/**
+ * Opens the delete confirmation modal for a specific announcement.
+ * @param {number} id - The ID of the announcement to delete.
+ */
 window.deleteAnnouncement = function(id) {
     announcementToDeleteId = id;
     const modal = document.getElementById('delete-modal');
@@ -260,6 +299,9 @@ window.deleteAnnouncement = function(id) {
     }
 }
 
+/**
+ * Closes the delete confirmation modal.
+ */
 window.closeDeleteModal = function() {
     const modal = document.getElementById('delete-modal');
     if (modal) {
@@ -269,6 +311,10 @@ window.closeDeleteModal = function() {
     announcementToDeleteId = null;
 }
 
+/**
+ * Performs the actual API call to soft-delete (archive) an announcement.
+ * @param {number} id - The ID of the announcement to delete.
+ */
 async function performDelete(id) {
     const btn = document.getElementById('confirm-delete-btn');
     const originalText = btn.innerText;
@@ -295,9 +341,14 @@ async function performDelete(id) {
     }
 }
 
-// Restore Modal Logic
+/**
+ * Logic for handling the restore confirmation modal.
+ */
 let announcementToRestoreId = null;
 
+/**
+ * Injects the restore confirmation modal into the DOM if it doesn't exist.
+ */
 function injectRestoreModal() {
     if (document.getElementById('restore-modal')) return;
     
@@ -331,6 +382,10 @@ function injectRestoreModal() {
     });
 }
 
+/**
+ * Opens the restore confirmation modal for a specific announcement.
+ * @param {number} id - The ID of the announcement to restore.
+ */
 window.restoreAnnouncement = function(id) {
     announcementToRestoreId = id;
     const modal = document.getElementById('restore-modal');
@@ -340,6 +395,9 @@ window.restoreAnnouncement = function(id) {
     }
 }
 
+/**
+ * Closes the restore confirmation modal.
+ */
 window.closeRestoreModal = function() {
     const modal = document.getElementById('restore-modal');
     if (modal) {
@@ -349,6 +407,10 @@ window.closeRestoreModal = function() {
     announcementToRestoreId = null;
 }
 
+/**
+ * Performs the actual API call to restore a soft-deleted announcement.
+ * @param {number} id - The ID of the announcement to restore.
+ */
 async function performRestore(id) {
     const btn = document.getElementById('confirm-restore-btn');
     const originalText = btn.innerText;
@@ -375,7 +437,9 @@ async function performRestore(id) {
     }
 }
 
-// Initialize
+/**
+ * Main entry point for the announcements page. Initializes tabs, modals, and loads initial data.
+ */
 document.addEventListener('DOMContentLoaded', () => {
     injectTabs();
     loadAnnouncements();

@@ -9,7 +9,6 @@ from datetime import datetime, timezone
 
 chat_bp = Blueprint('chat', __name__)
 
-# 1) GET /api/chats
 @chat_bp.route('/api/chats', methods=['GET'])
 def get_chats():
     user_id = session.get("user_id")
@@ -107,7 +106,6 @@ def get_chats():
 
     return jsonify(chats_data), 200
 
-# 2) POST /api/chats/start
 @chat_bp.route('/api/chats/start', methods=['POST'])
 def start_chat():
     user_id = session.get("user_id")
@@ -166,7 +164,6 @@ def start_chat():
             "partner_avatar": recipient.profile_picture or f"https://ui-avatars.com/api/?name={recipient.full_name}"
         }), 201
 
-# 2.5) GET /api/chats/<conversation_id> (Get details for specific chat, even if empty)
 @chat_bp.route('/api/chats/<int:conversation_id>', methods=['GET'])
 def get_chat_details(conversation_id):
     user_id = session.get("user_id")
@@ -190,7 +187,6 @@ def get_chat_details(conversation_id):
         "partner_avatar": partner.profile_picture or f"https://ui-avatars.com/api/?name={partner.full_name}",
     }), 200
 
-# 3) GET /api/messages/<conversation_id>
 @chat_bp.route('/api/messages/<int:conversation_id>', methods=['GET'])
 def get_messages(conversation_id):
     user_id = session.get("user_id")
@@ -230,7 +226,6 @@ def get_messages(conversation_id):
         
     return jsonify(results), 200
 
-# 4) GET /api/chats/unread-count
 @chat_bp.route('/api/chats/unread-count', methods=['GET'])
 def get_total_unread_count():
     user_id = session.get("user_id")
@@ -252,7 +247,6 @@ def get_total_unread_count():
     
     return jsonify({"per_conversation": counts, "total_unread": total}), 200
 
-# 5) GET /api/users/search
 @chat_bp.route('/api/users/search', methods=['GET'])
 def search_users_for_chat():
     user_id = session.get("user_id")
@@ -282,7 +276,6 @@ def search_users_for_chat():
         "avatar": u.profile_picture or f"https://ui-avatars.com/api/?name={u.full_name}"
     } for u in users]), 200
 
-# 5) POST /api/messages/<conversation_id>/mark-read
 @chat_bp.route('/api/messages/<int:conversation_id>/mark-read', methods=['POST'])
 def mark_messages_read(conversation_id):
     user_id = session.get("user_id")
@@ -301,7 +294,6 @@ def mark_messages_read(conversation_id):
     
     return jsonify({"success": True, "marked_count": count}), 200
 
-# 6) POST /api/chat/upload
 @chat_bp.route('/api/chat/upload', methods=['POST'])
 def upload_chat_attachment():
     if "user_id" not in session:
@@ -335,7 +327,6 @@ def upload_chat_attachment():
             "original_name": filename
         })
 
-# 7) POST /api/chats/send_message (HTTP endpoint for sharing/sending)
 @chat_bp.route('/api/chats/send_message', methods=['POST'])
 def send_message_http():
     user_id = session.get("user_id")
