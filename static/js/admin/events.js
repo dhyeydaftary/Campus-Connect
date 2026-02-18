@@ -4,7 +4,26 @@ let currentEvents = [];
 document.addEventListener('DOMContentLoaded', () => {
     loadEvents();
     setupFormHandlers();
+    setDateTimeInputMin();
 });
+
+/**
+ * Sets the 'min' attribute for date-time input fields to the current time,
+ * preventing users from selecting past dates and times.
+ */
+function setDateTimeInputMin() {
+    const now = new Date();
+    // Adjust for timezone to get local time in a format that the 'datetime-local' input accepts.
+    // `toISOString()` returns UTC, so we subtract the timezone offset to get local time.
+    const localNow = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    const minDateTime = localNow.toISOString().slice(0, 16);
+
+    const createDateInput = document.getElementById('event-date');
+    if (createDateInput) createDateInput.min = minDateTime;
+
+    const editDateInput = document.getElementById('edit-date');
+    if (editDateInput) editDateInput.min = minDateTime;
+}
 
 // Helper to ensure date is treated as UTC
 function parseAsUTC(dateStr) {
