@@ -30,8 +30,10 @@ static/uploads/**
 !static/uploads/post/post_docs/
 !static/uploads/post/post_images/
 !static/uploads/profile_photos/
+!static/images/
 
 # Allow only .gitkeep files
+!static/images/**/.gitkeep
 !static/uploads/**/.gitkeep
 
 # Local seeding scripts
