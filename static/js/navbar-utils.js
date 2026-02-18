@@ -93,7 +93,7 @@ function renderNotifications(notifications) {
         <div class="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 ${notif.is_read ? '' : 'bg-indigo-50'}" 
             onclick="markNotificationRead(${notif.id})">
             <div class="flex items-start gap-3">
-                <img src="${notif.actor_image || 'https://ui-avatars.com/api/?name=User'}" 
+                <img src="${notif.actor?.profile_picture || 'https://ui-avatars.com/api/?name=User'}" 
                     class="w-10 h-10 rounded-full">
                 <div class="flex-1">
                     <p class="text-sm text-gray-900">${notif.message}</p>
@@ -156,7 +156,7 @@ async function updateMessageBadge() {
 
 async function markNotificationRead(id) {
     try {
-        await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+        await fetch(`/api/notifications/mark-read/${id}`, { method: 'POST' });
         loadNotifications(); // Reload to update UI
     } catch (err) {
         console.error('Failed to mark as read:', err);

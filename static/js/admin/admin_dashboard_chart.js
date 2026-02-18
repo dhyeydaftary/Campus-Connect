@@ -1,4 +1,7 @@
-document.addEventListener("DOMContentLoaded", () => {
+/**
+ * Main entry point for the admin dashboard. Fetches overview data and renders all charts and KPIs.
+ */
+ document.addEventListener("DOMContentLoaded", () => {
     if (typeof Chart === "undefined") {
         console.error("Chart.js not loaded");
         return;
@@ -10,11 +13,14 @@ document.addEventListener("DOMContentLoaded", () => {
             return res.json();
         })
         .then(data => {
-            console.log("ADMIN DASHBOARD DATA:", data);
-
             /* ===============================
                 KPIs
             =============================== */
+            /**
+             * Safely sets the text content of an element by its ID.
+             * @param {string} id - The ID of the DOM element.
+             * @param {string|number} val - The value to set as text content.
+             */
             const setText = (id, val) => {
                 const el = document.getElementById(id);
                 if (el) el.textContent = val?.toLocaleString?.() ?? "0";

@@ -534,8 +534,7 @@ async function saveModal() {
         if (response.ok) {
           profileData.user.bio = bio;
           document.getElementById('aboutText').textContent = bio || 'No bio available.';
-          document.getElementById('aboutTabText').textContent = bio || 'No bio available.';
-        }
+        } 
         break;
 
       case 'password':
@@ -1075,7 +1074,6 @@ async function loadProfileData(userId) {
   document.getElementById('profileBatch').textContent = '';
   document.getElementById('profileLocation').textContent = '';
   document.getElementById('aboutText').textContent = 'Loading profile...';
-  document.getElementById('aboutTabText').textContent = 'Loading profile...';
   try {
     const response = await fetch(`/api/profile/${userId}`);
     if (!response.ok) throw new Error('Failed to load profile data');
@@ -1102,7 +1100,6 @@ function updateProfileHeader(user) {
   document.getElementById('profileBatch').textContent = `Batch of ${user.batch}`;
   document.getElementById('profileLocation').textContent = user.university;
   document.getElementById('aboutText').textContent = user.bio || 'No bio available.';
-  document.getElementById('aboutTabText').textContent = user.bio || 'No bio available.';
   document.getElementById('connectionsCount').textContent = profileData.stats.connections_count;
   document.getElementById('postsCount').textContent = profileData.stats.posts_count;
 

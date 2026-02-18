@@ -1,6 +1,10 @@
 // Chart instances
 let userGrowthChart, roleDistributionChart, contentActivityChart;
-// Initialize dashboard
+
+/**
+ * Initializes the admin dashboard by fetching overview data and rendering all
+ * KPI cards and charts.
+ */
 async function initDashboard() {
     const data = await API.getDashboardOverview();
 
@@ -10,6 +14,7 @@ async function initDashboard() {
     document.getElementById('blocked-users').textContent = data.blockedUsers.toLocaleString();
     document.getElementById('total-posts').textContent = data.totalPosts.toLocaleString();
     document.getElementById('active-events').textContent = data.activeEvents.toLocaleString();
+
     // User Growth Chart
     const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
     userGrowthChart = new Chart(userGrowthCtx, {
@@ -134,19 +139,6 @@ async function initDashboard() {
             }
         }
     });
-
-    // System Health
-    const healthHtml = Object.entries(data.systemHealth).map(([key, info]) => `
-        <div class="status-indicator">
-            <div class="status-dot ${info.status}"></div>
-            <div class="status-info">
-                <div class="status-name">${key.toUpperCase()}</div>
-                <div class="status-detail">${info.latency ? `Latency: ${info.latency}ms` : info.usage ? `Usage: ${info.usage}%` : `Hit Rate: ${info.hitRate}%`}</div>
-            </div>
-            <span class="badge badge-${info.status === 'online' ? 'success' : 'warning'}">${info.status}</span>
-        </div>
-    `).join('');
-    document.getElementById('system-health').innerHTML = healthHtml;
 }
 // Initialize on load
 document.addEventListener('DOMContentLoaded', initDashboard);
