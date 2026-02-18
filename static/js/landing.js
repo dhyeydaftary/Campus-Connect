@@ -1,42 +1,91 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // Feature Data
-    const features = [
-        {
-            icon: 'users',
-            title: 'Campus-Only Network',
-            description: 'Connect exclusively with verified students from your college. Build genuine, meaningful relationships.',
-        },
-        {
-            icon: 'trophy',
-            title: 'Events & Hackathons',
-            description: 'Discover hackathons, clubs, tournaments, and campus events. Never miss an opportunity again.',
-        },
-        {
-            icon: 'zap',
-            title: 'Smart Feed',
-            description: 'A personalized feed that keeps you updated with what matters most in your campus community.',
-        },
-    ];
+// ===== NAVBAR SCROLL SHRINK =====
+(function () {
+  var nav = document.getElementById('mainNav');
+  window.addEventListener('scroll', function () {
+    if (window.scrollY > 60) {
+      nav.classList.add('scrolled');
+    } else {
+      nav.classList.remove('scrolled');
+    }
+  }, { passive: true });
+})();
 
-    // Render Features
-    const grid = document.getElementById('feature-grid');
-    features.forEach((feature, index) => {
-        const card = `
-        <div class="animate-fade-in" style="animation-delay: ${index * 0.1}s">
-            <div class="border border-gray-100 shadow-sm hover:shadow-elevated hover:-translate-y-1 transition-all duration-300 h-full rounded-xl bg-white overflow-hidden">
-                <div class="p-6 text-center">
-                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 mb-4">
-                        <i data-lucide="${feature.icon}" class="h-7 w-7 text-indigo-600"></i>
-                    </div>
-                    <h3 class="font-semibold text-lg text-gray-900 mb-2">${feature.title}</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">${feature.description}</p>
-                </div>
-            </div>
-        </div>
-    `;
-        grid.innerHTML += card;
+// ===== SMOOTH SCROLL FOR NAV LINKS =====
+document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+  anchor.addEventListener('click', function (e) {
+    var target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth' });
+      // Close mobile menu
+      var navCollapse = document.getElementById('navMenu');
+      if (navCollapse && navCollapse.classList.contains('show')) {
+        var bsCollapse = bootstrap.Collapse.getInstance(navCollapse);
+        if (bsCollapse) bsCollapse.hide();
+      }
+    }
+  });
+});
+
+// ===== SCROLL REVEAL (Intersection Observer) =====
+(function () {
+  var revealElements = document.querySelectorAll(
+    '.reveal-up, .reveal-left, .reveal-right, .reveal-scale, .reveal-stagger'
+  );
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+  revealElements.forEach(function (el) {
+    observer.observe(el);
+  });
+})();
+
+// ===== JOURNEY SCROLL ANIMATION =====
+(function () {
+  var wrapper = document.getElementById('journeyWrapper');
+  var lineFill = document.getElementById('journeyLineFill');
+  var dots = document.querySelectorAll('.journey-dot');
+  var cards = document.querySelectorAll('.journey-card');
+
+  function handleJourneyScroll() {
+    if (!wrapper) return;
+    var wrapperRect = wrapper.getBoundingClientRect();
+    var triggerY = window.innerHeight * 0.6;
+    var lastActiveDotBottom = 0;
+
+    dots.forEach(function (dot, i) {
+      var dotRect = dot.getBoundingClientRect();
+      if (dotRect.top < triggerY) {
+        dot.classList.add('dot-active');
+        if (cards[i]) cards[i].classList.add('card-active');
+        lastActiveDotBottom = dotRect.top - wrapperRect.top + dot.offsetHeight / 2;
+      }
     });
 
-    // Initialize Lucide Icons
-    lucide.createIcons();
-});
+    if (lineFill) {
+      lineFill.style.height = lastActiveDotBottom + 'px';
+    }
+  }
+
+  window.addEventListener('scroll', handleJourneyScroll, { passive: true });
+  handleJourneyScroll();
+})();
+
+// ===== ROTATING WORDS =====
+(function () {
+  var words = document.querySelectorAll('.animate-word');
+  if (!words.length) return;
+  var activeIndex = 0;
+
+  setInterval(function () {
+    words[activeIndex].classList.remove('word-active');
+    activeIndex = (activeIndex + 1) % words.length;
+    words[activeIndex].classList.add('word-active');
+  }, 2000);
+})();

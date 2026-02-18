@@ -1,119 +1,456 @@
-<!--
-    Public Landing Page
-    This is the main marketing page for Campus Connect, displayed to unauthenticated
-    visitors. It provides an overview of the platform's features and a primary
-    call-to-action to log in.
--->
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CampusConnect - Connect. Collaborate. Grow.</title>
+    <title>Campus Connect - Your College Journey Starts Here</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Cinzel:wght@400;600;700;800;900&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
-    <script defer src="{{ url_for('static', filename='js/landing.js') }}"></script>
 </head>
 
+<body>
 
-<body class="bg-white text-gray-900 overflow-x-hidden">
-
-    <div class="min-h-screen">
-        <!-- Hero Section -->
-        <section class="relative min-h-screen flex items-center overflow-hidden gradient-hero">
-            <div class="absolute inset-0 opacity-10">
-                <!-- Decorative background pattern using an inline SVG -->
-                <div class="absolute inset-0"
-                    style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');">
-                </div>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-campus fixed-top" id="mainNav">
+        <div class="container-fluid px-4 px-lg-5">
+            <a class="navbar-brand navbar-brand-custom fw-bold" href="#">
+                <i class="bi bi-mortarboard-fill me-2 text-accent-campus"></i>Campus Connect
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#journey">Journey</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#team">Team</a></li>
+                    <li class="nav-item ms-lg-2">
+                        <a class="btn btn-campus-primary px-3 py-2" style="font-size: 0.875rem;" href="/login">Sign
+                            In</a>
+                    </li>
+                </ul>
             </div>
-
-            <div class="container mx-auto px-4 relative z-10">
-                <div class="max-w-4xl mx-auto text-center">
-                    <div
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 mb-8 animate-fade-in">
-                        <i data-lucide="sparkles" class="h-4 w-4 text-white"></i>
-                        <span class="text-white/90 text-sm font-medium">For Students, By Students</span>
-                    </div>
-
-                    <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight animate-fade-in"
-                        style="animation-delay: 0.1s;">
-                        Campus Connect <br />
-                        <span class="text-white/90">Your College Network</span>
-                    </h1>
-
-                    <p class="text-xl md:text-2xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in"
-                        style="animation-delay: 0.2s;">
-                        Connect. Collaborate. Grow.
-                    </p>
-
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in"
-                        style="animation-delay: 0.3s;">
-                        <a href="/login"
-                            class="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-white/90 shadow-elevated text-lg px-8 py-4 rounded-md font-medium transition-colors">
-                            <i data-lucide="log-in" class="h-5 w-5"></i>
-                            Student Login
+        </div>
+    </nav>
+    <!-- HERO SECTION -->
+    <section class="hero-section d-flex align-items-center"
+        style="background: linear-gradient(90deg rgb(43, 43, 78),rgb(72, 72, 136));">
+        <div class="hero-dots"></div>
+        <div class="container position-relative z-2">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-10 col-xl-8">
+                    <h2 class="hero-title mb-4 hero-animate-2">
+                        Campus Connect
+                    </h2>
+                    <p class="lead text-white-70 mb-5 hero-animate-3" style="font-size: 1.15rem;">
+                        College Networking Platform
+                    <div class="d-flex justify-content-center hero-animate-3">
+                        <a href="#features" class="hero-scroll-link" id="exploreLink">
+                            Explore More
+                            <span class="hero-scroll-arrow">
+                                <i class="bi bi-chevron-down"></i>
+                            </span>
                         </a>
                     </div>
                 </div>
             </div>
+        </div>
+        <div class="hero-bottom-fade"></div>
+    </section>
 
-            <!-- "Scroll Down" indicator -->
-            <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce">
-                <div class="w-6 h-10 rounded-full border-2 border-white/40 flex items-start justify-center pt-2">
-                    <div class="w-1.5 h-3 rounded-full bg-white/60"></div>
+    <!-- FEATURES SECTION -->
+    <section id="features" class="section-campus bg-light-custom">
+        <div class="container">
+            <div class="row justify-content-center mb-5">
+                <div class="col-lg-8 text-center reveal-up">
+                    <span class="text-uppercase text-accent-campus fw-semibold tracking-wide"
+                        style="font-size: 0.8rem;">
+                        Core Features
+                    </span>
+                    <h2 class="display-5 fw-bold mt-2 mb-3">What You Can Do</h2>
+                    <p class="text-muted-custom fs-5">
+                        All the tools to connect, share and stay updated on campus
+                    </p>
                 </div>
             </div>
-        </section>
 
-        <!-- Features Section -->
-        <section class="py-24 bg-white">
-            <div class="container mx-auto px-4">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                        Why CampusConnect?
+            <!-- Row 1: 3 cards -->
+            <div class="row g-4 reveal-stagger mb-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-chat-dots-fill"></i>
+                        </div>
+                        <h4 class="h5 fw-bold mb-3">Chat & Connect</h4>
+                        <p class="text-muted-custom mb-0">
+                            Send messages and have real conversations with your classmates instantly — no delays, no
+                            noise.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <h4 class="h5 fw-bold mb-3">Find Your People</h4>
+                        <p class="text-muted-custom mb-0">
+                            Connect with fellow students from your branch, batch or department and grow your campus
+                            network.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                        <h4 class="h5 fw-bold mb-3">Campus Events</h4>
+                        <p class="text-muted-custom mb-0">
+                            Never miss a fest, workshop or placement drive — every campus event, right where you are.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: 2 cards centered -->
+            <div class="row g-4 reveal-stagger justify-content-center">
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-pencil-square"></i>
+                        </div>
+                        <h4 class="h5 fw-bold mb-3">Share Your Thoughts</h4>
+                        <p class="text-muted-custom mb-0">
+                            Create posts, edit them anytime and delete when you want — your voice, your control.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card h-100">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-grid-fill"></i>
+                        </div>
+                        <h4 class="h5 fw-bold mb-3">Explore the Feed</h4>
+                        <p class="text-muted-custom mb-0">
+                            Scroll through posts from your entire campus community — all in one clean, organised feed.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="section-campus">
+        <div class="container">
+            <div class="row justify-content-center mb-5">
+                <div class="col-lg-10 text-center reveal-up">
+                    <span class="text-uppercase text-accent-campus fw-semibold tracking-wide"
+                        style="font-size: 0.8rem;">
+                        Why Us?
+                    </span>
+                    <h2 class="display-5 fw-bold mt-2 mb-4">What Makes Campus Connect Different</h2>
+                    <p class="fs-5 text-muted-custom">
+                        Built only for your campus — to make college life easier, more connected and a little less
+                        chaotic.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-5 reveal-stagger justify-content-center">
+                <div class="col-md-6 col-lg-4">
+                    <div class="diff-card text-center">
+                        <div class="diff-card-icon mx-auto mb-3">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Verified Students Only</h5>
+                        <p class="text-muted-custom small mb-0">
+                            Sign in with your college email — no fake profiles, no outsiders, just your real campus
+                            community.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="diff-card text-center">
+                        <div class="diff-card-icon mx-auto mb-3">
+                            <i class="bi bi-grid-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Everything in One Place</h5>
+                        <p class="text-muted-custom small mb-0">
+                            Events, posts, chats, connections — no switching between apps, it's all right here.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="diff-card text-center">
+                        <div class="diff-card-icon mx-auto mb-3">
+                            <i class="bi bi-cash-coin"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Completely Free</h5>
+                        <p class="text-muted-custom small mb-0">
+                            No subscriptions, no hidden charges. Built for students, always free.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- JOURNEY SECTION -->
+    <section id="journey" class="section-campus bg-light-custom">
+        <div class="container">
+            <div class="row justify-content-center mb-5">
+                <div class="col-lg-8 text-center reveal-up">
+                    <span class="text-uppercase text-accent-campus fw-semibold tracking-wide"
+                        style="font-size: 0.8rem;">
+                        Your Path
+                    </span>
+                    <h2 class="display-5 fw-bold mt-2 mb-3">How It Works</h2>
+                    <p class="text-muted-custom fs-5">
+                        Get started in minutes and transform your college experience
+                    </p>
+                </div>
+            </div>
+
+            <div class="journey-wrapper position-relative" id="journeyWrapper">
+                <div class="journey-line"></div>
+                <div class="journey-line-fill" id="journeyLineFill"></div>
+
+                <!-- Step 1 -->
+                <div class="journey-step">
+                    <div class="journey-dot"></div>
+                    <div class="journey-card journey-card-left">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="feature-icon-sm flex-shrink-0">
+                                <i class="bi bi-person-plus-fill"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-2">1. Sign in</h5>
+                                <p class="text-muted-custom mb-0 small">
+                                    Login using your official college email.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="journey-step">
+                    <div class="journey-dot"></div>
+                    <div class="journey-card journey-card-right">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="feature-icon-sm flex-shrink-0">
+                                <i class="bi bi-pencil-square"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-2">2. Build Profile</h5>
+                                <p class="text-muted-custom mb-0 small">
+                                    Add your skills, experiences and share your thoughts.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="journey-step">
+                    <div class="journey-dot"></div>
+                    <div class="journey-card journey-card-left">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="feature-icon-sm flex-shrink-0">
+                                <i class="bi bi-search"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-2">3. Discover</h5>
+                                <p class="text-muted-custom mb-0 small">
+                                    Explore your campus feed, find events and connect with people around you.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="journey-step">
+                    <div class="journey-dot"></div>
+                    <div class="journey-card journey-card-right">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="feature-icon-sm flex-shrink-0">
+                                <i class="bi bi-rocket-takeoff-fill"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-2">4. Engage</h5>
+                                <p class="text-muted-custom mb-0 small">
+                                    Participate in events and stay connected with your classmates. </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SHOWCASE SECTION -->
+    <section id="showcase" class="showcase-section position-relative">
+        <div class="hero-dots"></div>
+        <div class="container position-relative z-2">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-10">
+                    <h2 class="display-4 fw-bold text-white mb-4">
+                        you can
+                        <span class="word-container">
+                            <span class="animate-word word-active brand-highlight">collaborate</span>
+                            <span class="animate-word brand-highlight">Connect</span>
+                            <span class="animate-word brand-highlight">Explore</span>
+                            <span class="animate-word brand-highlight">Learn</span>
+                            <span class="animate-word brand-highlight">Share</span>
+                        </span>
                     </h2>
-                    <p class="text-lg text-gray-500 max-w-xl mx-auto">
-                        Everything you need to thrive in your college journey
+                    <p class="lead text-white-70 mb-5">
+                        Get started in minutes and stay connected with your entire campus.
+                    </p>
+                    <div class="d-flex justify-content-center hero-animate-3">
+                        <a href="#features" class="hero-scroll-link" id="exploreLink">
+                            See Features
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TEAM SECTION -->
+    <section id="team" class="section-campus">
+        <div class="container">
+            <div class="row justify-content-center mb-5">
+                <div class="col-lg-8 text-center reveal-up">
+
+                    <h2 class="display-5 fw-bold mt-2 mb-3">Our Team</h2>
+                </div>
+            </div>
+
+            <div class="row g-4 justify-content-center reveal-stagger">
+                <div class="col-md-6 col-lg-4">
+                    <div class="text-center">
+                        <div class="team-avatar-img mx-auto mb-3 d-flex align-items-center justify-content-center"><i
+                                class="bi bi-person-fill" style="font-size: 4rem; color: hsl(215, 80%, 35%);"></i></div>
+                        <h4 class="fw-bold mb-1">Dhyey Daftary</h4>
+                        <br>
+                        <p class="text-muted-custom mb-2">IT</p>
+
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="text-center">
+                        <div class="team-avatar-img mx-auto mb-3 d-flex align-items-center justify-content-center"><i
+                                class="bi bi-person-fill" style="font-size: 4rem; color: hsl(215, 80%, 35%);"></i></div>
+                        <h4 class="fw-bold mb-1">Urva shah</h4>
+                        <br>
+                        <p class="text-muted-custom mb-2">AIML</p>
+
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="text-center">
+                        <div class="team-avatar-img mx-auto mb-3 d-flex align-items-center justify-content-center"><i
+                                class="bi bi-person-fill" style="font-size: 4rem; color: hsl(215, 80%, 35%);"></i></div>
+                        <h4 class="fw-bold mb-1">Twisha Agarwal</h4>
+                        <br>
+                        <p class="text-muted-custom mb-2">AIML</p>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="campus-footer text-white py-5">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <h5 class="navbar-brand-custom fw-bold mb-3">
+                        <i class="bi bi-mortarboard-fill me-2 text-accent-campus"></i>CampusConnect
+                    </h5>
+                    <p class="text-white-60">
+                        Connecting students and building communities across the campus.
                     </p>
                 </div>
 
-                <!-- Feature cards are dynamically generated and injected here by landing.js -->
-                <div id="feature-grid" class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <div class="col-6 col-lg-2">
+                    <h6 class="fw-bold mb-6">Company</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#features"
+                                class="text-white-50 text-decoration-none footer-link">Features</a></li>
+                        <li class="mb-2"><a href="#about"
+                                class="text-white-50 text-decoration-none footer-link">About</a></li>
+                        <li class="mb-2"><a href="#team" class="text-white-50 text-decoration-none footer-link">Team</a>
+                        </li>
+                    </ul>
+                    </ul>
+                </div>
+
+                <div class="col-6 col-lg-2">
+                    <h6 class="fw-bold mb-6">Legal</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none footer-link">Privacy</a>
+                        </li>
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none footer-link">Terms</a>
+                        </li>
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none footer-link">Security</a>
+                        </li>
+                    </ul>
                 </div>
             </div>
-        </section>
 
-        <!-- Call to Action (CTA) Section -->
-        <section class="py-20 gradient-primary">
-            <div class="container mx-auto px-4 text-center">
-                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
-                    Ready to connect with your campus?
-                </h2>
-                <p class="text-white/70 mb-8 text-lg">
-                    Join thousands of students already building their network
-                </p>
-                <a href="/login"
-                    class="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 hover:bg-white/90 text-lg px-8 py-4 rounded-md font-medium shadow-elevated transition-colors">
-                    Login Now
-                    <i data-lucide="arrow-right" class="h-5 w-5"></i>
-                </a>
+            <hr class="my-4 border-white border-opacity-10">
+
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="text-white-50 mb-0">&copy; 2024 CampusConnect. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end mt-3 mt-md-0">
+                    <a href="#" class="text-white-50 text-decoration-none me-3 footer-link"><i
+                            class="bi bi-twitter"></i></a>
+                    <a href="#" class="text-white-50 text-decoration-none me-3 footer-link"><i
+                            class="bi bi-instagram"></i></a>
+                    <a href="#" class="text-white-50 text-decoration-none me-3 footer-link"><i
+                            class="bi bi-linkedin"></i></a>
+                    <a href="#" class="text-white-50 text-decoration-none footer-link"><i
+                            class="bi bi-facebook"></i></a>
+                </div>
             </div>
-        </section>
+        </div>
+    </footer>
 
-        <!-- Footer -->
-        <footer class="py-8 bg-gray-900">
-            <div class="container mx-auto px-4 text-center">
-                <p class="text-gray-400">
-                    © 2024 CampusConnect. Made with ❤️ for students.
-                </p>
-            </div>
-        </footer>
-    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 </body>
 
 </html>
