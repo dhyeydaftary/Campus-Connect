@@ -372,19 +372,19 @@ async function toggleEventStatus(eventId, status) {
         const data = await res.json();
 
         if (!res.ok) {
-            alert(data.error || 'Failed to register for event');
+            showToast('Registration Failed', data.error || 'Failed to register for event', 'error');
             return;
         }
 
         // Show success message
-        showToast(data.message, 'success');
+        showToast('Success', data.message, 'success');
 
         // Reload events to reflect changes
         await loadEvents();
 
     } catch (error) {
         console.error('Error:', error);
-        alert('Failed to register for event. Please try again.');
+        showToast('Network Error', 'Failed to register for event. Please try again.', 'error');
     }
 }
 
@@ -397,49 +397,25 @@ function scrollToTop() {
     });
 }
 
-
-// Show toast notification
-function showToast(message, type = 'success') {
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white text-sm font-medium z-50 transition-opacity duration-300 ${type === 'success' ? 'bg-green-500' :
-            type === 'error' ? 'bg-red-500' :
-                'bg-indigo-500'
-        }`;
-    toast.textContent = message;
-
-    document.body.appendChild(toast);
-
-    // Fade out and remove after 3 seconds
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 500);
-    }, 3000);
-}
-
-
 // Logic: Create Post
 async function submitPost() {
     const caption = document.getElementById('post-caption').value.trim();
     const fileInput = document.getElementById('post-file');
     const submitBtn = document.getElementById('submit-post-btn');
 
-    // Validation
-    if (currentPostType === 'text' && !caption) {
-        alert('Please enter some text for your post');
-        return;
-    }
-
-    if (currentPostType !== 'text' && (!fileInput || !fileInput.files[0])) {
-        alert('Please select a file');
-        return;
-    }
-
-    // Disable submit button
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Posting...';
 
     try {
+        // Validation: Throw errors to be caught by the catch block.
+        if (currentPostType === 'text' && !caption) {
+            throw new Error('Please enter some text for your post.');
+        }
+
+        if (currentPostType !== 'text' && (!fileInput || !fileInput.files[0])) {
+            throw new Error('Please select a file for this post type.');
+        }
+
         const formData = new FormData();
         formData.append('post_type', currentPostType);
         formData.append('caption', caption);
@@ -459,28 +435,29 @@ async function submitPost() {
             throw new Error(data.error || 'Failed to create post');
         }
 
-        // Success - reload posts and update counts
         closeCreatePost();
         
-        // Clear and reload feed (FIXED: correct container ID)
-        // Reset feed loader state properly
         window.feedLoader.currentPage = 1;
         window.feedLoader.hasMore = true;
         window.feedLoader.posts = [];
 
         await window.feedLoader.loadPosts(false);
 
-        // Update counts AFTER feed loads
         await loadProfileCard();
 
-        showToast('Post created successfully!', 'success');
+        showToast('Success', 'Post created successfully!', 'success');
 
     } catch (error) {
         console.error('Error creating post:', error);
-        alert(error.message || 'Failed to create post. Please try again.');
+        const isValidationError = error.message.includes('Please enter') || error.message.includes('Please select');
+        showToast(
+            isValidationError ? 'Incomplete Post' : 'Post Error',
+            error.message,
+            isValidationError ? 'warning' : 'error'
+        );
     } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Post';
+        submitBtn.innerHTML = 'Post';
     }
 }
 
@@ -574,21 +551,21 @@ async function sendConnectionRequest(userId) {
         
         if (response.ok) {
             // Success - show message and refresh suggestions
-            showToast('Connection request sent successfully!', 'success');
+            showToast('Success', 'Connection request sent successfully!', 'success');
             loadSuggestions(); // Refresh suggestions to remove this user
         } else {
             if (response.status === 401 || response.status === 403) {
-                showToast('Session mismatch. Reloading...', 'error');
+                showToast('Session Error', 'Your session has expired. Reloading...', 'error');
                 setTimeout(() => window.location.reload(), 1000);
                 return;
             }
             // Error - show error message
-            showToast(data.error || 'Failed to send connection request', 'error');
+            showToast('Error', data.error || 'Failed to send connection request', 'error');
         }
         
     } catch (error) {
         console.error('Error sending connection request:', error);
-        showToast('Error sending connection request. Please try again.', 'error');
+        showToast('Network Error', 'Could not send request. Please try again.', 'error');
     }
 }
 
@@ -743,20 +720,20 @@ async function rejectConnectionRequest(requestId) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('Connection request rejected', 'success');
+            showToast('Info', 'Connection request rejected', 'info');
             loadPendingRequests(); // Refresh pending requests
         } else {
             if (response.status === 401 || response.status === 403) {
-                showToast('Session mismatch. Reloading...', 'error');
+                showToast('Session Error', 'Your session has expired. Reloading...', 'error');
                 setTimeout(() => window.location.reload(), 1000);
                 return;
             }
-            showToast(data.error || 'Failed to reject request', 'error');
+            showToast('Error', data.error || 'Failed to reject request', 'error');
         }
         
     } catch (error) {
         console.error('Error rejecting request:', error);
-        showToast('Error rejecting request. Please try again.', 'error');
+        showToast('Network Error', 'Could not reject request. Please try again.', 'error');
     }
 }
 

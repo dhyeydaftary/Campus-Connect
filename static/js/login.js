@@ -5,26 +5,6 @@ document.addEventListener("DOMContentLoaded", () => {
         lucide.createIcons();
     }
 
-    // Toast utility
-    function showToast(title, description, destructive = false) {
-        const container = document.getElementById("toast-container");
-        const toast = document.createElement("div");
-
-        toast.className = `toast ${destructive ? "destructive" : ""}`;
-        toast.innerHTML = `
-            <div class="font-semibold text-sm">${title}</div>
-            <div class="text-xs text-slate-500 mt-1">${description}</div>
-        `;
-
-        container.appendChild(toast);
-        setTimeout(() => toast.classList.add("show"), 10);
-
-        setTimeout(() => {
-            toast.classList.remove("show");
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
-
     // Form handling
     const form = document.getElementById("login-form");
     const btn = document.getElementById("login-btn");
@@ -222,11 +202,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 btn.disabled = false;
             } else {
-                showToast("Error", "Student details not found.", true);
+                showToast("Error", "Student details not found.", "error");
                 btn.disabled = true;
             }
         } catch (error) {
-            showToast("Error", "Failed to fetch student details.", true);
+            showToast("Network Error", "Failed to fetch student details.", "error");
         }
     }
 
@@ -312,14 +292,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 otpFlow.classList.remove("hidden");
                 maskedEmailSpan.textContent = result.email;
                 btnText.textContent = "Verify & Login";
-                showToast("OTP Sent", `Check your email`);
+                showToast("OTP Sent", `Check your email at ${result.email}`, 'info');
                 startOtpTimer(result.expiry_time);
             } else {
-                showToast("Error", result.error || "Failed to send OTP", true);
+                showToast("Error", result.error || "Failed to send OTP", "error");
                 resendBtn.disabled = false; // Re-enable if failed
             }
         } catch (error) {
-            showToast("Error", "Network error. Please try again.", true);
+            showToast("Network Error", "Please try again.", "error");
             resendBtn.disabled = false;
         } finally {
             btn.disabled = false;
@@ -358,10 +338,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 const result = await response.json();
                 
                 if (response.ok) {
-                    showToast("Success", "Login successful");
+                    showToast("Success", "Login successful, redirecting...", 'success');
                     window.location.replace(result.redirect_url);
                 } else {
-                    showToast("Login Failed", result.error, true);
+                    showToast("Login Failed", result.error, "error");
                 }
             }
             // --- STUDENT PASSWORD LOGIN ---
@@ -377,17 +357,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 const result = await response.json();
 
                 if (response.ok) {
-                    showToast("Success", "Login successful");
+                    showToast("Success", "Login successful, redirecting...", 'success');
                     window.location.replace(result.redirect_url);
                 } else {
-                    showToast("Login Failed", result.error, true);
+                    showToast("Login Failed", result.error, "error");
                 }
             }
             // --- STUDENT OTP REQUEST ---
             else if (currentRole === "student" && currentStep === "credentials") {
                 // STEP 1: Request OTP
                 if (!enrollmentInput.value || !branchSelect.value || !nameInput.value) {
-                    showToast("Incomplete", "Please select a valid student from the suggestions.", true);
+                    showToast("Incomplete", "Please select a valid student from the suggestions.", "warning");
                     throw new Error("Validation failed");
                 }
                 
@@ -401,7 +381,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const otp = document.getElementById("otp").value.trim();
 
                 if (!otp || otp.length !== 6) {
-                    showToast("Invalid OTP", "Please enter a valid 6-digit OTP.", true);
+                    showToast("Invalid OTP", "Please enter a valid 6-digit OTP.", "warning");
                     throw new Error("Validation failed");
                 }
 
@@ -416,17 +396,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 const result = await response.json();
 
                 if (response.ok) {
-                    showToast("Success", "Login successful! Redirecting...");
+                    showToast("Success", "Login successful! Redirecting...", 'success');
                     setTimeout(() => {
                         window.location.replace(result.redirect_url || "/home");
                     }, 800);
                 } else {
-                    showToast("Verification Failed", result.error || "Invalid OTP.", true);
+                    showToast("Verification Failed", result.error || "Invalid OTP.", "error");
                 }
             }
         } catch (error) {
             if (error.message !== "Validation failed" && error.message !== "Missing credentials") {
-                showToast("Error", "Something went wrong. Please try again.", true);
+                showToast("System Error", "Something went wrong. Please try again.", "error");
             }
         } finally {
             // Reset button state (unless redirecting)
@@ -444,120 +424,76 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     });
-
+    
     // ==========================================
-    // FORGOT PASSWORD LOGIC
+    // FORGOT PASSWORD MODAL LOGIC
     // ==========================================
     const forgotLink = document.getElementById("forgot-password-link");
     const forgotModal = document.getElementById("forgot-password-modal");
     const closeForgotModal = document.getElementById("close-forgot-modal");
     const forgotForm = document.getElementById("forgot-password-form");
     const fpBtn = document.getElementById("fp-btn");
-    
-    let fpStep = 1;
+    const fpBtnText = document.getElementById("fp-btn-text");
+    const fpBtnSpinner = document.getElementById("fp-btn-spinner");
+    const fpStatus = document.getElementById("fp-status");
+    const fpIdentifier = document.getElementById("fp-identifier");
 
-    if (forgotLink) {
-        forgotLink.addEventListener("click", (e) => {
-            e.preventDefault();
-            forgotModal.classList.remove("hidden");
-            forgotModal.classList.add("flex");
-            resetForgotForm();
-        });
-    }
+    const openModal = () => {
+        forgotModal.classList.remove("hidden");
+        forgotModal.classList.add("flex");
+        fpIdentifier.value = "";
+        fpStatus.textContent = "A link to reset your password will be sent to your email.";
+        fpStatus.className = "text-xs text-gray-500 mt-2";
+        fpBtn.disabled = false;
+        fpBtnText.classList.remove("hidden");
+        fpBtnSpinner.classList.add("hidden");
+        fpBtnText.textContent = "Send Reset Link";
+    };
 
-    if (closeForgotModal) {
-        closeForgotModal.addEventListener("click", () => {
-            forgotModal.classList.add("hidden");
-            forgotModal.classList.remove("flex");
-        });
-    }
+    const closeModal = () => {
+        forgotModal.classList.add("hidden");
+        forgotModal.classList.remove("flex");
+    };
 
-    function resetForgotForm() {
-        fpStep = 1;
-        document.getElementById("fp-step-1").classList.remove("hidden");
-        document.getElementById("fp-step-2").classList.add("hidden");
-        document.getElementById("fp-step-3").classList.add("hidden");
-        document.getElementById("fp-identifier").value = "";
-        document.getElementById("fp-otp").value = "";
-        document.getElementById("fp-new-pass").value = "";
-        document.getElementById("fp-confirm-pass").value = "";
-        fpBtn.textContent = "Send OTP";
-    }
+    forgotLink?.addEventListener("click", (e) => { e.preventDefault(); openModal(); });
+    closeForgotModal?.addEventListener("click", closeModal);
 
-    forgotForm.addEventListener("submit", async (e) => {
+    forgotForm?.addEventListener("submit", async(e) => {
         e.preventDefault();
-        const identifier = document.getElementById("fp-identifier").value.trim();
+        const identifier = fpIdentifier.value.trim();
+
+        if (!identifier) {
+            fpStatus.textContent = "Please enter your email or enrollment number.";
+            fpStatus.className = "text-xs text-red-600 mt-2";
+            return;
+        }
+
+        // Set loading state
         fpBtn.disabled = true;
+        fpBtnText.classList.add("hidden");
+        fpBtnSpinner.classList.remove("hidden");
+        fpStatus.textContent = "Sending request...";
+        fpStatus.className = "text-xs text-gray-500 mt-2";
 
         try {
-            if (fpStep === 1) {
-                if (!identifier) throw new Error("Please enter your Enrollment No. or Email");
-                fpBtn.textContent = "Sending...";
-                
-                const res = await fetch("/api/auth/forgot-password/request-otp", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ identifier })
-                });
-                
-                const data = await res.json();
-                showToast("Info", "If account exists, OTP sent.");
-                fpStep = 2;
-                document.getElementById("fp-step-1").classList.add("hidden");
-                document.getElementById("fp-step-2").classList.remove("hidden");
-                fpBtn.textContent = "Verify OTP";
-                
-                if (data.expiry_time) {
-                    startOtpTimer(data.expiry_time, "fp-otp-timer", null);
-                }
-
-            } else if (fpStep === 2) {
-                const otp = document.getElementById("fp-otp").value.trim();
-                if (otp.length !== 6) throw new Error("Invalid OTP");
-                fpBtn.textContent = "Verifying...";
-
-                const res = await fetch("/api/auth/forgot-password/verify-otp", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ identifier, otp })
-                });
-                
-                if (!res.ok) throw new Error((await res.json()).error || "Invalid OTP");
-
-                fpStep = 3;
-                document.getElementById("fp-step-2").classList.add("hidden");
-                document.getElementById("fp-step-3").classList.remove("hidden");
-                fpBtn.textContent = "Reset Password";
-
-            } else if (fpStep === 3) {
-                const otp = document.getElementById("fp-otp").value.trim();
-                const newPass = document.getElementById("fp-new-pass").value;
-                const confirmPass = document.getElementById("fp-confirm-pass").value;
-
-                if (newPass.length < 6) throw new Error("Password too short (min 6 chars)");
-                if (newPass !== confirmPass) throw new Error("Passwords do not match");
-                
-                fpBtn.textContent = "Updating...";
-
-                const res = await fetch("/api/auth/forgot-password/reset-password", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ identifier, otp, new_password: newPass })
-                });
-
-                if (!res.ok) throw new Error((await res.json()).error || "Failed to reset");
-
-                showToast("Success", "Password reset successfully!");
-                forgotModal.classList.add("hidden");
-                forgotModal.classList.remove("flex");
-            }
+            const response = await fetch("/api/auth/forgot-password/request", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ identifier })
+            });
+            const data = await response.json();
+            // Always show a generic success message for security (prevents user enumeration)
+            fpStatus.textContent = data.message;
+            fpStatus.className = "text-xs text-green-600 mt-2";
         } catch (err) {
-            showToast("Error", err.message, true);
+            // On network error, still show a generic message
+            fpStatus.textContent = "If an account exists, an email has been sent.";
+            fpStatus.className = "text-xs text-green-600 mt-2";
         } finally {
-            fpBtn.disabled = false;
-            if (fpStep === 1) fpBtn.textContent = "Send OTP";
-            else if (fpStep === 2) fpBtn.textContent = "Verify OTP";
-            else if (fpStep === 3) fpBtn.textContent = "Reset Password";
+            // Keep button disabled and message shown. User should check their email.
+            fpBtnText.textContent = "Link Sent";
+            fpBtnText.classList.remove("hidden");
+            fpBtnSpinner.classList.add("hidden");
         }
     });
 });

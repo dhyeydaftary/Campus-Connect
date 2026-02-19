@@ -1,0 +1,40 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+
+<p>Hello,</p>
+
+<p>
+    A sign-in request was initiated for your Campus Connect account.
+    Please use the verification code below to complete authentication.
+</p>
+
+<div style="text-align:center; margin:40px 0;">
+    {% for digit in otp_code %}
+    <span style="
+        display:inline-block;
+        width:46px;
+        height:56px;
+        line-height:56px;
+        margin:5px;
+        font-size:20px;
+        font-weight:600;
+        background-color:#f9fafb;
+        border:1px solid #e5e7eb;
+        border-radius:6px;
+        color:#111827;">
+        {{ digit }}
+    </span>
+    {% endfor %}
+</div>
+
+<p>
+    This code will expire in <strong>5 minutes</strong>.
+    For your protection, do not share this code with anyone.
+</p>
+
+<p>
+    If you did not attempt to sign in, you may safely disregard this message.
+</p>
+
+{% endblock %}

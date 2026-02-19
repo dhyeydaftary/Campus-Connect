@@ -1,0 +1,36 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+
+<p>Hello {{ user_name }},</p>
+
+<p>
+    Welcome to Campus Connect.
+    Your account has been successfully created.
+</p>
+
+<p>
+    With Campus Connect, you can:
+</p>
+
+<ul style="padding-left:18px; margin:15px 0;">
+    <li>Connect with students and peers</li>
+    <li>Share updates and academic insights</li>
+    <li>Participate in discussions</li>
+    <li>Stay informed about campus events</li>
+</ul>
+
+<p>
+    We encourage you to complete your profile and begin exploring the platform.
+</p>
+
+<p>
+    If you have any questions, feel free to reach out to our support team.
+</p>
+
+<p>
+    Best regards,<br>
+    Campus Connect Team
+</p>
+
+{% endblock %}

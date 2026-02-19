@@ -55,44 +55,6 @@ let state = {
 // UTILITY FUNCTIONS
 // ============================================
 
-function showToast(message, type = 'success') {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = `toast flex items-center gap-3 px-4 py-3 bg-card border border-border rounded-lg shadow-card-hover`;
-
-  const icon = type === 'success'
-    ? '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
-    : '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
-
-  toast.innerHTML = `${icon}<span class="text-sm text-foreground">${message}</span>`;
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.classList.add('removing');
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-// ============================================
-// RENDER FUNCTIONS
-// ============================================
-
-function renderSkills() {
-  const container = document.getElementById('skillsContainer');
-  const skills = profileData.skills || [];
-  
-  if (skills.length === 0) {
-    container.innerHTML = '<p class="text-sm text-muted-foreground">No skills added yet.</p>';
-    return;
-  }
-  
-  container.innerHTML = skills.map(skill => `
-    <span class="skill-badge px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full cursor-default">
-      ${skill.name}
-    </span>
-  `).join('');
-}
-
 function renderExperience() {
   const container = document.getElementById('experienceContainer');
   const experiences = profileData.experiences || [];
@@ -544,11 +506,11 @@ async function saveModal() {
         const confirmPassword = document.getElementById('confirmPassword').value;
 
         if (newPassword !== confirmPassword) {
-            showToast('Passwords do not match', 'error');
+            showToast('Validation Error', 'Passwords do not match.', 'warning');
             return;
         }
         if (newPassword.length < 6) {
-            showToast('Password must be at least 6 characters', 'error');
+            showToast('Validation Error', 'Password must be at least 6 characters.', 'warning');
             return;
         }
 
@@ -564,7 +526,7 @@ async function saveModal() {
 
         if (!pwdResponse.ok) {
             const data = await pwdResponse.json();
-            showToast(data.error || 'Failed to update password', 'error');
+            showToast('Error', data.error || 'Failed to update password', 'error');
             return;
         }
         
@@ -741,11 +703,11 @@ async function saveModal() {
         break;
     }
 
-    closeEditModal();
-    showToast('Changes saved successfully!');
+    showToast('Success', 'Your changes have been saved.', 'success');
+    closeEditModal(); // Close modal after showing toast
   } catch (error) {
     console.error('Error saving:', error);
-    showToast('Error saving changes', 'error');
+    showToast('Save Error', 'Could not save your changes. Please try again.', 'error');
   }
 }
 
@@ -771,15 +733,15 @@ async function addSkill() {
         profileData.skills.push(newSkill);
         input.value = '';
         renderSkills();
-        openEditModal('skills'); // Refresh modal
-        showToast('Skill added successfully!');
+        openEditModal('skills'); // Refresh modal with new skill
+        showToast('Success', 'Skill has been added.', 'success');
       } else {
         const error = await response.json();
-        showToast(error.error || 'Failed to add skill', 'error');
+        showToast('Error', error.error || 'Failed to add the skill.', 'error');
       }
     } catch (error) {
       console.error('Error adding skill:', error);
-      showToast('Error adding skill', 'error');
+      showToast('Network Error', 'Could not add the skill. Please check your connection.', 'error');
     }
   }
 }
@@ -793,15 +755,15 @@ async function removeSkill(skillId) {
     if (response.ok) {
       profileData.skills = profileData.skills.filter(s => s.id != skillId);
       renderSkills();
-      openEditModal('skills'); // Refresh modal
-      showToast('Skill removed successfully!');
+      openEditModal('skills'); // Refresh modal without the removed skill
+      showToast('Success', 'The skill has been removed.', 'success');
     } else {
       const error = await response.json();
-      showToast(error.error || 'Failed to remove skill', 'error');
+      showToast('Error', error.error || 'Failed to remove the skill.', 'error');
     }
   } catch (error) {
     console.error('Error removing skill:', error);
-    showToast('Error removing skill', 'error');
+    showToast('Network Error', 'Could not remove the skill. Please check your connection.', 'error');
   }
 }
 
@@ -849,14 +811,14 @@ async function removeExperience(expId) {
       profileData.experiences = profileData.experiences.filter(e => e.id != expId);
       openEditModal('experience'); // Refresh modal
       renderExperience();
-      showToast('Experience removed successfully!');
+      showToast('Success', 'The experience has been removed.', 'success');
     } else {
       const error = await response.json();
-      showToast(error.error || 'Failed to remove experience', 'error');
+      showToast('Error', error.error || 'Failed to remove the experience.', 'error');
     }
   } catch (error) {
     console.error('Error removing experience:', error);
-    showToast('Error removing experience', 'error');
+    showToast('Network Error', 'Could not remove the experience. Please check your connection.', 'error');
   }
 }
 
@@ -901,14 +863,14 @@ async function removeEducation(eduId) {
       profileData.educations = profileData.educations.filter(e => e.id != eduId);
       openEditModal('education'); // Refresh modal
       renderEducation();
-      showToast('Education removed successfully!');
+      showToast('Success', 'The education entry has been removed.', 'success');
     } else {
       const error = await response.json();
-      showToast(error.error || 'Failed to remove education', 'error');
+      showToast('Error', error.error || 'Failed to remove the education entry.', 'error');
     }
   } catch (error) {
     console.error('Error removing education:', error);
-    showToast('Error removing education', 'error');
+    showToast('Network Error', 'Could not remove the education entry. Please check your connection.', 'error');
   }
 }
 
@@ -926,21 +888,21 @@ async function sendConnectionRequest(receiverId) {
 
     if (response.ok) {
       const data = await response.json();
-      showToast('Connection request sent!', 'success');
+      showToast('Success', 'Connection request sent.', 'success');
       // Reload profile data to update connection status
       await refreshConnectionData();
     } else {
       if (response.status === 401 || response.status === 403) {
-        showToast('Session mismatch. Reloading...', 'error');
+        showToast('Session Error', 'Your session has expired. Reloading...', 'error');
         setTimeout(() => window.location.reload(), 1000);
         return;
       }
       const errorData = await response.json();
-      showToast(errorData.error || 'Error sending request', 'error');
+      showToast('Error', errorData.error || 'Could not send request.', 'error');
     }
   } catch (error) {
     console.error('Error sending connection request:', error);
-    showToast('Error sending connection request', 'error');
+    showToast('Network Error', 'Could not send request. Please check your connection.', 'error');
   }
 }
 
@@ -953,21 +915,21 @@ async function acceptConnectionRequest(requestId) {
 
     if (response.ok) {
       const data = await response.json();
-      showToast('Connection request accepted!', 'success');
+      showToast('Success', 'Connection request accepted.', 'success');
       // Reload profile data to update connection status
       await refreshConnectionData();
     } else {
       if (response.status === 401 || response.status === 403) {
-        showToast('Session mismatch. Reloading...', 'error');
+        showToast('Session Error', 'Your session has expired. Reloading...', 'error');
         setTimeout(() => window.location.reload(), 1000);
         return;
       }
       const errorData = await response.json();
-      showToast(errorData.error || 'Error accepting request', 'error');
+      showToast('Error', errorData.error || 'Could not accept request.', 'error');
     }
   } catch (error) {
     console.error('Error accepting connection request:', error);
-    showToast('Error accepting connection request', 'error');
+    showToast('Network Error', 'Could not accept request. Please check your connection.', 'error');
   }
 }
 
@@ -979,20 +941,20 @@ async function rejectConnectionRequest(requestId) {
     });
 
     if (response.ok) {
-      showToast('Connection request rejected', 'success');
+      showToast('Info', 'Connection request rejected.', 'info');
       await refreshConnectionData();
     } else {
       if (response.status === 401 || response.status === 403) {
-        showToast('Session mismatch. Reloading...', 'error');
+        showToast('Session Error', 'Your session has expired. Reloading...', 'error');
         setTimeout(() => window.location.reload(), 1000);
         return;
       }
       const errorData = await response.json();
-      showToast(errorData.error || 'Error rejecting request', 'error');
+      showToast('Error', errorData.error || 'Could not reject request.', 'error');
     }
   } catch (error) {
     console.error('Error rejecting connection request:', error);
-    showToast('Error rejecting connection request', 'error');
+    showToast('Network Error', 'Could not reject request. Please check your connection.', 'error');
   }
 }
 
@@ -1017,15 +979,15 @@ async function confirmRemoveConnection() {
     });
     
     if (response.ok) {
-      showToast('Connection removed', 'success');
+      showToast('Success', 'Connection removed.', 'success');
       await refreshConnectionData();
     } else {
       const data = await response.json();
-      showToast(data.error || 'Failed to remove connection', 'error');
+      showToast('Error', data.error || 'Failed to remove the connection.', 'error');
     }
   } catch (error) {
     console.error('Error removing connection:', error);
-    showToast('Error removing connection', 'error');
+    showToast('Network Error', 'Could not remove the connection. Please check your connection.', 'error');
   } finally {
     closeRemoveConnectionModal();
   }
@@ -1050,7 +1012,7 @@ async function toggleLike(postId) {
     });
 
     if (response.ok) {
-      const data = await response.json();
+      const data = await response.json(); // eslint-disable-line no-unused-vars
       // Update the UI to reflect the new like status
       // This would need to be implemented based on how posts are rendered
       console.log('Like toggled:', data);
@@ -1067,6 +1029,28 @@ async function toggleLike(postId) {
 // ============================================
 // API DATA FETCHING
 // ============================================
+
+function renderSkills() {
+  const container = document.getElementById('skillsContainer');
+  const skills = profileData.skills || [];
+  
+  if (!container) return;
+
+  if (skills.length === 0) {
+    container.innerHTML = '<p class="text-sm text-muted-foreground">No skills added yet.</p>';
+    return;
+  }
+  
+  container.innerHTML = skills.map(skill => `
+    <span class="skill-badge px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full cursor-default">
+      ${skill.name}
+    </span>
+  `).join('');
+}
+
+
+
+
 
 async function loadProfileData(userId) {
   document.getElementById('profileName').textContent = 'Loading...';
@@ -1242,10 +1226,10 @@ function setupAvatarUpload(isOwnProfile) {
                 // Update local data and UI
                 profileData.user.profile_picture = url;
                 updateProfileHeader(profileData.user);
-                ProfileUpload.updateGlobalAvatars(url);
-                showToast('Profile photo updated', 'success');
+                window.ProfileUpload.updateGlobalAvatars(url);
+                showToast('Success', 'Profile photo updated', 'success');
             } catch (err) {
-                showToast(err.message || 'Upload failed', 'error');
+                showToast('Upload Failed', err.message || 'Could not upload photo.', 'error');
             } finally {
                 container.classList.remove('opacity-50');
             }
@@ -1372,7 +1356,7 @@ async function submitComment() {
         
         if (!response.ok) throw new Error('Failed to post comment');
         
-        input.value = '';
+        input.value = ''; // eslint-disable-line no-unused-vars
         
         const postIndex = window.feedLoader.posts.findIndex(p => p.id == postId);
         if (postIndex >= 0) {
@@ -1387,6 +1371,6 @@ async function submitComment() {
         
     } catch (error) {
         console.error('Error posting comment:', error);
-        showToast('Failed to post comment', 'error');
+        showToast('Error', 'Failed to post comment.', 'error');
     }
 }

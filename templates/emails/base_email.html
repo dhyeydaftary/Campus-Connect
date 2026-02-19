@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+</head>
+
+<body
+    style="margin:0; padding:0; background-color:#f4f6f9; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:60px 20px;">
+        <tr>
+            <td align="center">
+
+                <table width="520" cellpadding="0" cellspacing="0"
+                    style="background:#ffffff; border-radius:10px; padding:48px 40px; box-shadow:0 12px 30px rgba(0,0,0,0.05);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding-bottom:30px;">
+                            <h1 style="margin:0; font-size:20px; font-weight:600; color:#111827;">
+                                Campus Connect
+                            </h1>
+                            <p style="margin:6px 0 0; font-size:14px; color:#6b7280;">
+                                {{ subtitle }}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="color:#374151; font-size:15px; line-height:1.7;">
+                            {% block content %}{% endblock %}
+                        </td>
+                    </tr>
+
+                    <!-- Divider -->
+                    <tr>
+                        <td style="padding-top:40px;">
+                            <hr style="border:none; border-top:1px solid #e5e7eb;">
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding-top:18px; font-size:13px; color:#9ca3af; text-align:center;">
+                            © {{ current_year }} Campus Connect. All rights reserved.<br>
+                            This is an automated message. Please do not reply.
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>
