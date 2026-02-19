@@ -17,7 +17,8 @@ from flask import (
     session,
     redirect,
     url_for,
-    abort
+    abort,
+    current_app
 )
 
 from flask_mail import Mail, Message as EmailMessage
@@ -39,6 +40,9 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from flask import send_file
 from flask_socketio import SocketIO
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
 from chat_routes import chat_bp
 from chat_socket import init_socket_events
 from comment_queue import comment_queue_service
@@ -53,13 +57,28 @@ app.config.from_object(Config)  # This loads ALL config from config.py
 if not app.secret_key:
     raise RuntimeError("SECRET_KEY not set. Check .env file.")
 
+if not app.config.get("SECURITY_PASSWORD_SALT"):
+    raise RuntimeError("SECURITY_PASSWORD_SALT not set. Check .env and config.py.")
+
 if not app.config["SQLALCHEMY_DATABASE_URI"]:
     raise RuntimeError("DATABASE_URL not set. Check .env file.")
+
+if not app.config.get("FRONTEND_URL"):
+    raise RuntimeError("FRONTEND_URL not set. Check .env and config.py.")
 
 # Initialize extensions
 db.init_app(app)
 bcrypt.init_app(app)
 mail = Mail(app)
+
+# Initialize rate limiter.
+# Use Redis if REDIS_URL is set, otherwise fall back to in-memory storage.
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=app.config.get("REDIS_URL", "memory://")
+)
 
 # Initialize background job queue for non-blocking tasks like notifications.
 comment_queue_service.init_app(app)
@@ -172,22 +191,26 @@ def get_content_activity():
         "events": [events_counts[d] for d in days],
     }
 
-def _format_post_for_api(post_data_tuple, current_user_id):
+def _format_post_for_api(post_data_tuple, current_user_id, liked_post_ids=None):
     """
     Standardizes the format of a post object for API responses.
 
     Args:
         post_data_tuple: A tuple containing (Post, User, likes_count, comments_count).
         current_user_id: The ID of the user viewing the post, to check 'isLiked' status.
+        liked_post_ids: (Optional) A set of post IDs the current user has liked.
+                        Providing this avoids N+1 queries in feed endpoints.
     """
     post, user, likes_count, comments_count = post_data_tuple
 
     is_liked = False
     if current_user_id:
-        is_liked = Like.query.filter_by(
-            post_id=post.id,
-            user_id=current_user_id
-        ).first() is not None
+        if liked_post_ids is not None:
+            # Performant check using pre-fetched data
+            is_liked = post.id in liked_post_ids
+        else:
+            # Fallback for single-post fetches (acceptable performance)
+            is_liked = db.session.query(Like.query.filter_by(post_id=post.id, user_id=current_user_id).exists()).scalar()
 
     return {
         "id": post.id,
@@ -321,35 +344,85 @@ def profile_page(user_id):
         "profile.html",
         profile_user=profile_user,
         user=current_user,
+        user_name=current_user.full_name,
         is_own_profile=is_own_profile,
         current_user_id=session["user_id"]
     )
+
+@app.route("/reset-password")
+def reset_password_page():
+    """Renders the page for resetting a password with a token."""
+    # The token is read from the URL query parameter by the frontend JavaScript.
+    # No server-side token validation is needed on this page load.
+    return render_template("reset-password.html")
+
+@app.route('/favicon.ico')
+def favicon():
+    """Serves a 204 No Content response to prevent 404 errors for the favicon."""
+    return '', 204
+
 
 # ==============================================================================
 # AUTHENTICATION API ROUTES
 # ==============================================================================
 
-def generate_otp():
-    """Generate a 6-digit numeric OTP"""
-    return ''.join(random.choices(string.digits, k=6))
+@app.context_processor
+def inject_global_template_vars():
+    """Injects variables into all templates."""
+    return {
+        'current_year': datetime.now(timezone.utc).year
+    }
 
-def send_otp(email, otp):
-    """
-    Send OTP via email or print to console in development.
-    """
-    # In debug mode, print OTP to console to avoid sending emails during development.
-    if app.debug:
-        print(f"\n[DEV MODE OTP] {email}: {otp}\n")
-        return True
+# ==============================================================================
+# EMAIL HELPERS
+# ==============================================================================
 
+def send_email(subject, recipients, html_body):
+    """
+    Sends an HTML email using Flask-Mail.
+
+    Returns:
+        bool: True if email was sent successfully, False otherwise.
+    """
     try:
-        msg = EmailMessage("Campus Connect Login OTP", recipients=[email])
-        msg.body = f"Your OTP for Campus Connect login is: {otp}\n\nThis OTP is valid for 10 minutes."
+        msg = EmailMessage(subject, recipients=recipients)
+        msg.html = html_body
         mail.send(msg)
         return True
     except Exception as e:
-        print(f"❌ Error sending email: {e}")
+        current_app.logger.error(f"Email sending failed to {recipients}: {e}")
         return False
+
+def send_otp_email(email, otp):
+    """Sends a login OTP email using an HTML template."""
+    html = render_template(
+        "emails/otp_login.html",
+        subtitle="Your Login Verification Code",
+        otp_code=list(otp)  # Pass as a list of characters for the template
+    )
+    return send_email("Your Campus Connect OTP", [email], html)
+
+def send_welcome_email(user):
+    """Sends a welcome email to a new user."""
+    html = render_template(
+        "emails/welcome_email.html",
+        subtitle="Welcome Aboard!",
+        user_name=user.full_name
+    )
+    return send_email(f"Welcome to Campus Connect, {user.first_name}!", [user.email], html)
+
+def send_password_reset_email(user, reset_link):
+    """Sends a password reset link email."""
+    html = render_template(
+        "emails/password_reset.html",
+        subtitle="Password Reset Request",
+        reset_link=reset_link
+    )
+    return send_email("Reset Your Campus Connect Password", [user.email], html)
+
+def generate_otp():
+    """Generate a 6-digit numeric OTP"""
+    return ''.join(random.choices(string.digits, k=6))
 
 
 @app.route("/api/auth/enrollment-suggestions", methods=["POST"])
@@ -380,6 +453,9 @@ def get_student_details():
     data = request.json
     enrollment_no = data.get("enrollment_no", "").strip()
 
+    if not enrollment_no:
+        return jsonify({"error": "Enrollment number is required"}), 400
+
     user = User.query.filter_by(enrollment_no=enrollment_no).first()
 
     if not user:
@@ -393,6 +469,7 @@ def get_student_details():
 
 
 @app.route("/api/auth/request-otp", methods=["POST"])
+@limiter.limit("5 per 10 minutes")
 def request_otp():
     """Handles the first step of OTP-based login: validating the user and sending an OTP."""
     data = request.json
@@ -419,11 +496,6 @@ def request_otp():
     if user.password_hash is not None:
         return jsonify({"error": "Password already set. Please login with password."}), 400
 
-    # Security: Simple rate limiting to prevent OTP spam.
-    last_otp = OTPVerification.query.filter_by(enrollment_no=user.enrollment_no).order_by(OTPVerification.created_at.desc()).first()
-    if last_otp and last_otp.created_at > datetime.now(timezone.utc) - timedelta(minutes=1):
-        return jsonify({"error": "Please wait 1 minute before requesting a new OTP."}), 429
-
     # Generate and save OTP
     otp_code = generate_otp()
     expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
@@ -437,7 +509,7 @@ def request_otp():
     db.session.commit()
 
     # Send Email
-    if not send_otp(user.email, otp_code):
+    if not send_otp_email(user.email, otp_code):
         return jsonify({"error": "Failed to send OTP. Please try again."}), 500
 
     return jsonify({
@@ -458,7 +530,9 @@ def verify_otp():
     otp_record = OTPVerification.query.filter_by(
         enrollment_no=enrollment_no,
         is_used=False
-    ).filter(OTPVerification.expiry_time > datetime.now(timezone.utc)).with_for_update().first()
+    ).filter(
+        OTPVerification.expiry_time > datetime.now(timezone.utc)
+    ).order_by(OTPVerification.created_at.desc()).with_for_update().first()
 
     if not otp_record:
         return jsonify({"error": "No active OTP found or OTP expired"}), 400
@@ -482,6 +556,7 @@ def verify_otp():
     # Mark user as verified if first time
     if not user.is_verified:
         user.is_verified = True
+        send_welcome_email(user)
         
     db.session.commit()
 
@@ -535,111 +610,69 @@ def login_with_password():
     }), 200
 
 
-@app.route("/api/auth/forgot-password/request-otp", methods=["POST"])
-def forgot_password_request_otp():
-    """Handles the first step of the 'Forgot Password' flow."""
+@app.route("/api/auth/forgot-password/request", methods=["POST"])
+@limiter.limit("5 per 10 minutes")
+def forgot_password_request():
+    """
+    Handles the 'Forgot Password' request by sending a secure, time-sensitive reset link.
+    """
     data = request.json
     identifier = data.get("identifier", "").strip()
-    
-    # Default expiry (5 mins) to return even if user not found
-    expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
     
     if not identifier:
-        return jsonify({"message": "If an account exists, an OTP has been sent.", "expiry_time": expiry.isoformat()}), 200
+        # Prevent user enumeration by returning a generic success message.
+        return jsonify({"message": "If an account with that email or enrollment number exists, a password reset link has been sent."}), 200
         
-    # Find user by Enrollment OR Email
     user = User.query.filter(
         or_(User.enrollment_no == identifier, User.email == identifier)
     ).first()
     
-    # Security: Always return a generic 200 OK response to prevent user enumeration attacks.
     if user and user.is_active:
-        # Rate limiting: Check last OTP time
-        last_otp = OTPVerification.query.filter_by(enrollment_no=user.enrollment_no).order_by(OTPVerification.created_at.desc()).first()
-        if last_otp and last_otp.created_at > datetime.now(timezone.utc) - timedelta(minutes=1):
-            return jsonify({"message": "If an account exists, an OTP has been sent.", "expiry_time": expiry.isoformat()}), 200
-            
-        otp_code = generate_otp()
+        # Generate a timed, signed token
+        ts = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+        token = ts.dumps(user.email, salt=app.config["SECURITY_PASSWORD_SALT"])
+
+        # Create a reset link for the frontend to handle
+        frontend_url = app.config["FRONTEND_URL"]
+        reset_link = f"{frontend_url.rstrip('/')}/reset-password?token={token}"
         
-        otp_entry = OTPVerification(
-            enrollment_no=user.enrollment_no,
-            otp=otp_code,
-            expiry_time=expiry
-        )
-        db.session.add(otp_entry)
-        db.session.commit()
+        send_password_reset_email(user, reset_link)
         
-        send_otp(user.email, otp_code)
-        
-    return jsonify({"message": "If an account exists, an OTP has been sent.", "expiry_time": expiry.isoformat()}), 200
+    return jsonify({"message": "If an account with that email or enrollment number exists, a password reset link has been sent."}), 200
 
 
-@app.route("/api/auth/forgot-password/verify-otp", methods=["POST"])
-def forgot_password_verify_otp():
-    """Verifies the OTP during the 'Forgot Password' flow before showing the password reset form."""
+@app.route("/api/auth/reset-password", methods=["POST"])
+@limiter.limit("10 per minute")
+def reset_password_with_token():
+    """Handles the final step of 'Forgot Password': setting a new password via a token."""
     data = request.json
-    identifier = data.get("identifier", "").strip()
-    otp_code = data.get("otp", "").strip()
-    
-    user = User.query.filter(
-        or_(User.enrollment_no == identifier, User.email == identifier)
-    ).first()
-    
-    if not user:
-        return jsonify({"error": "Invalid OTP"}), 400
-        
-    otp_record = OTPVerification.query.filter_by(
-        enrollment_no=user.enrollment_no,
-        is_used=False
-    ).filter(OTPVerification.expiry_time > datetime.now(timezone.utc)).order_by(OTPVerification.created_at.desc()).first()
-    
-    if not otp_record:
-        return jsonify({"error": "Invalid or expired OTP"}), 400
-        
-    if otp_record.attempts >= 5:
-        return jsonify({"error": "Too many failed attempts"}), 400
-        
-    if otp_record.otp != otp_code:
-        otp_record.attempts += 1
-        db.session.commit()
-        return jsonify({"error": "Invalid OTP"}), 400
-        
-    return jsonify({"message": "OTP Verified"}), 200
+    token = data.get("token")
+    new_password = data.get("new_password")
 
+    if not token or not new_password:
+        return jsonify({"error": "Token and new password are required."}), 400
 
-@app.route("/api/auth/forgot-password/reset-password", methods=["POST"])
-def forgot_password_reset():
-    """Handles the final step of the 'Forgot Password' flow: setting the new password."""
-    data = request.json
-    identifier = data.get("identifier", "").strip()
-    otp_code = data.get("otp", "").strip()
-    new_password = data.get("new_password", "")
-    
     if len(new_password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
-        
-    user = User.query.filter(
-        or_(User.enrollment_no == identifier, User.email == identifier)
-    ).first()
-    
+
+    ts = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+    try:
+        # Token expires in 15 minutes (900 seconds)
+        email = ts.loads(token, salt=app.config["SECURITY_PASSWORD_SALT"], max_age=900)
+    except SignatureExpired:
+        return jsonify({"error": "The password reset link has expired."}), 400
+    except (BadTimeSignature, Exception):
+        return jsonify({"error": "Invalid password reset link."}), 400
+
+    user = User.query.filter_by(email=email).first()
     if not user:
-        return jsonify({"error": "Invalid request"}), 400
-        
-    # Security: The OTP must be re-verified on the server during the final reset step.
-    otp_record = OTPVerification.query.filter_by(
-        enrollment_no=user.enrollment_no,
-        is_used=False
-    ).filter(OTPVerification.expiry_time > datetime.now(timezone.utc)).order_by(OTPVerification.created_at.desc()).first()
-    
-    if not otp_record or otp_record.otp != otp_code:
-        return jsonify({"error": "Invalid or expired OTP"}), 400
-        
-    # Reset Password
+        # This case should be rare if the email was valid when token was created
+        return jsonify({"error": "Invalid user."}), 400
+
     user.set_password(new_password)
-    otp_record.is_used = True
     db.session.commit()
-    
-    return jsonify({"message": "Password reset successfully"}), 200
+
+    return jsonify({"message": "Password has been reset successfully."}), 200
 
 
 # ==============================================================================
@@ -699,12 +732,24 @@ def api_posts():
         .all()
     )
 
+    # --- N+1 Query Fix: Pre-fetch likes for the current user ---
+    post_ids = [p.Post.id for p in db_posts]
+    liked_post_ids = set()
+    if post_ids and session.get("user_id"):
+        user_likes = db.session.query(Like.post_id).filter(
+            Like.user_id == session["user_id"],
+            Like.post_id.in_(post_ids)
+        ).all()
+        liked_post_ids = {like.post_id for like in user_likes}
+    # --- End Fix ---
+
     return jsonify({
         "viewer": {
             "id": session.get("user_id"),
             "name": session.get("user_name")
         },
-        "posts": [_format_post_for_api(p, session["user_id"]) for p in db_posts]
+        # Pass the pre-fetched set of liked post IDs to the formatter
+        "posts": [_format_post_for_api(p, session["user_id"], liked_post_ids) for p in db_posts]
     })
 
 
@@ -747,7 +792,7 @@ def get_single_post_api(post_id):
 
     post, user, likes_count, comments_count = post_data
 
-    formatted_post = _format_post_for_api(post_data, session["user_id"])
+    formatted_post = _format_post_for_api(post_data, session["user_id"]) # Uses fallback logic
 
     return jsonify({
         "viewer": {
@@ -1562,6 +1607,7 @@ def get_notifications():
 
 
 @app.route("/api/notifications/unread-count", methods=["GET"])
+@limiter.exempt
 def get_unread_count():
     """Fetches only the count of unread notifications, for badge updates."""
     if "user_id" not in session:
@@ -1816,12 +1862,24 @@ def api_profile_posts(user_id):
         .all()
     )
 
+    # --- N+1 Query Fix: Pre-fetch likes for the current user ---
+    post_ids = [p.Post.id for p in db_posts]
+    liked_post_ids = set()
+    if post_ids and session.get("user_id"):
+        user_likes = db.session.query(Like.post_id).filter(
+            Like.user_id == session["user_id"],
+            Like.post_id.in_(post_ids)
+        ).all()
+        liked_post_ids = {like.post_id for like in user_likes}
+    # --- End Fix ---
+
     return jsonify({
         "viewer": {
             "id": session.get("user_id"),
             "name": session.get("user_name")
         },
-        "posts": [_format_post_for_api(p, session["user_id"]) for p in db_posts]
+        # Pass the pre-fetched set of liked post IDs to the formatter
+        "posts": [_format_post_for_api(p, session["user_id"], liked_post_ids) for p in db_posts]
     })
 
 
@@ -2795,22 +2853,21 @@ def seed_admin():
 
     if not email or not password:
         return
-    print(f"⚙️ Seeding admin with email: {email}")
+    current_app.logger.info(f"⚙️ Seeding admin with email: {email}")
 
     admin = User.query.filter_by(account_type="admin").first()
     if admin:
         # Update existing admin to ensure credentials match .env and hash is correct
         admin.email = email.lower()
-        admin.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        admin.set_password(password) # Use the model's method
         db.session.commit()
-        print("✅ Admin account updated")
+        current_app.logger.info("✅ Admin account updated")
         return
 
     admin = User(
         first_name="Admin",
         last_name="User",
         email=email.lower(),
-        password_hash=bcrypt.generate_password_hash(password).decode('utf-8'),
         university="Campus Connect University",
         major="Administration",
         batch="N/A",
@@ -2820,10 +2877,11 @@ def seed_admin():
         enrollment_no="ADMIN001",
         branch="ADMINISTRATION"
     )
+    admin.set_password(password)
 
     db.session.add(admin)
     db.session.commit()
-    print("✅ Default admin created")
+    current_app.logger.info("✅ Default admin created")
 
 @app.cli.command("seed-admin")
 def seed_admin_command():
@@ -3011,6 +3069,7 @@ def admin_download_event_pdf(event_id):
 # ==============================================================================
 # GLOBAL SEARCH API
 # ==============================================================================
+
 @app.route("/api/search", methods=["GET"])
 def search_all():
     """Performs a global search across users and announcements."""

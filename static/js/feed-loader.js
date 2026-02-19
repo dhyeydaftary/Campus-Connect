@@ -224,7 +224,7 @@ class FeedLoader {
         const post = this.posts[index];
 
         if (!post.id) {
-            this.showToast('Comments disabled for demo posts', 'error');
+            showToast('Info', 'Comments disabled for demo posts', 'info');
             return;
         }
 
@@ -290,7 +290,7 @@ class FeedLoader {
         // Open Modal
         const modal = document.getElementById('share-modal');
         if (!modal) {
-            this.showToast('Share modal not found', 'error');
+            showToast('UI Error', 'Share modal not found', 'error');
             return;
         }
         
@@ -387,14 +387,14 @@ class FeedLoader {
             });
             
             if (res.ok) {
-                this.showToast('Post shared successfully!', 'success');
+                showToast('Success', 'Post shared successfully!', 'success');
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             } else {
                 throw new Error('Failed to share');
             }
         } catch (e) {
-            this.showToast('Failed to share post', 'error');
+            showToast('Error', 'Failed to share post', 'error');
         }
     }
 
@@ -418,24 +418,6 @@ class FeedLoader {
     showEndState() {
         if (this.endState) this.endState.classList.remove('hidden');
         if (this.loadMoreBtn) this.loadMoreBtn.classList.add('hidden');
-    }
-
-    showToast(message, type = 'success') {
-        // Create toast element
-        const toast = document.createElement('div');
-        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white text-sm font-medium z-50 transition-opacity duration-300 ${type === 'success' ? 'bg-green-500' :
-            type === 'error' ? 'bg-red-500' :
-                'bg-indigo-500'
-            }`;
-        toast.textContent = message;
-
-        document.body.appendChild(toast);
-
-        // Fade out and remove after 3 seconds
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
     }
 
     // ═══════════════════════════════════════════════════════════════

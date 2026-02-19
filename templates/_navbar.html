@@ -85,8 +85,8 @@
                 <!-- Profile Dropdown -->
                 <div class="relative ml-1" id="profile-dropdown">
                     <button onclick="NavbarUtils.toggleProfileDropdown()" class="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/20 border border-transparent hover:border-gray-200" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
-                        <img class="h-9 w-9 rounded-full object-cover border border-gray-200 nav-avatar shadow-sm" 
-                             src="https://ui-avatars.com/api/?name={{ user_name }}" 
+                        <img class="h-9 w-9 rounded-full object-cover border border-gray-200 nav-avatar shadow-sm"
+                             src="{{ user.profile_picture if user.profile_picture else 'https://ui-avatars.com/api/?name=' + (user_name | urlencode) }}"
                              alt="{{ user_name }}">
                         <i class="fas fa-chevron-down text-xs text-gray-400 mr-1 hidden sm:block transition-transform duration-200" id="profile-chevron"></i>
                     </button>
