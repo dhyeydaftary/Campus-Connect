@@ -26,8 +26,8 @@
                 if (el) el.textContent = val?.toLocaleString?.() ?? "0";
             };
 
-            setText("total-users", data.totalUsers);
-            setText("official-users", data.officialUsers);
+            setText("active-users", data.activeUsers);
+            setText("pending-users", data.pendingUsers);
             setText("blocked-users", data.blockedUsers);
             setText("total-posts", data.totalPosts);
             setText("active-events", data.activeEvents);

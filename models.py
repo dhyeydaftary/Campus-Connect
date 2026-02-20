@@ -8,11 +8,14 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 
-def get_is_password_set_default(context):
-    """Sets default for is_password_set based on account type."""
+def get_status_default(context):
+    """Sets default for status based on account type."""
     if context.get_current_parameters().get('account_type') == 'admin':
-        return True
-    return False
+        return "ACTIVE"
+    return "PENDING"
+
+
+
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -29,7 +32,7 @@ class User(db.Model):
     # Authentication
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=True)
-    is_password_set = db.Column(db.Boolean, default=get_is_password_set_default, nullable=False)
+    is_password_set = db.Column(db.Boolean, default=False, nullable=False)
     
     # OTP & Student Details
     enrollment_no = db.Column(db.String(50), unique=True, nullable=False, index=True)
@@ -47,7 +50,7 @@ class User(db.Model):
     batch = db.Column(db.String(20), nullable=False)
     
     # Status
-    is_active = db.Column(db.Boolean, default=False, nullable=False)
+    status = db.Column(db.String(20), default=get_status_default, nullable=False)
     
     # Role-based access control
     account_type = db.Column(db.String(20), default="student", nullable=False)
@@ -70,6 +73,10 @@ class User(db.Model):
                                         foreign_keys="ConnectionRequest.receiver_id",
                                         backref="receiver",
                                         lazy="dynamic")
+
+    __table_args__ = (
+        db.CheckConstraint(status.in_(['PENDING', 'ACTIVE', 'BLOCKED']), name='user_status_check'),
+    )
 
     @property
     def full_name(self):
