@@ -261,7 +261,7 @@ def search_users_for_chat():
     # Limit to 10 results for performance
     users = User.query.filter(
         User.id != user_id,
-        User.is_active == True,
+        User.status == 'ACTIVE',
         User.account_type != 'admin',  # Exclude admin from search
         or_(
             User.first_name.ilike(f"%{query}%"),

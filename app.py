@@ -18,13 +18,14 @@ from flask import (
     redirect,
     url_for,
     abort,
-    current_app
+    current_app,
+    flash
 )
 
 from flask_mail import Mail, Message as EmailMessage
 from config import Config
 from models import *
-from sqlalchemy import func, or_, and_
+from sqlalchemy import func, or_, and_, event
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timezone, timedelta
@@ -71,6 +72,20 @@ db.init_app(app)
 bcrypt.init_app(app)
 mail = Mail(app)
 
+@event.listens_for(User, 'init')
+def set_user_defaults(target, args, kwargs):
+    """
+    Sets default is_password_set flag based on user role.
+    Admins have password set by default.
+    Students default to False (pending OTP/setup).
+    """
+    account_type = kwargs.get('account_type')
+    if 'is_password_set' not in kwargs:
+        if account_type == 'admin':
+            target.is_password_set = True
+        elif account_type == 'student':
+            target.is_password_set = False
+
 # Initialize rate limiter.
 # Use Redis if REDIS_URL is set, otherwise fall back to in-memory storage.
 limiter = Limiter(
@@ -105,27 +120,55 @@ def admin_required():
     if session.get("account_type") != "admin":
         abort(403)  # Forbidden - not an admin
 
+from functools import wraps
+def status_required(allowed_statuses):
+    """
+    Decorator to protect routes based on user status.
+    Redirects to login if user is not authenticated, or if their status is not in the allowed list.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if "user_id" not in session:
+                return redirect(url_for("login_page"))
+            
+            user = db.session.get(User, session["user_id"])
+            if not user:
+                session.clear()
+                return redirect(url_for("login_page"))
+
+            if user.status == "BLOCKED":
+                session.clear()
+                flash("Your account is blocked. Please contact support.", "danger")
+                return redirect(url_for("login_page"))
+            
+            if user.status not in allowed_statuses:
+                abort(403)
+                
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
 @app.before_request
+def before_request_funcs():
+    enforce_user_state()
+
 def enforce_user_state():
     """
     A middleware that enforces user state before every request.
-
-    1.  If a user has not set a password, it redirects them to the setup page.
-    2.  If a user has been deactivated (is_active=False), it logs them out.
+    - Redirects PENDING users to the password setup page.
+    - Logs out and blocks BLOCKED users.
     """
     if 'user_id' not in session:
         return
 
-    # Define endpoints that are always accessible to prevent redirect loops.
     exempt_endpoints = [
-        'set_password_page',    # The page to set the password
-        'update_password',      # The API endpoint that saves the new password
-        'logout',               # Always allow users to log out
-        'static',               # For CSS, JS, etc.
-        'favicon',
-        'login_page'
+        'login_page', 'logout', 'static', 'favicon',
+        'set_password_page', 'update_password', 
+        'reset_password_page', 'reset_password_with_token'
     ]
-    if request.endpoint in exempt_endpoints:
+    if request.endpoint in exempt_endpoints or request.path.startswith('/api/auth/'):
         return
 
     user = db.session.get(User, session['user_id'])
@@ -133,16 +176,15 @@ def enforce_user_state():
         session.clear()
         return redirect(url_for('login_page'))
 
-    # Priority 1: New user must set a password.
-    # This allows an inactive new user to proceed to the setup page.
-    if not user.is_password_set:
-        return redirect(url_for('set_password_page'))
-
-    # Priority 2: Established user who has been deactivated must be logged out.
-    # This check runs only if the user already has a password.
-    if not user.is_active:
+    # If user is blocked, log them out immediately.
+    if user.status == "BLOCKED":
         session.clear()
+        flash("Your account is blocked. Please contact administration.", "danger")
         return redirect(url_for('login_page'))
+
+    # If user is pending, they must set their password.
+    if user.status == "PENDING" and not user.is_password_set:
+        return redirect(url_for('set_password_page'))
 
 def save_uploaded_file(file, file_type):
     """
@@ -207,7 +249,9 @@ def get_content_activity():
             func.date(func.timezone('UTC', Post.created_at)),
             func.count(Post.id)
         )
+        .join(User, Post.user_id == User.id)
         .filter(Post.created_at >= start_dt)
+        .filter(User.status == 'ACTIVE')
         .group_by(func.date(func.timezone('UTC', Post.created_at)))
         .all()
     )
@@ -221,7 +265,9 @@ def get_content_activity():
             func.date(func.timezone('UTC', Event.event_date)),
             func.count(Event.id)
         )
+        .join(User, Event.user_id == User.id)
         .filter(Event.event_date >= start_dt)
+        .filter(User.status == 'ACTIVE')
         .group_by(func.date(func.timezone('UTC', Event.event_date)))
         .all()
     )
@@ -499,7 +545,7 @@ def get_enrollment_suggestions():
     users = User.query.filter(
         User.major == major,
         User.enrollment_no.ilike(f"{query}%"),
-        User.is_active == True
+        User.status.in_(['ACTIVE', 'PENDING'])
     ).limit(5).all()
 
     suggestions = [u.enrollment_no for u in users]
@@ -548,15 +594,13 @@ def request_otp():
     if user.major.lower() != major.lower():
         return jsonify({"error": "Enrollment number does not match the selected major."}), 400
 
-    # Allow inactive users to proceed ONLY IF they are setting up their account.
-    # A truly disabled (blocked) user will have a password hash.
-    if not user.is_active and user.password_hash is not None:
+    if user.status == "BLOCKED":
         return jsonify({"error": "Account is disabled."}), 403
-
-    # Security: Prevent OTP login if a password is set, forcing password-based login.
-    if user.password_hash is not None:
+    
+    if user.status == "ACTIVE":
         return jsonify({"error": "Password already set. Please login with password."}), 400
 
+    # PENDING users can proceed
     # Generate and save OTP
     otp_code = generate_otp()
     expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
@@ -660,8 +704,19 @@ def login_with_password():
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    if not user.is_active:
-        return jsonify({"error": "Account is disabled"}), 403
+    if user.status == "BLOCKED":
+        return jsonify({"error": "Account is blocked"}), 403
+    
+    if user.status == "PENDING":
+        # Log the user in, but force them to the set-password page.
+        session.clear()
+        session["user_id"] = user.id
+        session["user_name"] = user.full_name
+        session["account_type"] = user.account_type
+        return jsonify({
+            "message": "Login successful, redirecting to password setup.",
+            "redirect_url": url_for("set_password_page")
+        }), 200
 
     # Security: Prevent session fixation.
     session.clear()
@@ -692,7 +747,7 @@ def forgot_password_request():
         or_(User.enrollment_no == identifier, User.email == identifier)
     ).first()
     
-    if user and user.is_active:
+    if user and user.status == 'ACTIVE':
         # Generate a timed, signed token
         ts = URLSafeTimedSerializer(app.config["SECRET_KEY"])
         token = ts.dumps(user.email, salt=app.config["SECURITY_PASSWORD_SALT"])
@@ -2540,27 +2595,27 @@ def update_password():
     if new_password != confirm_password:
         return jsonify({"error": "Passwords do not match"}), 400
         
-    # If user has a password set, verify it
+    # If user already has a password (i.e., not the first time), verify the current one.
     if user.password_hash:
         if not current_password:
             return jsonify({"error": "Current password is required"}), 400
         if not user.check_password(current_password):
             return jsonify({"error": "Incorrect current password"}), 400
 
-    # Check if this is the first time the password is being set.
-    is_first_password_set = not user.is_password_set
+    # This is the activation step. Check if the user is pending before changing password.
+    is_activating = user.status == "PENDING"
 
     user.set_password(new_password)
     
     # Activate the user and mark password as set
-    if is_first_password_set:
+    if is_activating:
+        user.status = "ACTIVE"
         user.is_password_set = True
-        user.is_active = True
 
     db.session.commit()
 
     # Send the welcome email only after the user has set their password for the first time.
-    if is_first_password_set:
+    if is_activating:
         send_welcome_email(user)
 
     return jsonify({
@@ -2583,9 +2638,9 @@ def admin_dashboard_overview():
     try:
         # --- Key Performance Indicators (KPIs) ---
         total_users = User.query.count()
-        active_users = User.query.filter_by(is_active=True).count()
-        blocked_users = User.query.filter_by(is_active=False).count()
-        official_users = User.query.filter_by(account_type="official").count()
+        active_users = User.query.filter_by(status='ACTIVE').count()
+        pending_users = User.query.filter_by(status='PENDING').count()
+        blocked_users = User.query.filter_by(status='BLOCKED').count()
         total_posts = Post.query.count()
         active_events = Event.get_active_count()
 
@@ -2594,7 +2649,7 @@ def admin_dashboard_overview():
         role_distribution_query = db.session.query(
             User.account_type,
             func.count(User.id).label('count')
-        ).group_by(User.account_type).all()
+        ).filter(User.status == 'ACTIVE').group_by(User.account_type).all()
         
         role_distribution = {
             role: count for role, count in role_distribution_query
@@ -2604,7 +2659,7 @@ def admin_dashboard_overview():
         user_growth_query = db.session.query(
             func.date(User.created_at).label('date'),
             func.count(User.id).label('count')
-        ).group_by(func.date(User.created_at)).order_by(func.date(User.created_at)).all()
+        ).filter(User.status == 'ACTIVE').group_by(func.date(User.created_at)).order_by(func.date(User.created_at)).all()
         
         user_growth = [
             {
@@ -2619,7 +2674,7 @@ def admin_dashboard_overview():
         return jsonify({
             "totalUsers": total_users,
             "activeUsers": active_users,
-            "officialUsers": official_users,
+            "pendingUsers": pending_users,
             "blockedUsers": blocked_users,
             "totalPosts": total_posts,
             "activeEvents": active_events,
@@ -2654,14 +2709,14 @@ def admin_get_users():
         "email": user.email,
         "role": user.account_type, # Frontend expects 'role'
         "major": user.major,
-        "status": "active" if user.is_active else "blocked", # Frontend expects 'status' string
+        "status": user.status.lower(), # PENDING, ACTIVE, BLOCKED
         "joinDate": user.created_at.strftime('%Y-%m-%d')
     } for user in users]), 200
 
 
 @app.route("/admin/api/users/<int:user_id>/toggle", methods=["POST"])
 def admin_toggle_user_status(user_id):
-    """Toggles a user's active/blocked status and logs the action."""
+    """Toggles a user's status between ACTIVE and BLOCKED."""
     admin_required()
     
     # Prevent admin from disabling themselves
@@ -2672,16 +2727,21 @@ def admin_toggle_user_status(user_id):
     if not user:
         abort(404)
     
-    # Toggle the is_active status
-    old_status = user.is_active
-    user.is_active = not user.is_active
+    old_status = user.status
+    
+    # If user is BLOCKED, activate them. Otherwise, block them.
+    # This prevents accidentally activating PENDING users.
+    if user.status == 'BLOCKED':
+        user.status = 'ACTIVE'
+    else:
+        user.status = 'BLOCKED'
     
     # Log the action
     log = AdminLog(
         admin_id=session["user_id"],
-        action_type="toggle_user",
+        action_type="set_user_status",
         target_user_id=user_id,
-        details=f"Changed is_active from {old_status} to {user.is_active}"
+        details=f"Changed status from {old_status} to {user.status}"
     )
     db.session.add(log)
     db.session.commit()
@@ -2690,7 +2750,7 @@ def admin_toggle_user_status(user_id):
         "success": True,
         "user": {
             "id": user.id,
-            "status": "active" if user.is_active else "blocked"
+            "status": user.status.lower() # Return new status for frontend
         }
     }), 200
 
@@ -2955,7 +3015,6 @@ def seed_admin():
         major="Administration",
         batch="N/A",
         account_type="admin",
-        is_active=True,
         is_verified=True,  # Admin is trusted by default
         enrollment_no="ADMIN001"
     )
@@ -3062,7 +3121,7 @@ def admin_get_user_details(user_id):
         "full_name": user.full_name,
         "email": user.email,
         "role": user.account_type,
-        "status": "active" if user.is_active else "blocked",
+        "status": user.status.lower(),
         "university": user.university,
         "major": user.major,
         "batch": user.batch,
@@ -3172,7 +3231,7 @@ def search_all():
             User.last_name.ilike(search_term),
             User.major.ilike(search_term)
         ),
-        User.is_active == True
+        User.status == 'ACTIVE'
     ).limit(5).all()
     
     # 2. Search Announcements (Title)

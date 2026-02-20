@@ -9,8 +9,8 @@ async function initDashboard() {
     const data = await API.getDashboardOverview();
 
     // Update KPIs
-    document.getElementById('total-users').textContent = data.totalUsers.toLocaleString();
-    document.getElementById('official-users').textContent = data.officialUsers.toLocaleString();
+    document.getElementById('active-users').textContent = data.activeUsers.toLocaleString();
+    document.getElementById('pending-users').textContent = data.pendingUsers.toLocaleString();
     document.getElementById('blocked-users').textContent = data.blockedUsers.toLocaleString();
     document.getElementById('total-posts').textContent = data.totalPosts.toLocaleString();
     document.getElementById('active-events').textContent = data.activeEvents.toLocaleString();

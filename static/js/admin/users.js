@@ -72,6 +72,7 @@ function filterAndRenderUsers() {
     const searchTerm = document.getElementById('search-input').value.toLowerCase();
     const roleFilter = document.getElementById('role-filter').value;
     const branchFilter = document.getElementById('branch-filter').value;
+    const statusFilter = document.getElementById('status-filter').value;
     let filtered = [...allUsers];
     if (searchTerm) {
         filtered = filtered.filter(user =>
@@ -83,7 +84,10 @@ function filterAndRenderUsers() {
         filtered = filtered.filter(user => user.role === roleFilter);
     }
     if (branchFilter) {
-        filtered = filtered.filter(user => user.branch === branchFilter);
+        filtered = filtered.filter(user => user.major === branchFilter);
+    }
+    if (statusFilter) {
+        filtered = filtered.filter(user => user.status === statusFilter);
     }
 
     // Default sort: Name (A-Z)
@@ -99,7 +103,7 @@ async function initUsers() {
     allUsers.sort((a, b) => a.username.localeCompare(b.username));
 
     // Populate branch filter dynamically based on available users
-    const branches = [...new Set(allUsers.map(u => u.branch).filter(b => b))].sort();
+    const branches = [...new Set(allUsers.map(u => u.major).filter(b => b))].sort();
     const branchSelect = document.getElementById('branch-filter');
     branches.forEach(branch => {
         const option = document.createElement('option');
@@ -111,11 +115,12 @@ async function initUsers() {
     document.getElementById('users-loading').style.display = 'none';
     document.getElementById('users-table').style.display = 'table';
 
-    renderUsers(allUsers);
+    filterAndRenderUsers();
     // Add event listeners for filters
     document.getElementById('search-input').addEventListener('input', filterAndRenderUsers);
     document.getElementById('role-filter').addEventListener('change', filterAndRenderUsers);
     document.getElementById('branch-filter').addEventListener('change', filterAndRenderUsers);
+    document.getElementById('status-filter').addEventListener('change', filterAndRenderUsers);
 }
 document.addEventListener('DOMContentLoaded', initUsers);
 
