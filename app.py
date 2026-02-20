@@ -80,6 +80,12 @@ limiter = Limiter(
     storage_uri=app.config.get("REDIS_URL", "memory://")
 )
 
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    """Custom JSON response for 429 Too Many Requests."""
+    return jsonify(error="ratelimit exceeded", description=str(e.description)), 429
+
+
 # Initialize background job queue for non-blocking tasks like notifications.
 comment_queue_service.init_app(app)
 
@@ -98,6 +104,45 @@ def admin_required():
     
     if session.get("account_type") != "admin":
         abort(403)  # Forbidden - not an admin
+
+@app.before_request
+def enforce_user_state():
+    """
+    A middleware that enforces user state before every request.
+
+    1.  If a user has not set a password, it redirects them to the setup page.
+    2.  If a user has been deactivated (is_active=False), it logs them out.
+    """
+    if 'user_id' not in session:
+        return
+
+    # Define endpoints that are always accessible to prevent redirect loops.
+    exempt_endpoints = [
+        'set_password_page',    # The page to set the password
+        'update_password',      # The API endpoint that saves the new password
+        'logout',               # Always allow users to log out
+        'static',               # For CSS, JS, etc.
+        'favicon',
+        'login_page'
+    ]
+    if request.endpoint in exempt_endpoints:
+        return
+
+    user = db.session.get(User, session['user_id'])
+    if not user:
+        session.clear()
+        return redirect(url_for('login_page'))
+
+    # Priority 1: New user must set a password.
+    # This allows an inactive new user to proceed to the setup page.
+    if not user.is_password_set:
+        return redirect(url_for('set_password_page'))
+
+    # Priority 2: Established user who has been deactivated must be logged out.
+    # This check runs only if the user already has a password.
+    if not user.is_active:
+        session.clear()
+        return redirect(url_for('login_page'))
 
 def save_uploaded_file(file, file_type):
     """
@@ -215,7 +260,7 @@ def _format_post_for_api(post_data_tuple, current_user_id, liked_post_ids=None):
     return {
         "id": post.id,
         "user_id": post.user_id,
-        "username": user.full_name,
+        "username": user.full_name.title() if user.full_name else "",
         "profileImage": _get_user_avatar(user),
         "postImages": [f"/static/{post.file_path}"] if post.file_path else ([post.image_url] if post.image_url else []),
         "currentImageIndex": 0,
@@ -349,6 +394,20 @@ def profile_page(user_id):
         current_user_id=session["user_id"]
     )
 
+@app.route("/set-password")
+def set_password_page():
+    """Renders the page for a new user to set their initial password."""
+    if "user_id" not in session:
+        return redirect(url_for("login_page"))
+    
+    user = db.session.get(User, session["user_id"])
+    # If user has already set a password, they shouldn't be on this page.
+    if user and user.is_password_set:
+        return redirect(url_for("home_page"))
+        
+    # The template should contain the form handled by set-password.js
+    return render_template("set-password.html", user=user, user_name=user.full_name)
+
 @app.route("/reset-password")
 def reset_password_page():
     """Renders the page for resetting a password with a token."""
@@ -429,16 +488,16 @@ def generate_otp():
 def get_enrollment_suggestions():
     """Fetches enrollment number suggestions for the login form."""
     data = request.json
-    branch = data.get("branch", "").strip()
+    major = data.get("major", "").strip()
     query = data.get("query", "").strip()
 
-    if not branch or not query:
+    if not major or not query:
         return jsonify({"suggestions": []})
 
     # Filter users by branch and partial enrollment number
     # Limit to 5 suggestions for performance
     users = User.query.filter(
-        User.branch == branch,
+        User.major == major,
         User.enrollment_no.ilike(f"{query}%"),
         User.is_active == True
     ).limit(5).all()
@@ -447,7 +506,7 @@ def get_enrollment_suggestions():
     return jsonify({"suggestions": suggestions})
 
 
-@app.route("/api/auth/student-details", methods=["POST"])
+@app.route("/api/auth/student_details", methods=["POST"])
 def get_student_details():
     """Fetches student details (name, email) based on enrollment number."""
     data = request.json
@@ -462,7 +521,7 @@ def get_student_details():
         return jsonify({"error": "Student not found"}), 404
 
     return jsonify({
-        "full_name": user.full_name,
+        "full_name": user.full_name.title() if user.full_name else "",
         "email": user.email,
         "has_password": user.password_hash is not None
     })
@@ -474,10 +533,10 @@ def request_otp():
     """Handles the first step of OTP-based login: validating the user and sending an OTP."""
     data = request.json
     enrollment_no = data.get("enrollment_no", "").strip()
-    branch = data.get("branch", "").strip()
+    major = data.get("major", "").strip()
 
-    if not enrollment_no or not branch:
-        return jsonify({"error": "Enrollment number and branch are required"}), 400
+    if not enrollment_no or not major:
+        return jsonify({"error": "Enrollment number and major are required"}), 400
 
     # Find user (must match both enrollment and branch for security)
     user = User.query.filter_by(enrollment_no=enrollment_no).first()
@@ -486,10 +545,12 @@ def request_otp():
         return jsonify({"error": "Student not found. Please contact administration."}), 404
     
     # Case-insensitive branch check
-    if user.branch.lower() != branch.lower():
-        return jsonify({"error": "Enrollment number does not match the selected branch."}), 400
+    if user.major.lower() != major.lower():
+        return jsonify({"error": "Enrollment number does not match the selected major."}), 400
 
-    if not user.is_active:
+    # Allow inactive users to proceed ONLY IF they are setting up their account.
+    # A truly disabled (blocked) user will have a password hash.
+    if not user.is_active and user.password_hash is not None:
         return jsonify({"error": "Account is disabled."}), 403
 
     # Security: Prevent OTP login if a password is set, forcing password-based login.
@@ -556,8 +617,7 @@ def verify_otp():
     # Mark user as verified if first time
     if not user.is_verified:
         user.is_verified = True
-        send_welcome_email(user)
-        
+
     db.session.commit()
 
     # Security: Clear the session before populating it to prevent session fixation.
@@ -566,8 +626,13 @@ def verify_otp():
     session["user_name"] = user.full_name
     session["account_type"] = user.account_type
 
-    # Redirect based on account type
-    redirect_url = "/admin/dashboard" if user.account_type == "admin" else "/home"
+    # Determine redirect URL. If user has no password, force them to set one.
+    # This is the primary path for OTP-based first-time logins.
+    if user.password_hash is None:
+        redirect_url = url_for("set_password_page")
+    else:
+        # This case is for robustness, though OTP flow is for passwordless users.
+        redirect_url = url_for("admin_dashboard_page") if user.account_type == "admin" else url_for("home_page")
 
     return jsonify({
         "message": "Login successful",
@@ -2481,11 +2546,27 @@ def update_password():
             return jsonify({"error": "Current password is required"}), 400
         if not user.check_password(current_password):
             return jsonify({"error": "Incorrect current password"}), 400
-            
+
+    # Check if this is the first time the password is being set.
+    is_first_password_set = not user.is_password_set
+
     user.set_password(new_password)
-    db.session.commit()
     
-    return jsonify({"message": "Password updated successfully"}), 200
+    # Activate the user and mark password as set
+    if is_first_password_set:
+        user.is_password_set = True
+        user.is_active = True
+
+    db.session.commit()
+
+    # Send the welcome email only after the user has set their password for the first time.
+    if is_first_password_set:
+        send_welcome_email(user)
+
+    return jsonify({
+        "message": "Password updated successfully",
+        "redirect_url": url_for("home_page")
+    }), 200
 
 
 # ==============================================================================
@@ -2572,7 +2653,7 @@ def admin_get_users():
         "profile_picture": _get_user_avatar(user),
         "email": user.email,
         "role": user.account_type, # Frontend expects 'role'
-        "branch": user.branch,
+        "major": user.major,
         "status": "active" if user.is_active else "blocked", # Frontend expects 'status' string
         "joinDate": user.created_at.strftime('%Y-%m-%d')
     } for user in users]), 200
@@ -2855,7 +2936,9 @@ def seed_admin():
         return
     current_app.logger.info(f"⚙️ Seeding admin with email: {email}")
 
-    admin = User.query.filter_by(account_type="admin").first()
+    # Find the specific admin by email to ensure we update the correct one.
+    admin = User.query.filter_by(email=email.lower()).first()
+
     if admin:
         # Update existing admin to ensure credentials match .env and hash is correct
         admin.email = email.lower()
@@ -2874,8 +2957,7 @@ def seed_admin():
         account_type="admin",
         is_active=True,
         is_verified=True,  # Admin is trusted by default
-        enrollment_no="ADMIN001",
-        branch="ADMINISTRATION"
+        enrollment_no="ADMIN001"
     )
     admin.set_password(password)
 

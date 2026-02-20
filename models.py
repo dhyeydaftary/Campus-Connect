@@ -8,6 +8,13 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 
+def get_is_password_set_default(context):
+    """Sets default for is_password_set based on account type."""
+    if context.get_current_parameters().get('account_type') == 'admin':
+        return True
+    return False
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # CORE TABLES
 # ═══════════════════════════════════════════════════════════════════════════
@@ -22,10 +29,10 @@ class User(db.Model):
     # Authentication
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=True)
+    is_password_set = db.Column(db.Boolean, default=get_is_password_set_default, nullable=False)
     
     # OTP & Student Details
     enrollment_no = db.Column(db.String(50), unique=True, nullable=False, index=True)
-    branch = db.Column(db.String(100), nullable=False, index=True)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     
     # Profile
@@ -40,7 +47,7 @@ class User(db.Model):
     batch = db.Column(db.String(20), nullable=False)
     
     # Status
-    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=False, nullable=False)
     
     # Role-based access control
     account_type = db.Column(db.String(20), default="student", nullable=False)

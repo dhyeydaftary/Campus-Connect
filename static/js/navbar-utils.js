@@ -368,14 +368,22 @@ window.openSearchAnnouncement = function(id) {
 
 // Load notification badge on page load (all pages)
 document.addEventListener('DOMContentLoaded', async function() {
-    // Initial load
-    updateNotificationBadge();
-    updateMessageBadge();
-    
-    // Poll every 30 seconds
-    setInterval(updateNotificationBadge, 30000);
+    const nonPollingPages = ['/login', '/set-password', '/reset-password'];
+    const shouldPoll = !nonPollingPages.some(page => window.location.pathname.startsWith(page));
 
-    // Initialize Search
+    // Initial load
+    if (shouldPoll) {
+        updateNotificationBadge();
+        updateMessageBadge();
+    
+        // Poll every 30 seconds only on active pages
+        setInterval(() => {
+            updateNotificationBadge();
+            updateMessageBadge();
+        }, 30000);
+    }
+
+    // Initialize Search on all pages
     initSearch();
 });
 

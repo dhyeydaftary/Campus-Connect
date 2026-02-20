@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnText = document.getElementById("btn-text");
     const btnIcon = document.getElementById("btn-icon");
     
-    const branchSelect = document.getElementById("branch");
+    const majorSelect = document.getElementById("major");
     const enrollmentInput = document.getElementById("enrollment");
     const suggestionsBox = document.getElementById("suggestions-box");
     const nameInput = document.getElementById("student-name");
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("login-subtitle").textContent = "Admin Login";
                 
                 // Disable Student Inputs (Prevents validation error on hidden fields)
-                branchSelect.disabled = true;
+                majorSelect.disabled = true;
                 enrollmentInput.disabled = true;
                 
                 // Enable Admin Inputs
@@ -89,8 +89,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 btn.disabled = true;
                 
                 // Enable Student Inputs
-                branchSelect.disabled = false;
-                enrollmentInput.disabled = !branchSelect.value; // Only enable if branch is selected
+                majorSelect.disabled = false;
+                enrollmentInput.disabled = !majorSelect.value; // Only enable if major is selected
                 
                 // Disable Admin Inputs
                 adminEmailInput.disabled = true;
@@ -100,8 +100,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // 1. Enable Enrollment Input only after Branch Selection
-    branchSelect.addEventListener("change", () => {
-        if (branchSelect.value) {
+    majorSelect.addEventListener("change", () => {
+        if (majorSelect.value) {
             enrollmentInput.disabled = false;
             enrollmentInput.placeholder = "Start typing enrollment no...";
             enrollmentInput.focus();
@@ -118,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. Handle Enrollment Input with Debounce
     enrollmentInput.addEventListener("input", (e) => {
         const query = e.target.value.trim();
-        const branch = branchSelect.value;
+        const major = majorSelect.value;
 
         // Reset auto-filled fields on change
         nameInput.value = "";
@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const response = await fetch("/api/auth/enrollment-suggestions", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ branch, query })
+                    body: JSON.stringify({ major, query })
                 });
                 const data = await response.json();
                 
@@ -157,11 +157,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         suggestions.forEach(enrollment => {
-            const div = document.createElement("div");
-            div.className = "px-4 py-2 hover:bg-indigo-50 cursor-pointer text-sm text-gray-700 transition-colors";
-            div.textContent = enrollment;
-            div.onclick = () => selectEnrollment(enrollment);
-            suggestionsBox.appendChild(div);
+            // Use a <button> with type="button" to prevent unintended form submissions.
+            // This is the standard, robust way to create clickable actions inside a form.
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "w-full text-left px-4 py-2 hover:bg-indigo-50 cursor-pointer text-sm text-gray-700 transition-colors";
+            button.textContent = enrollment;
+            button.addEventListener('mousedown', (e) => {
+                // Prevents the input from blurring when a suggestion is clicked.
+                // This stops the 'change' event from firing with partial data, which was causing the 404.
+                e.preventDefault();
+            });
+            button.addEventListener('click', () => {
+                selectEnrollment(enrollment);
+            });
+            suggestionsBox.appendChild(button);
         });
 
         suggestionsBox.classList.remove("hidden");
@@ -177,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Helper: Check student details for password/OTP flow
     async function checkStudentDetails(enrollment) {
         try {
-            const response = await fetch("/api/auth/student-details", {
+            const response = await fetch("/api/auth/student_details", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ enrollment_no: enrollment })
@@ -202,7 +212,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 btn.disabled = false;
             } else {
-                showToast("Error", "Student details not found.", "error");
+                // Improve error handling: Show the actual error from the backend.
+                const errorData = await response.json().catch(() => ({ error: "An unknown error occurred." }));
+                showToast("Error", errorData.error || "Student details not found.", "error");
                 btn.disabled = true;
             }
         } catch (error) {
@@ -268,9 +280,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // 6. Reusable Send OTP Function
     async function sendOtp() {
         const enrollment = enrollmentInput.value.trim();
-        const branch = branchSelect.value;
+        const major = majorSelect.value;
 
-        if (!enrollment || !branch) return;
+        if (!enrollment || !major) return;
 
         // UI Loading State
         btn.disabled = true;
@@ -281,7 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch("/api/auth/request-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ enrollment_no: enrollment, branch: branch })
+                body: JSON.stringify({ enrollment_no: enrollment, major: major })
             });
 
             const result = await response.json();
@@ -366,7 +378,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // --- STUDENT OTP REQUEST ---
             else if (currentRole === "student" && currentStep === "credentials") {
                 // STEP 1: Request OTP
-                if (!enrollmentInput.value || !branchSelect.value || !nameInput.value) {
+                if (!enrollmentInput.value || !majorSelect.value || !nameInput.value) {
                     showToast("Incomplete", "Please select a valid student from the suggestions.", "warning");
                     throw new Error("Validation failed");
                 }
