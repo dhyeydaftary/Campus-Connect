@@ -143,6 +143,7 @@ def request_otp():
 
 
 @auth_bp.route("/api/auth/verify-otp", methods=["POST"])
+@limiter.limit("5 per minute")
 def verify_otp():
     """Handles the second step of OTP-based login: verifying the OTP and creating a session."""
     data = request.json
@@ -194,6 +195,7 @@ def verify_otp():
 
 
 @auth_bp.route("/api/auth/login", methods=["POST"])
+@limiter.limit("5 per minute")
 def login_with_password():
     """Handles password-based login for both students and administrators."""
     data = request.json
