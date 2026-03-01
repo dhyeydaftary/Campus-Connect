@@ -1,8 +1,11 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from app import app, db, bcrypt
+from app import create_app
+from app.extensions import db, bcrypt
 from app.models import User
 import os
+
+app = create_app()
 
 with app.app_context():
     admin_email = os.getenv("ADMIN_EMAIL")

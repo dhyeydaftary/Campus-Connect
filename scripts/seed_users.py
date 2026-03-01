@@ -58,7 +58,7 @@ def seed_students():
                 users_added_count = 0
                 skipped_count = 0
 
-                for i, row in enumerate(reader, start=2): # Start at line 2 for accurate logging
+                for i, row in enumerate(reader, start=3): # Start at line 3 because header is 1 and 2
                     try:
                         # --- 1. Basic Validation ---
                         if len(row) < 3:
@@ -73,7 +73,9 @@ def seed_students():
                             skipped_count += 1
                             continue
                         
+                        # User constraint check: skip if enrollment number already exists
                         if enrollment_no in existing_enrollments:
+                            logger.info(f"Skipping row #{i}: Enrollment No '{enrollment_no}' already exists in DB.")
                             skipped_count += 1
                             continue
 
@@ -113,7 +115,7 @@ def seed_students():
 
                     except IntegrityError as e:
                         db.session.rollback()
-                        logger.warning(f"Skipping row #{i} due to DB constraint violation (likely a duplicate). Details: {e.orig}")
+                        logger.warning(f"Skipping row #{i} due to DB constraint violation (likely a duplicate '{enrollment_no}').")
                         skipped_count += 1
                     except Exception as e:
                         db.session.rollback()

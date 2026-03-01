@@ -21,6 +21,7 @@ from app.utils.helpers import (
 )
 from app.services.email_service import send_welcome_email
 from app.services.comment_queue import comment_queue_service
+from sqlalchemy.orm import joinedload
 
 main_bp = Blueprint('main', __name__)
 
@@ -438,19 +439,31 @@ def get_events():
     
     user_id = session["user_id"]
     
-    # Get all upcoming events
     events = Event.query.filter(
         Event.event_date >= datetime.now(timezone.utc)
     ).order_by(Event.event_date.asc()).all()
     
+    event_ids = [e.id for e in events]
+    
+    # Fetch all registrations for these events in one query
+    registrations = EventRegistration.query.filter(
+        EventRegistration.event_id.in_(event_ids)
+    ).all() if event_ids else []
+    
+    # Pre-calculate counts in memory
+    reg_data = {e_id: {'going': 0, 'interested': 0, 'user_status': None} for e_id in event_ids}
+    for r in registrations:
+        if r.status == 'going':
+            reg_data[r.event_id]['going'] += 1
+        elif r.status == 'interested':
+            reg_data[r.event_id]['interested'] += 1
+            
+        if r.user_id == user_id:
+            reg_data[r.event_id]['user_status'] = r.status
+    
     events_data = []
     for event in events:
-        # Check user's registration status
-        registration = EventRegistration.query.filter_by(
-            event_id=event.id,
-            user_id=user_id
-        ).first()
-        
+        data = reg_data[event.id]
         events_data.append({
             "id": event.id,
             "title": event.title,
@@ -458,10 +471,10 @@ def get_events():
             "location": event.location,
             "eventDate": event.event_date.isoformat(),
             "totalSeats": event.total_seats,
-            "availableSeats": event.available_seats,
-            "goingCount": event.going_count,
-            "interestedCount": event.interested_count,
-            "userStatus": registration.status if registration else None,
+            "availableSeats": max(0, event.total_seats - data["going"]),
+            "goingCount": data["going"],
+            "interestedCount": data["interested"],
+            "userStatus": data["user_status"],
             "month": event.event_date.strftime("%b").upper(),
             "day": event.event_date.day,
             "time": event.event_date.strftime("%I:%M %p"),
