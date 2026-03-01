@@ -50,14 +50,18 @@ def create_app():
         raise RuntimeError("FRONTEND_URL not set. Check .env and config.py.")
 
     # Initialize extensions
+    if app.config.get("TESTING"):
+        app.config["REDIS_URL"] = None
+        
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
     
+    is_testing = os.environ.get("TESTING") == "true"
     redis_url = app.config.get("REDIS_URL")
-    if redis_url:
+    if redis_url and not is_testing:
         socketio.init_app(app, cors_allowed_origins=[], message_queue=redis_url)
         app.config["RATELIMIT_STORAGE_URI"] = redis_url
     else:
@@ -123,12 +127,20 @@ def create_app():
     from app.blueprints.admin.routes import admin_bp
     from app.blueprints.chat.routes import chat_bp
     from app.blueprints.support.routes import support_bp
+    from app.blueprints.feed import feed_bp
+    from app.blueprints.events import events_bp
+    from app.blueprints.connections import connections_bp
+    from app.blueprints.notifications import notifications_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(support_bp)
+    app.register_blueprint(feed_bp, url_prefix="/api")
+    app.register_blueprint(events_bp, url_prefix="/api")
+    app.register_blueprint(connections_bp, url_prefix="/api")
+    app.register_blueprint(notifications_bp, url_prefix="/api")
 
     # Initialize socket events
     from app.blueprints.chat.socket import init_socket_events

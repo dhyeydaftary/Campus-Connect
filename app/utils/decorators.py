@@ -19,6 +19,19 @@ def admin_required():
         abort(403)  # Forbidden - not an admin
 
 
+def login_required(f):
+    """
+    Decorator to protect routes that require user authentication.
+    Redirects to login page if user is not authenticated.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("auth.login_page"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def status_required(allowed_statuses):
     """
     Decorator to protect routes based on user status.
