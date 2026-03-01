@@ -9,7 +9,7 @@ from flask import Flask, redirect, url_for, session, request, flash, jsonify
 from datetime import datetime, timezone
 from sqlalchemy import event as sa_event
 
-from app.extensions import db, bcrypt, mail, socketio, limiter
+from app.extensions import db, bcrypt, mail, socketio, limiter, csrf
 from app.config import Config
 
 
@@ -35,6 +35,7 @@ def create_app():
     db.init_app(app)
     bcrypt.init_app(app)
     mail.init_app(app)
+    csrf.init_app(app)
     socketio.init_app(app, cors_allowed_origins=[])
     limiter.init_app(app)
     limiter.storage_uri = app.config.get("REDIS_URL", "memory://")

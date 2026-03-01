@@ -12,6 +12,37 @@
  * @param {'success'|'error'|'warning'|'info'} type The type of toast for styling and icon.
  * @param {number} duration The duration in milliseconds before auto-dismissing.
  */
+function getCSRFToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+}
+
+/**
+ * Intercept all fetch requests to automatically inject the CSRF token
+ * into the headers for state-changing requests (POST, PUT, PATCH, DELETE).
+ */
+const originalFetch = window.fetch;
+window.fetch = async function (resource, options = {}) {
+    const method = (options.method || 'GET').toUpperCase();
+
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        options.headers = options.headers || {};
+        const token = getCSRFToken();
+
+        if (token) {
+            if (options.headers instanceof Headers) {
+                if (!options.headers.has('X-CSRFToken')) {
+                    options.headers.append('X-CSRFToken', token);
+                }
+            } else {
+                options.headers['X-CSRFToken'] = token;
+            }
+        }
+    }
+
+    return originalFetch(resource, options);
+};
+
 function showToast(title, message, type = 'info', duration = 5000) {
     try {
         let container = document.getElementById('toast-container');
