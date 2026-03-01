@@ -1,0 +1,236 @@
+/* Navigation Styles */
+nav {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Dropdown Animation */
+#dropdown-menu {
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Active nav icon */
+.nav-icon-active {
+    color: #4f46e5;
+}
+
+/* Layout Styles */
+body {
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+/* Sidebar Cards */
+.sidebar-card {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    margin-bottom: 1rem;
+}
+
+/* Sticky Sidebars */
+#left-sidebar-profile,
+#right-sidebar-connections,
+#right-sidebar-events {
+    position: sticky;
+    top: 80px;
+}
+
+/* Post Cards - Facebook/LinkedIn Style */
+.post-card {
+    background: white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    border: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
+    width: 100%;
+    transition: box-shadow 0.2s;
+}
+
+.post-card:hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.post-card .post-content-img {
+    max-height: 600px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.post-card header {
+    padding: 1rem;
+}
+
+.post-card .p-4 {
+    padding: 1rem;
+}
+
+/* Engagement stats hover effects */
+.post-card .hover\:underline:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* Action buttons */
+.post-card button.group:hover {
+    background-color: #f3f4f6;
+}
+
+/* Posts Container */
+#posts {
+    width: 100%;
+}
+
+#posts article {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+/* Responsive: Hide sidebars on smaller screens */
+@media (max-width: 1023px) {
+    .lg\:col-span-3 {
+        display: none;
+    }
+
+    .lg\:col-span-6 {
+        grid-column: span 12 / span 12;
+    }
+
+    .post-card .post-content-img {
+        max-height: 400px;
+    }
+}
+
+/* Gradient Text */
+.gradient-text {
+    background: linear-gradient(to right, #6366f1, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Scrollbar Hide */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Connect Button */
+.connect-btn {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.connect-btn.connected {
+    background: #1f2937;
+}
+
+.connect-btn:hover {
+    opacity: 0.9;
+}
+
+/* Modal Styling */
+#comment-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Carousel Controls */
+.group:hover button {
+    opacity: 1;
+}
+
+.group button {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+/* Skeleton Loader */
+.skeleton-post {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.skeleton-header {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    animation: pulse 1.5s infinite;
+}
+
+.skeleton-lines {
+    flex: 1;
+}
+
+.skeleton-line {
+    height: 10px;
+    background: #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    animation: pulse 1.5s infinite;
+}
+
+.skeleton-line.short {
+    width: 50%;
+}
+
+.skeleton-image {
+    width: 100%;
+    height: 300px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    animation: pulse 1.5s infinite;
+}
+
+.skeleton-footer {
+    margin-top: 8px;
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}

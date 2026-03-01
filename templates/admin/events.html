@@ -1,4 +1,4 @@
-{% extends "admin/layout.html" %}
+{% extends "layouts/admin_base.html" %}
 {% block title %}Events | Admin{% endblock %}
 {% block header_title %}Events Management{% endblock %}
 {% block content %}
@@ -23,7 +23,8 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="event-description">Description</label>
-                    <textarea class="form-textarea" id="event-description" placeholder="Enter event description" required></textarea>
+                    <textarea class="form-textarea" id="event-description" placeholder="Enter event description"
+                        required></textarea>
                 </div>
                 <div class="grid-2">
                     <div class="form-group">
@@ -70,17 +71,23 @@
         <div class="card-body">
             <!-- Tabs -->
             <div class="flex border-b border-gray-200 mb-4">
-                <button id="tab-upcoming" class="px-4 py-2 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 focus:outline-none transition-colors duration-200" onclick="switchTab('upcoming')">
+                <button id="tab-upcoming"
+                    class="px-4 py-2 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 focus:outline-none transition-colors duration-200"
+                    onclick="switchTab('upcoming')">
                     Upcoming Events
                 </button>
-                <button id="tab-past" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors duration-200" onclick="switchTab('past')">
+                <button id="tab-past"
+                    class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors duration-200"
+                    onclick="switchTab('past')">
                     Past Events
                 </button>
             </div>
-            
+
             <!-- Events List -->
             <div id="events-list" class="flex flex-col gap-4">
-                <div class="loading-spinner"><div class="spinner"></div></div>
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -136,9 +143,10 @@
         <div class="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold" id="view-modal-title">Event Details</h3>
-                <button onclick="closeModal('view-modal')" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                <button onclick="closeModal('view-modal')"
+                    class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
-            
+
             <div class="mb-4">
                 <h4 class="font-bold mb-2 text-gray-800">Description</h4>
                 <p id="view-description" class="text-gray-600 text-sm whitespace-pre-wrap"></p>
@@ -155,7 +163,12 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-gray-100 border-b"><th class="p-2">Name</th><th class="p-2">Email</th><th class="p-2">College</th><th class="p-2">Dept</th></tr>
+                        <tr class="bg-gray-100 border-b">
+                            <th class="p-2">Name</th>
+                            <th class="p-2">Email</th>
+                            <th class="p-2">College</th>
+                            <th class="p-2">Dept</th>
+                        </tr>
                     </thead>
                     <tbody id="participants-tbody"></tbody>
                 </table>

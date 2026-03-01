@@ -1,27 +1,62 @@
-# Virtual environment
+# ==============================
+# VIRTUAL ENVIRONMENTS
+# ==============================
 .venv/
 venv/
 env/
 
-# Python cache
+# ==============================
+# PYTHON CACHE
+# ==============================
 __pycache__/
 *.pyc
 
-# Environment variables
+# ==============================
+# SECRETS
+# ==============================
 .env
 
-# Flask instance folder
+# ==============================
+# FLASK INSTANCE FOLDER
+# ==============================
 instance/
 
-# OS junk
+# ==============================
+# OS CLUTTER
+# ==============================
 .DS_Store
 
-# =========================
-# User uploads (IMPORTANT)
-# =========================
+# ==============================
+# IDE CONFIG
+# ==============================
+.vscode/
+.idea/
+
+# ==============================
+# NODE MODULES
+# ==============================
+node_modules/
+
+# ==============================
+# LOGS & LOCAL DATABASES
+# ==============================
+*.log
+*.sqlite3
+*.sqlite
+*.db
+
+# ==============================
+# BUILD ARTIFACTS
+# ==============================
+build/
+dist/
+*.egg-info/
+
+# ==============================
+# USER UPLOADS
+# ==============================
 static/uploads/**
 
-# Allow folder structure
 !static/uploads/
 !static/uploads/chat/
 !static/uploads/chat/chat_docs/
@@ -30,18 +65,28 @@ static/uploads/**
 !static/uploads/post/post_docs/
 !static/uploads/post/post_images/
 !static/uploads/profile_photos/
-!static/images/
-
-# Allow only .gitkeep files
-!static/images/**/.gitkeep
 !static/uploads/**/.gitkeep
 
-# Local seeding scripts
-seed_admin.py
-seed_users.py
+# ==============================
+# STATIC IMAGES
+# ==============================
+!static/images/team/
+!static/images/team/.gitkeep
 
-# Local database reset script
-reset_db.py
+# ==============================
+# INSTANCE FOLDER STRUCTURE
+# ==============================
+!instance/
+!instance/.gitkeep
 
-# Local database file
-students.csv
+# ==============================
+# LOCAL DEVELOPMENT SCRIPTS
+# ==============================
+scripts/seed_admin.py
+scripts/seed_users.py
+scripts/reset_db.py
+
+# ==============================
+# LOCAL DATA FILES
+# ==============================
+data/students.csv

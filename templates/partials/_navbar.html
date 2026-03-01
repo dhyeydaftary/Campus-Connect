@@ -1,0 +1,178 @@
+<!-- templates/_navbar.html -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+
+<nav class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300"
+    id="main-navbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+        <div class="flex justify-between items-center h-full gap-4">
+
+            <!-- LEFT: Logo & Sidebar Toggle -->
+            <div class="flex items-center gap-3 lg:gap-4">
+                <!-- Mobile Sidebar Toggle -->
+                <button id="sidebar-toggle"
+                    class="lg:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 hover:text-indigo-600 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    aria-label="Toggle Sidebar">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+
+                <!-- Brand Logo -->
+                <a href="/home" class="flex items-center gap-2 font-bold text-xl group focus:outline-none">
+                    <i class="fas fa-graduation-cap text-indigo-600"></i>
+                    <span class="hidden sm:block text-gray-900 group-hover:text-indigo-600 transition-colors">Campus
+                        Connect</span>
+                </a>
+            </div>
+
+            <!-- CENTER: Search Bar (Desktop) -->
+            <div class="hidden md:flex flex-1 max-w-xl px-4">
+                <div class="relative w-full group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400 group-focus-within:text-indigo-500 transition-colors"></i>
+                    </div>
+                    <input type="search" id="search-input"
+                        class="global-search-input block w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all duration-200 sm:text-sm"
+                        placeholder="Search for people, posts, or events..." autocomplete="off">
+                    <!-- Results container injected by JS -->
+                </div>
+            </div>
+
+            <!-- RIGHT: Actions & Profile -->
+            <div class="flex items-center gap-1 sm:gap-2">
+
+                <!-- Mobile Search Toggle -->
+                <button onclick="NavbarUtils.toggleMobileSearch()"
+                    class="md:hidden p-2.5 text-gray-500 hover:bg-gray-100 hover:text-indigo-600 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    aria-label="Search">
+                    <i class="fas fa-search text-xl"></i>
+                </button>
+
+                <!-- Desktop Nav Icons -->
+                <div class="hidden lg:flex items-center gap-1 mr-2 border-r border-gray-200 pr-2">
+                    <a href="/home"
+                        class="p-2.5 {{ 'text-indigo-600 bg-indigo-50' if request.path == '/home' else 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }} rounded-xl transition-all relative group"
+                        aria-label="Home">
+                        <i class="fas fa-home text-xl"></i>
+                        <span
+                            class="absolute -bottom-10 left-1/2 transform -translate-x-1/2 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-sm">Home</span>
+                    </a>
+                    <a href="/messages"
+                        class="p-2.5 {{ 'text-indigo-600 bg-indigo-50' if request.path == '/messages' else 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }} rounded-xl transition-all relative group"
+                        aria-label="Messages">
+                        <div class="relative">
+                            <i class="fas fa-comment-alt text-xl"></i>
+                            <span id="message-badge"
+                                class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold border-2 border-white hidden shadow-sm">0</span>
+                        </div>
+                        <span
+                            class="absolute -bottom-10 left-1/2 transform -translate-x-1/2 px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-sm">Messages</span>
+                    </a>
+                </div>
+
+                <!-- Notification Bell -->
+                <div class="relative" id="notification-bell">
+                    <button onclick="NavbarUtils.toggleNotifications()"
+                        class="p-2.5 text-gray-500 hover:bg-gray-100 hover:text-indigo-600 rounded-xl transition-all relative focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        aria-label="Notifications">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span id="notification-badge"
+                            class="absolute top-2 right-2.5 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white hidden shadow-sm"></span>
+                    </button>
+
+                    <!-- Notification Dropdown (hidden by default) -->
+                    <div id="notification-dropdown"
+                        class="hidden absolute right-0 mt-4 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 origin-top-right ring-1 ring-black ring-opacity-5 animate-fade-in-up">
+                        <div
+                            class="px-4 py-3 border-b border-gray-50 flex justify-between items-center bg-gray-50/80 backdrop-blur-sm">
+                            <h3 class="font-semibold text-gray-900">Notifications</h3>
+                            <button onclick="NavbarUtils.markAllAsRead()"
+                                class="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline">Mark
+                                all read</button>
+                        </div>
+                        <div id="notifications-list" class="max-h-[400px] overflow-y-auto custom-scrollbar bg-white">
+                            <div class="p-8 text-center text-gray-500">
+                                <i class="fas fa-spinner fa-spin mb-2 text-indigo-500"></i>
+                                <p class="text-sm">Loading...</p>
+                            </div>
+                        </div>
+                        <div class="p-3 border-t border-gray-50 bg-gray-50/80 backdrop-blur-sm text-center">
+                            <button onclick="NavbarUtils.clearAllNotifications()"
+                                class="text-sm font-medium text-red-600 hover:text-red-700">Clear all</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Dropdown -->
+                <div class="relative ml-1" id="profile-dropdown">
+                    <button onclick="NavbarUtils.toggleProfileDropdown()"
+                        class="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/20 border border-transparent hover:border-gray-200"
+                        id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                        <img class="h-9 w-9 rounded-full object-cover border border-gray-200 nav-avatar shadow-sm"
+                            src="{{ user.profile_picture if user.profile_picture else 'https://ui-avatars.com/api/?name=' + (user_name | urlencode) }}"
+                            alt="{{ user_name }}">
+                        <i class="fas fa-chevron-down text-xs text-gray-400 mr-1 hidden sm:block transition-transform duration-200"
+                            id="profile-chevron"></i>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="dropdown-menu"
+                        class="hidden absolute right-0 mt-4 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 origin-top-right ring-1 ring-black ring-opacity-5 animate-fade-in-up">
+                        <div class="px-5 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50 to-white">
+                            <p class="text-sm font-bold text-gray-900 truncate">{{ user_name }}</p>
+                        </div>
+                        <div class="py-2">
+                            <a href="/profile/{{ session.user_id }}"
+                                class="group flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                                <div
+                                    class="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <span class="font-medium">My Profile</span>
+                            </a>
+                            <div class="border-t border-gray-50 my-1 mx-4"></div>
+                            <a href="/logout"
+                                class="group flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                <div
+                                    class="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center group-hover:bg-red-100 group-hover:text-red-600 transition-colors">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                </div>
+                                <span class="font-medium">Sign out</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile Right Panel Toggle -->
+                <button id="right-panel-toggle"
+                    class="lg:hidden p-2.5 text-gray-500 hover:bg-gray-100 hover:text-indigo-600 rounded-xl ml-1 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    aria-label="Toggle Right Panel">
+                    <i class="fas fa-th-large text-xl"></i>
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Search Bar (Collapsible) -->
+    <div id="mobile-search-bar"
+        class="hidden md:hidden absolute top-16 left-0 w-full bg-white border-b border-gray-200 px-4 py-3 shadow-lg z-40 animate-fade-in-down">
+        <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input type="search" id="mobile-search-input"
+                class="global-search-input w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-gray-50 text-gray-900 placeholder-gray-500"
+                placeholder="Search Campus Connect...">
+            <button onclick="NavbarUtils.toggleMobileSearch()"
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <!-- Mobile Search Results Container -->
+        <div id="mobile-search-results" class="mt-2 hidden"></div>
+    </div>
+</nav>
+<!-- Spacer for fixed navbar -->
+<div class="h-16"></div>
+<!-- Global Toast Container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[200] w-full max-w-md space-y-3 pointer-events-none"></div>
+
+<script defer src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/core/navbar-utils.js') }}"></script>
