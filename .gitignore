@@ -9,7 +9,9 @@ env/
 # PYTHON CACHE
 # ==============================
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
 
 # ==============================
 # SECRETS
@@ -40,6 +42,7 @@ node_modules/
 # ==============================
 # LOGS & LOCAL DATABASES
 # ==============================
+logs/
 *.log
 *.sqlite3
 *.sqlite
@@ -78,13 +81,6 @@ static/images/team/*
 # ==============================
 instance/*
 !instance/.gitkeep
-
-# ==============================
-# LOCAL DEVELOPMENT SCRIPTS
-# ==============================
-scripts/seed_admin.py
-scripts/seed_users.py
-scripts/reset_db.py
 
 # ==============================
 # LOCAL DATA FILES
