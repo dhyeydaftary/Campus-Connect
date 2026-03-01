@@ -55,9 +55,16 @@ def create_app():
     bcrypt.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
-    socketio.init_app(app, cors_allowed_origins=[])
+    
+    redis_url = app.config.get("REDIS_URL")
+    if redis_url:
+        socketio.init_app(app, cors_allowed_origins=[], message_queue=redis_url)
+        app.config["RATELIMIT_STORAGE_URI"] = redis_url
+    else:
+        socketio.init_app(app, cors_allowed_origins=[])
+        app.config["RATELIMIT_STORAGE_URI"] = "memory://"
+        
     limiter.init_app(app)
-    limiter.storage_uri = app.config.get("REDIS_URL", "memory://")
 
     # User init event listener
     from app.models import User
