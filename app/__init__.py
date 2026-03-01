@@ -5,6 +5,10 @@ Campus Connect — Application Factory
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
+import os
+import logging
+from logging.handlers import RotatingFileHandler
+
 from flask import Flask, redirect, url_for, session, request, flash, jsonify
 from datetime import datetime, timezone
 from sqlalchemy import event as sa_event
@@ -21,6 +25,20 @@ def create_app():
         template_folder='../templates'
     )
     app.config.from_object(Config)
+
+    # Configure Logging
+    if not app.debug and not app.testing:
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+        file_handler = RotatingFileHandler('logs/campus_connect.log', maxBytes=10240000, backupCount=5)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        ))
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('Campus Connect startup')
 
     if not app.secret_key:
         raise RuntimeError("SECRET_KEY not set. Check .env file.")
