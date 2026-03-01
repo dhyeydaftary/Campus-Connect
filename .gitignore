@@ -70,13 +70,13 @@ static/uploads/**
 # ==============================
 # STATIC IMAGES
 # ==============================
-!static/images/team/
+static/images/team/*
 !static/images/team/.gitkeep
 
 # ==============================
 # INSTANCE FOLDER STRUCTURE
 # ==============================
-!instance/
+instance/*
 !instance/.gitkeep
 
 # ==============================
