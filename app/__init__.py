@@ -9,7 +9,7 @@ from flask import Flask, redirect, url_for, session, request, flash, jsonify
 from datetime import datetime, timezone
 from sqlalchemy import event as sa_event
 
-from app.extensions import db, bcrypt, mail, socketio, limiter, csrf
+from app.extensions import db, bcrypt, mail, socketio, limiter, csrf, migrate
 from app.config import Config
 
 
@@ -33,6 +33,7 @@ def create_app():
 
     # Initialize extensions
     db.init_app(app)
+    migrate.init_app(app, db)
     bcrypt.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
