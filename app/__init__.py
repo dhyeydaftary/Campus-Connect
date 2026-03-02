@@ -17,7 +17,7 @@ from app.extensions import db, bcrypt, mail, socketio, limiter, csrf, migrate
 from app.config import Config
 
 
-def create_app():
+def create_app(test_config=None):
     """Create and configure the Flask application."""
     app = Flask(
         __name__,
@@ -25,6 +25,9 @@ def create_app():
         template_folder='../templates'
     )
     app.config.from_object(Config)
+
+    if test_config:
+        app.config.update(test_config)
 
     # Configure Logging
     if not app.debug and not app.testing:

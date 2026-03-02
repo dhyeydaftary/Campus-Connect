@@ -1,0 +1,9 @@
+[run]
+source = app
+omit = 
+    app/tests/*
+    tests/*
+    venv/*
+    .venv/*
+    config.py
+    run.py
