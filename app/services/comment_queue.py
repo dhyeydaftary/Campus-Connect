@@ -23,14 +23,35 @@ class CommentProcessingQueue:
     def init_app(self, app: Flask):
         """Initialize with Flask app context"""
         self.app = app
+
+        if app.config.get("TESTING"):
+            logger.info("Comment worker NOT started (TESTING mode).")
+            return
+
+        if not app.config.get("COMMENT_QUEUE_ENABLED", True):
+            logger.info("Comment worker NOT started (Disabled via config).")
+            return
+
         self._start_worker()
 
     def _start_worker(self):
         """Start the background consumer thread"""
         if not self._worker_thread or not self._worker_thread.is_alive():
+            self._stop_event.clear()
             self._worker_thread = threading.Thread(target=self._process_worker, daemon=True)
             self._worker_thread.start()
             logger.info("Comment processing worker thread started.")
+
+    def shutdown(self):
+        """Signal the worker to stop and wait for it."""
+        self._stop_event.set()
+        if self._worker_thread and self._worker_thread.is_alive():
+            # Join the thread with a short timeout to prevent hanging the test suite or main process indefinitely.
+            self._worker_thread.join(timeout=2.0)
+            if not self._worker_thread.is_alive():
+                logger.info("Comment processing worker thread shut down gracefully.")
+            else:
+                logger.warning("Comment processing worker thread did not shut down in time.")
 
     def enqueue(self, task_data):
         """
