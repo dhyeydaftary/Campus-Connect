@@ -53,7 +53,6 @@ def test_delete_user_removes_profile_data(auth_client_student, app):
         assert db.session.get(Experience, exp_id) is None
         assert db.session.get(Education, edu_id) is None
 
-@pytest.mark.skip(reason="No ON DELETE CASCADE configured for Notifications in the DB model")
 @pytest.mark.cascade
 def test_delete_user_removes_notifications(auth_client_student, app):
     client, user = auth_client_student
@@ -147,14 +146,12 @@ def test_add_skill_to_nonexistent_user_returns_404(auth_client_student, app):
             db.session.commit()
         db.session.rollback()
 
-@pytest.mark.skip(reason="No validation logic implemented on POST /api/posts/<id>/comments")
 def test_comment_on_nonexistent_post_returns_404(auth_client_student):
     client, user = auth_client_student
     response = client.post('/api/posts/99999/comments', json={"text": "Hello"})
     # Assuming the API checks if post exists
     assert response.status_code == 404
 
-@pytest.mark.skip(reason="No validation logic implemented on POST /api/posts/<id>/like")
 def test_like_nonexistent_post_returns_404(auth_client_student):
     client, user = auth_client_student
     response = client.post('/api/posts/99999/like')
@@ -194,7 +191,6 @@ def test_duplicate_connection_request_returns_409(auth_client_student, second_st
     response = client.post('/api/connections/request', json={"target_user_id": second_student.id})
     assert response.status_code in [409, 400]
 
-@pytest.mark.skip(reason="Unique constraint may not be enforced safely at the DB level, or API suppresses it")
 def test_duplicate_event_registration_returns_409(auth_client_student, event_with_capacity, app):
     client, user = auth_client_student
     client.post(f'/api/events/{event_with_capacity.id}/register', json={"status": "going"})

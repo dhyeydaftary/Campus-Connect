@@ -76,7 +76,6 @@ def test_unlike_post_decrements_counter(auth_client_student, second_student, app
     assert data["liked"] is False
     assert data["likesCount"] == 0
 
-@pytest.mark.skip(reason="Missing backend validation for non-existent post raises IntegrityError directly")
 def test_unlike_nonexistent_like_returns_404(auth_client_student):
     client, user = auth_client_student
     # Just sending a like to non existent post
@@ -99,9 +98,8 @@ def test_get_feed_with_invalid_limit_returns_400(auth_client_student):
     response = client.get('/api/posts?limit=1000') # Exceeds max limit
     assert response.status_code in [400, 200]
 
-@pytest.mark.skip(reason="App throws ValueError unhandled in TESTING mode")
+@pytest.mark.critical
 def test_get_feed_with_string_limit_returns_400(auth_client_student):
     client, user = auth_client_student
     response = client.get('/api/posts?limit=abc')
     assert response.status_code in [400, 200, 500]
-
