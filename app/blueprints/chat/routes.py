@@ -143,7 +143,7 @@ def start_chat():
             "partner_id": partner.id,
             "partner_name": partner.full_name,
             "partner_avatar": partner.profile_picture or f"https://ui-avatars.com/api/?name={partner.full_name}"
-        }), 200
+        }), 409
     else:
         # Create new conversation
         new_conversation = Conversation(user1_id=u1_id, user2_id=u2_id)
@@ -329,6 +329,15 @@ def send_message_http():
     if not recipient_id or not content:
         return jsonify({"error": "Recipient and content required"}), 400
         
+    if int(recipient_id) == int(user_id):
+        return jsonify({"error": "Cannot chat with yourself"}), 400
+        
+    if not str(content).strip():
+        return jsonify({"error": "Content cannot be empty"}), 400
+        
+    if len(str(content)) > 5000:
+        return jsonify({"error": "Message too long"}), 400
+        
     try:
         # Get or create conversation
         u1_id, u2_id = (user_id, int(recipient_id)) if user_id < int(recipient_id) else (int(recipient_id), user_id)
@@ -370,8 +379,26 @@ def send_message_http():
             }
             socketio.emit('new_message', payload, room=f"chat_{conversation.id}")
             
-        return jsonify({"success": True}), 200
+        return jsonify({"success": True}), 201
         
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+@chat_bp.route('/api/messages/<int:message_id>', methods=['DELETE'])
+def delete_message(message_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    msg = db.session.get(Message, message_id)
+    if not msg:
+        return jsonify({"error": "Message not found"}), 404
+        
+    if msg.sender_id != user_id:
+        return jsonify({"error": "Access denied"}), 403
+        
+    db.session.delete(msg)
+    db.session.commit()
+    
+    return jsonify({"success": True}), 200
