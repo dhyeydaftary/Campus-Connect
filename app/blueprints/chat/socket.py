@@ -4,6 +4,15 @@ from app.models import db, Conversation, Message, User
 from datetime import datetime, timezone
 def init_socket_events(socketio):
     
+    @socketio.on('connect')
+    def on_connect():
+        if "user_id" not in session:
+            return False
+            
+    @socketio.on('disconnect')
+    def on_disconnect():
+        pass
+        
     @socketio.on('join_chat')
     def on_join(data):
         if not data:
@@ -20,8 +29,16 @@ def init_socket_events(socketio):
             
         # Validate DB access
         conversation = db.session.get(Conversation, int(room_id))
-        if conversation and user_id in [conversation.user1_id, conversation.user2_id]:
-            join_room(f"chat_{int(room_id)}")
+        if not conversation:
+            emit('error', {'message': 'Conversation not found'})
+            return
+            
+        if user_id not in [conversation.user1_id, conversation.user2_id]:
+            emit('error', {'message': 'Access denied'})
+            return
+            
+        join_room(f"chat_{int(room_id)}")
+        emit('joined', {'status': 'success', 'room': f"chat_{int(room_id)}"}) # Default emit to sender
 
     @socketio.on('leave_chat')
     def on_leave(data):
@@ -115,6 +132,7 @@ def init_socket_events(socketio):
                 "is_own": False # Receiver sees this as False
             }
             
+            # 3. Emit to the specific room
             # 3. Emit to the specific room
             emit('new_message', payload, room=f"chat_{conversation_id}")
         except Exception:
