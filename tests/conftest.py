@@ -67,38 +67,44 @@ def unauthenticated_client(client):
 @pytest.fixture
 def auth_client_student(client, app):
     with app.app_context():
-        user = User(
-            first_name="Test", last_name="Student", email="student@example.com",
-            enrollment_no="STU001", university="Test U", major="CS", batch="2026",
-            account_type="student", status="ACTIVE", is_password_set=True
-        )
-        user.set_password("pass")
-        db.session.add(user)
-        db.session.commit()
+        user = User.query.filter_by(enrollment_no="STU001").first()
+        if not user:
+            user = User(
+                first_name="Test", last_name="Student", email="student@example.com",
+                enrollment_no="STU001", university="Test U", major="CS", batch="2026",
+                account_type="student", status="ACTIVE", is_password_set=True
+            )
+            user.set_password("pass")
+            db.session.add(user)
+            db.session.commit()
         user_id = user.id
         
-        response = client.post('/api/auth/login', json={
-            "role": "student", "enrollment_no": "STU001", "password": "pass"
-        })
+        with client.session_transaction() as sess:
+            sess["user_id"] = user_id
+            sess["account_type"] = "student"
+            sess["_fresh"] = True
         
         yield client, db.session.get(User, user_id)
 
 @pytest.fixture
 def auth_client_admin(client, app):
     with app.app_context():
-        user = User(
-            first_name="Admin", last_name="User", email="admin@example.com",
-            enrollment_no="ADM001", university="Test U", major="CS", batch="2026",
-            account_type="admin", status="ACTIVE", is_password_set=True
-        )
-        user.set_password("pass")
-        db.session.add(user)
-        db.session.commit()
+        user = User.query.filter_by(email="admin@example.com").first()
+        if not user:
+            user = User(
+                first_name="Admin", last_name="User", email="admin@example.com",
+                enrollment_no="ADM001", university="Test U", major="CS", batch="2026",
+                account_type="admin", status="ACTIVE", is_password_set=True
+            )
+            user.set_password("pass")
+            db.session.add(user)
+            db.session.commit()
         user_id = user.id
         
-        response = client.post('/api/auth/login', json={
-            "role": "admin", "email": "admin@example.com", "password": "pass"
-        })
+        with client.session_transaction() as sess:
+            sess["user_id"] = user_id
+            sess["account_type"] = "admin"
+            sess["_fresh"] = True
         
         yield client, db.session.get(User, user_id)
 

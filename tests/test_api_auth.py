@@ -358,6 +358,31 @@ class TestAuthHelpers:
         assert resp.status_code == 200
         assert "SUG123" in resp.json["suggestions"]
 
+    def test_get_enrollment_suggestions_pending(self, client, app):
+        with app.app_context():
+            user = User(
+                first_name="Pend", last_name="User", email="pend@example.com",
+                enrollment_no="PEND123", university="U", major="CS", batch="B",
+                status="PENDING"
+            )
+            db.session.add(user)
+            db.session.commit()
+            
+        resp = client.post("/api/auth/enrollment-suggestions", json={
+            "major": "CS", "query": "PEND"
+        })
+        assert resp.status_code == 200
+        assert "PEND123" in resp.json["suggestions"]
+
+    def test_get_enrollment_suggestions_missing_params(self, client):
+        resp = client.post("/api/auth/enrollment-suggestions", json={"major": "CS"})
+        assert resp.status_code == 200
+        assert resp.json["suggestions"] == []
+        
+        resp = client.post("/api/auth/enrollment-suggestions", json={"query": "SUG"})
+        assert resp.status_code == 200
+        assert resp.json["suggestions"] == []
+
     def test_get_student_details(self, client, app):
         with app.app_context():
             user = User(
@@ -373,3 +398,13 @@ class TestAuthHelpers:
         assert resp.status_code == 200
         assert resp.json["email"] == "det@example.com"
         assert resp.json["full_name"] == "Detail User"
+
+    def test_get_student_details_missing_enrollment(self, client):
+        resp = client.post("/api/auth/student_details", json={})
+        assert resp.status_code == 400
+        assert "error" in resp.json
+
+    def test_get_student_details_not_found(self, client):
+        resp = client.post("/api/auth/student_details", json={"enrollment_no": "NOTEXIST"})
+        assert resp.status_code == 404
+        assert "error" in resp.json
