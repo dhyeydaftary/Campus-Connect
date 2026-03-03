@@ -3,7 +3,7 @@ Deep coverage tests for app/blueprints/main/routes.py (Phase 4C - Wave 1)
 Focuses on Pagination, Search, Profile Access, and Announcements.
 """
 import pytest
-from app.models import User, Announcement, Post, Skill, Experience, Education
+from app.models import User, Announcement, Post, Skill, Experience, Education, Connection, ConnectionRequest
 from app.extensions import db
 
 class TestMainPagination:
@@ -54,6 +54,24 @@ class TestMainPagination:
         resp = client.get(f"/api/profile/{target_id}/posts", query_string={"page": "abc"})
         assert resp.status_code == 400
 
+    def test_profile_posts_unauthorized(self, client, second_student):
+        resp = client.get(f"/api/profile/{second_student.id}/posts")
+        assert resp.status_code == 401
+
+    def test_profile_posts_user_not_found(self, auth_client_student):
+        client, student = auth_client_student
+        resp = client.get("/api/profile/99999/posts")
+        assert resp.status_code == 404
+
+    def test_profile_posts_invalid_params(self, auth_client_student, second_student):
+        client, student = auth_client_student
+        # page < 1
+        resp = client.get(f"/api/profile/{second_student.id}/posts", query_string={"page": 0})
+        assert resp.status_code == 400
+        # limit < 1
+        resp = client.get(f"/api/profile/{second_student.id}/posts", query_string={"limit": 0})
+        assert resp.status_code == 400
+
 class TestMainSearch:
     """Wave 1 – Search Guard Branches"""
 
@@ -97,6 +115,43 @@ class TestMainProfileAccess:
         resp = client.get(f"/api/profile/{student.id}")
         assert resp.status_code == 200
         assert resp.json["is_own_profile"] is True
+
+    def test_get_profile_data_connection_statuses(self, client, auth_client_student, second_student, app):
+        auth_client, student = auth_client_student
+        
+        # 1. Not connected
+        resp = auth_client.get(f"/api/profile/{second_student.id}")
+        assert resp.json["connection_status"] == "not_connected"
+        
+        # 2. Pending Sent
+        with app.app_context():
+            req = ConnectionRequest(sender_id=student.id, receiver_id=second_student.id, status="pending")
+            db.session.add(req)
+            db.session.commit()
+        resp = auth_client.get(f"/api/profile/{second_student.id}")
+        assert resp.json["connection_status"] == "pending_sent"
+        
+        # 3. Pending Received
+        with app.app_context():
+            db.session.delete(req)
+            req2 = ConnectionRequest(sender_id=second_student.id, receiver_id=student.id, status="pending")
+            db.session.add(req2)
+            db.session.commit()
+        resp = auth_client.get(f"/api/profile/{second_student.id}")
+        assert resp.json["connection_status"] == "pending_received"
+        
+        # 4. Connected
+        with app.app_context():
+            db.session.delete(req2)
+            conn = Connection(user_id=student.id, connected_user_id=second_student.id)
+            db.session.add(conn)
+            db.session.commit()
+        resp = auth_client.get(f"/api/profile/{second_student.id}")
+        assert resp.json["connection_status"] == "connected"
+
+    def test_get_profile_data_not_logged_in(self, client, second_student):
+        resp = client.get(f"/api/profile/{second_student.id}")
+        assert resp.status_code == 401
 
     def test_get_profile_data_not_found(self, auth_client_student):
         client, student = auth_client_student

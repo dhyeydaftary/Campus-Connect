@@ -71,7 +71,7 @@ class TestAdminCRUD:
             sess["account_type"] = "admin"
         resp = client.put(f"/admin/api/announcements/{ann.id}", json={"title": "T2-upd"})
         assert resp.status_code == 200
-        assert Announcement.query.get(ann.id).title == "T2-upd"
+        assert db.session.get(Announcement, ann.id).title == "T2-upd"
 
     def test_delete_announcement(self, client, admin_user):
         ann = Announcement(title="T3", content="C3", author_id=admin_user.id)
@@ -82,7 +82,7 @@ class TestAdminCRUD:
             sess["account_type"] = "admin"
         resp = client.delete(f"/admin/api/announcements/{ann.id}")
         assert resp.status_code == 200
-        assert Announcement.query.get(ann.id).status == "deleted"
+        assert db.session.get(Announcement, ann.id).status == "deleted"
 
     def test_create_event_invalid_target(self, client, admin_user):
         with client.session_transaction() as sess:
