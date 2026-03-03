@@ -101,6 +101,14 @@ def register_for_event(event_id):
     if event.is_cancelled:
         return jsonify({"error": "Cannot register for a cancelled event"}), 400
     
+    # Hardening: Prevent registration for past events
+    event_date = event.event_date
+    if event_date.tzinfo is None:
+        event_date = event_date.replace(tzinfo=timezone.utc)
+        
+    if event_date < datetime.now(timezone.utc):
+        return jsonify({"error": "Cannot register for a past event"}), 400
+    
     # Check existing registration
     existing = EventRegistration.query.filter_by(
         event_id=event_id,
