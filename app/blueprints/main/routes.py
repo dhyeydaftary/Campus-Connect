@@ -104,7 +104,15 @@ def get_announcements():
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
     
-    limit = request.args.get("limit", type=int)
+    try:
+        limit = request.args.get("limit")
+        if limit is not None:
+            limit = int(limit)
+            if limit < 1:
+                limit = None # Ignore invalid limits
+    except (ValueError, TypeError):
+        limit = None
+        
     query = Announcement.query.filter_by(status='active').order_by(Announcement.created_at.desc())
     
     if limit:
@@ -232,8 +240,14 @@ def api_profile_posts(user_id):
         return jsonify({"error": "User not found"}), 404
 
     # Fetch posts for this specific user
-    page = int(request.args.get("page", 1))
-    limit = int(request.args.get("limit", 5))
+    try:
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 5))
+        if page < 1 or limit < 1:
+            return jsonify({"error": "Invalid pagination parameters"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid pagination parameters"}), 400
+        
     offset = (page - 1) * limit
 
     likes_subq = (
