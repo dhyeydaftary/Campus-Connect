@@ -12,7 +12,6 @@ def test_send_connection_request_to_self_returns_403(auth_client_student):
     response = client.post('/api/connections/request', json={"connected_user_id": user.id})
     assert response.status_code in [403, 400]
 
-@pytest.mark.skip(reason="API returns 400 on initial request due to unresolved validation logics")
 def test_send_duplicate_connection_request_returns_409(auth_client_student, second_student):
     client, user = auth_client_student
     # First request
@@ -73,7 +72,6 @@ def test_reject_connection_request_succeeds(auth_client_student, second_student,
     response = client.post(f'/api/connections/reject/{req_id}')
     assert response.status_code == 200
 
-@pytest.mark.skip(reason="No validation implemented for re-sending a rejected connection request in testing API logic.")
 def test_send_request_after_rejection_succeeds(auth_client_student, second_student, app):
     client, user = auth_client_student
     with app.app_context():

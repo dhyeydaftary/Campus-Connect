@@ -154,7 +154,6 @@ def test_create_post_with_string_user_id_returns_400(auth_client_student):
     response = client.post('/api/posts/create', data={"post_type": "text", "caption": "test", "user_id": "invalid"})
     assert response.status_code in [400, 201]  # Either rejects or ignores invalid user_id field
 
-@pytest.mark.skip(reason="App throws ValueError unhandled in TESTING mode")
 @pytest.mark.critical
 def test_get_feed_with_string_limit_returns_400(auth_client_student):
     client, user = auth_client_student

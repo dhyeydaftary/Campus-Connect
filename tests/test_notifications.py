@@ -109,7 +109,6 @@ def test_notification_created_on_post_like(auth_client_student, second_student, 
         if response.status_code == 200:
             assert notif is not None
 
-@pytest.mark.skip(reason="No ON DELETE CASCADE configured for Notifications on Post deletion")
 @pytest.mark.cascade
 def test_delete_post_removes_related_notifications(auth_client_student, second_student, app):
     client, user = auth_client_student

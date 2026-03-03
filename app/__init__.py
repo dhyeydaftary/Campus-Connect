@@ -57,6 +57,16 @@ def create_app(test_config=None):
         app.config["REDIS_URL"] = None
         
     db.init_app(app)
+    
+    # Enable SQLite foreign key support
+    if app.config.get("SQLALCHEMY_DATABASE_URI", "").startswith("sqlite"):
+        with app.app_context():
+            @sa_event.listens_for(db.engine, "connect")
+            def set_sqlite_pragma(dbapi_connection, connection_record):
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.close()
+
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     mail.init_app(app)

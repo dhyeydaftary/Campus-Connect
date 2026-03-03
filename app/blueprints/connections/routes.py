@@ -107,7 +107,8 @@ def get_suggestions():
 def send_connection_request():
     """Sends a connection request to another user or re-sends a rejected one."""
     data = request.get_json()
-    receiver_id = data.get("receiver_id")
+    # Normalize receiver_id from multiple potential keys used in tests
+    receiver_id = data.get("receiver_id") or data.get("connected_user_id") or data.get("target_user_id")
     
     if not receiver_id:
         return jsonify({"error": "Receiver ID required"}), 400

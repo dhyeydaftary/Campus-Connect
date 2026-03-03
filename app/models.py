@@ -1,6 +1,6 @@
 from app.extensions import db, bcrypt
 from datetime import datetime, timezone
-from sqlalchemy import Index, CheckConstraint, and_, or_, DateTime
+from sqlalchemy import Index, CheckConstraint, and_, or_, DateTime, event as sa_event
 from sqlalchemy.exc import IntegrityError
 
 
@@ -69,6 +69,11 @@ class User(db.Model):
                                         foreign_keys="ConnectionRequest.receiver_id",
                                         backref="receiver",
                                         lazy="dynamic")
+    notifications = db.relationship("Notification", 
+                                    foreign_keys="Notification.user_id",
+                                    backref="user", 
+                                    lazy="dynamic", 
+                                    cascade="all, delete-orphan")
 
     __table_args__ = (
         db.CheckConstraint(status.in_(['PENDING', 'ACTIVE', 'BLOCKED']), name='user_status_check'),
@@ -292,8 +297,7 @@ class Notification(db.Model):
     is_read = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     
-    # Relationships
-    user = db.relationship("User", foreign_keys=[user_id], backref="notifications")
+    # Relationships defined in parent models via backref
     actor = db.relationship("User", foreign_keys=[actor_id])
     
     __table_args__ = (
@@ -385,6 +389,10 @@ class Post(db.Model):
         Index("idx_posts_visibility_created", "visibility", "created_at"),
     )
 
+    # Relationships
+    likes = db.relationship("Like", backref="post", cascade="all, delete-orphan", lazy="dynamic")
+    comments = db.relationship("Comment", backref="post", cascade="all, delete-orphan", lazy="dynamic")
+
 
 class Like(db.Model):
 
@@ -447,6 +455,8 @@ class Comment(db.Model):
         lazy="dynamic",
         cascade="all, delete-orphan"
     )
+    
+    # Relationships to User and Post are handled by parent models
     
     __table_args__ = (
         # For getting comments on a post
@@ -944,3 +954,32 @@ class Message(db.Model):
             db.session.commit()
         
         return count
+# 
+# EVENT LISTENERS (POLYMORPHIC CLEANUP)
+# 
+
+@sa_event.listens_for(Post, 'after_delete')
+def delete_post_notifications(mapper, connection, target):
+    """Clean up polymorphic notifications when a post is deleted."""
+    from sqlalchemy import and_
+    connection.execute(
+        Notification.__table__.delete().where(
+            and_(
+                Notification.reference_id == target.id,
+                Notification.type.like('post_%')
+            )
+        )
+    )
+
+@sa_event.listens_for(Event, 'after_delete')
+def delete_event_notifications(mapper, connection, target):
+    """Clean up polymorphic notifications when an event is deleted."""
+    from sqlalchemy import and_
+    connection.execute(
+        Notification.__table__.delete().where(
+            and_(
+                Notification.reference_id == target.id,
+                Notification.type.like('event_%')
+            )
+        )
+    )

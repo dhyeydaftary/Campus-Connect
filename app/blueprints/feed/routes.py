@@ -30,8 +30,12 @@ from . import feed_bp
 @login_required
 def api_posts():
     """Fetches a paginated feed of posts, ranked by a simple algorithm."""
-    page = int(request.args.get("page", 1))
-    limit = int(request.args.get("limit", 5))
+    try:
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 5))
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid pagination parameters"}), 400
+        
     offset = (page - 1) * limit
 
     likes_subq = (
@@ -249,6 +253,10 @@ def download_post_attachment(post_id):
 @login_required
 def toggle_like(post_id):
     """Toggles a user's 'like' on a post and creates/removes notifications."""
+    post = db.session.get(Post, post_id)
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+        
     user_id = session["user_id"]
 
     existing = Like.query.filter_by(
@@ -327,6 +335,10 @@ def get_comments(post_id):
 @login_required
 def add_comment(post_id):
     """Adds a new comment to a post and enqueues a background job for processing."""
+    post = db.session.get(Post, post_id)
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+        
     text = request.json.get("text")
     if not text:
         return jsonify({"error": "Empty comment"}), 400
