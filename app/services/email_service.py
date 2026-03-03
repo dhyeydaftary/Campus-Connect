@@ -17,6 +17,11 @@ def send_email(subject, recipients, html_body):
     Returns:
         bool: True if email was sent successfully, False otherwise.
     """
+    # Validate recipients: must be a non-empty list of valid-looking emails
+    import re
+    if not recipients or not isinstance(recipients, (list, tuple)) or not all(isinstance(r, str) and re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", r) for r in recipients):
+        current_app.logger.error(f"Invalid recipient(s) for email: {recipients}")
+        return False
     try:
         msg = EmailMessage(subject, recipients=recipients)
         msg.html = html_body

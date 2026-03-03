@@ -55,6 +55,49 @@ def reset_password_page():
 # AUTHENTICATION API ROUTES
 # ==============================================================================
 
+@auth_bp.route("/api/auth/register", methods=["POST"])
+def register():
+    """Handles new user registration."""
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    required_fields = ["first_name", "last_name", "email", "enrollment_no", "university", "major", "batch", "password"]
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({"error": f"Field '{field}' is required"}), 400
+
+    email = data.get("email").strip().lower()
+    enrollment_no = data.get("enrollment_no").strip()
+
+    if "@" not in email or "." not in email:
+        return jsonify({"error": "Invalid email format"}), 400
+
+    if User.query.filter((User.email == email) | (User.enrollment_no == enrollment_no)).first():
+        return jsonify({"error": "Email or enrollment number already exists"}), 409
+
+    try:
+        user = User(
+            first_name=data.get("first_name").strip(),
+            last_name=data.get("last_name").strip(),
+            email=email,
+            enrollment_no=enrollment_no,
+            university=data.get("university").strip(),
+            major=data.get("major").strip(),
+            batch=data.get("batch").strip(),
+            status="PENDING",
+            is_password_set=False
+        )
+        user.set_password(data.get("password"))
+        db.session.add(user)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({"message": "Registration successful", "user_id": user.id}), 201
+
+
 @auth_bp.route("/api/auth/enrollment-suggestions", methods=["POST"])
 def get_enrollment_suggestions():
     """Fetches enrollment number suggestions for the login form."""
