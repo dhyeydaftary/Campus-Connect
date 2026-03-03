@@ -1,3 +1,33 @@
+# --- Additional hardening tests ---
+def test_queue_perform_task_logic_db_commit_exception(sync_queue, auth_client_student, second_student):
+    app = sync_queue.app
+    client, user = auth_client_student
+    with app.app_context():
+        post = Post(user_id=user.id, caption="Test Post")
+        db.session.add(post)
+        db.session.commit()
+        post_id = post.id
+        owner_id = user.id
+        commenter_id = second_student.id
+        task = {
+            "comment_id": 123,
+            "post_id": post_id,
+            "user_id": commenter_id
+        }
+        from unittest.mock import patch
+        # Patch db.session.commit to raise exception
+        with patch("app.models.db.session.commit", side_effect=Exception("DB error")):
+            with patch("time.sleep", return_value=None):
+                sync_queue._perform_task_logic(task)
+        # Notification should not be created
+        notif = Notification.query.filter_by(user_id=owner_id, actor_id=commenter_id).first()
+        assert notif is None
+
+def test_queue_init_app_respects_comment_queue_enabled(app):
+    app.config["COMMENT_QUEUE_ENABLED"] = False
+    q = CommentProcessingQueue()
+    q.init_app(app)
+    assert q._worker_thread is None
 import pytest
 from app.services.comment_queue import CommentProcessingQueue
 from app.models import Post, Notification, User

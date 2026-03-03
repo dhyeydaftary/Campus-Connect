@@ -34,6 +34,9 @@ def app():
     app = create_app(test_config)
 
     with app.app_context():
+        # Safety: force disable rate limiting and use in-memory storage for all tests
+        app.config["RATELIMIT_ENABLED"] = False
+        app.config["RATELIMIT_STORAGE_URI"] = "memory://"
         # Enforce foreign keys for SQLite
         @sa_event.listens_for(db.engine, "connect")
         def set_sqlite_pragma(dbapi_connection, connection_record):

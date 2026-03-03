@@ -117,13 +117,13 @@ def get_content_activity():
 
     posts_query = (
         db.session.query(
-            func.date(func.timezone('UTC', Post.created_at)),
+            func.date(Post.created_at),
             func.count(Post.id)
         )
         .join(User, Post.user_id == User.id)
         .filter(Post.created_at >= start_dt)
         .filter(User.status == 'ACTIVE')
-        .group_by(func.date(func.timezone('UTC', Post.created_at)))
+        .group_by(func.date(Post.created_at))
         .all()
     )
 
@@ -133,13 +133,13 @@ def get_content_activity():
 
     events_query = (
         db.session.query(
-            func.date(func.timezone('UTC', Event.event_date)),
+            func.date(Event.event_date),
             func.count(Event.id)
         )
         .join(User, Event.user_id == User.id)
         .filter(Event.event_date >= start_dt)
         .filter(User.status == 'ACTIVE')
-        .group_by(func.date(func.timezone('UTC', Event.event_date)))
+        .group_by(func.date(Event.event_date))
         .all()
     )
 
