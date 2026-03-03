@@ -156,17 +156,22 @@ def get_content_activity():
 
 def _format_admin_event(event):
     """Helper to format an event object for the admin events list API."""
-    dt_iso = event.event_date.isoformat()
-    if event.event_date.tzinfo is None:
-        dt_iso += "Z"
+    dt = event.event_date
+
+    # Normalize naive datetime to UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+
+    now = datetime.now(timezone.utc)
+
     return {
         "id": event.id,
         "title": event.title,
-        "date": dt_iso,
+        "date": dt.isoformat(),
         "location": event.location,
         "description": event.description,
         "total_seats": event.total_seats,
         "interested_count": event.interested_count,
         "going_count": event.going_count,
-        "is_past": event.event_date < datetime.now(timezone.utc)
+        "is_past": dt < now
     }

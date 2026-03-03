@@ -245,6 +245,15 @@ def admin_create_event():
         user_id=target_user_id  # Event owner is the target user, NOT the admin
     )
     
+    # Prevent creating past events
+    now = datetime.now(timezone.utc)
+    event_date_check = event.event_date
+    if event_date_check.tzinfo is None:
+        event_date_check = event_date_check.replace(tzinfo=timezone.utc)
+    
+    if event_date_check < now:
+        return jsonify({"error": "Cannot create events in the past"}), 400
+    
     db.session.add(event)
     db.session.flush()  # Get event.id before commit
     
@@ -433,7 +442,12 @@ def admin_update_event(event_id):
         abort(404)
     
     # Prevent editing past events
-    if event.event_date < datetime.now(timezone.utc):
+    now = datetime.now(timezone.utc)
+    event_date = event.event_date
+    if event_date.tzinfo is None:
+        event_date = event_date.replace(tzinfo=timezone.utc)
+        
+    if event_date < now:
         return jsonify({"error": "Cannot edit past events"}), 400
         
     data = request.json

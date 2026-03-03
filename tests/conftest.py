@@ -97,7 +97,7 @@ def auth_client_admin(client, app):
         user_id = user.id
         
         response = client.post('/api/auth/login', json={
-            "role": "admin", "enrollment_no": "ADM001", "password": "pass"
+            "role": "admin", "email": "admin@example.com", "password": "pass"
         })
         
         yield client, db.session.get(User, user_id)
