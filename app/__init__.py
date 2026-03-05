@@ -145,6 +145,7 @@ def create_app(test_config=None):
     from app.blueprints.events import events_bp
     from app.blueprints.connections import connections_bp
     from app.blueprints.notifications import notifications_bp
+    from app.blueprints.health import health_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -155,6 +156,7 @@ def create_app(test_config=None):
     app.register_blueprint(events_bp, url_prefix="/api")
     app.register_blueprint(connections_bp, url_prefix="/api")
     app.register_blueprint(notifications_bp, url_prefix="/api")
+    app.register_blueprint(health_bp)
 
     # Initialize socket events
     from app.blueprints.chat.socket import init_socket_events
