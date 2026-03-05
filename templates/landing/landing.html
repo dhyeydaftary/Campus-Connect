@@ -22,30 +22,7 @@
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=Inter:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Serif+Display:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
         rel="stylesheet" />
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                        display: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
-                        serif: ['DM Serif Display', 'Playfair Display', 'Georgia', 'serif'],
-                        mono: ['Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', 'monospace'],
-                    },
-                    colors: {
-                        border: 'hsl(220,18%,88%)',
-                        background: 'hsl(0,0%,100%)',
-                        foreground: 'hsl(221,39%,11%)',
-                        primary: { DEFAULT: 'hsl(221,68%,28%)', foreground: 'hsl(0,0%,100%)' },
-                        secondary: { DEFAULT: 'hsl(220,18%,96%)', foreground: 'hsl(221,39%,11%)' },
-                        muted: { DEFAULT: 'hsl(220,16%,94%)', foreground: 'hsl(220,14%,46%)' },
-                        card: { DEFAULT: 'hsl(0,0%,100%)', foreground: 'hsl(221,39%,11%)' },
-                    },
-                },
-            },
-        };
-    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/landing.css') }}" />
 </head>
