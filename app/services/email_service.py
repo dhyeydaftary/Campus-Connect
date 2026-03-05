@@ -3,7 +3,7 @@ Email Service for Campus Connect.
 Handles all outgoing email functionality.
 """
 
-import random
+import secrets
 import string
 from flask import render_template, current_app
 from flask_mail import Message as EmailMessage
@@ -60,4 +60,4 @@ def send_password_reset_email(user, reset_link):
 
 def generate_otp():
     """Generate a 6-digit numeric OTP"""
-    return ''.join(random.choices(string.digits, k=6))
+    return ''.join(secrets.choice(string.digits) for _ in range(6))
