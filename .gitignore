@@ -86,3 +86,8 @@ instance/*
 # LOCAL DATA FILES
 # ==============================
 data/students.csv
+
+# ==============================
+# TAILWIND BINARY
+# ==============================
+tailwindcss.exe
