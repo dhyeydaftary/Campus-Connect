@@ -42,7 +42,8 @@ node_modules/
 # ==============================
 # LOGS & LOCAL DATABASES
 # ==============================
-logs/
+logs/*
+!logs/.gitkeep
 *.log
 *.sqlite3
 *.sqlite
