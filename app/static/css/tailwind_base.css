@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "system-ui", "-apple-system", sans-serif;
+  --font-display: "Plus Jakarta Sans", "system-ui", "-apple-system", sans-serif;
+  --font-serif: "DM Serif Display", "Playfair Display", "Georgia", serif;
+  --font-mono: "Consolas", "Monaco", "Andale Mono", "Ubuntu Mono", monospace;
+
+  --color-border: hsl(220, 18%, 88%);
+  --color-background: hsl(0, 0%, 100%);
+  --color-foreground: hsl(221, 39%, 11%);
+  
+  --color-primary: hsl(221, 68%, 28%);
+  --color-primary-foreground: hsl(0, 0%, 100%);
+  
+  --color-secondary: hsl(220, 18%, 96%);
+  --color-secondary-foreground: hsl(221, 39%, 11%);
+  
+  --color-muted: hsl(220, 16%, 94%);
+  --color-muted-foreground: hsl(220, 14%, 46%);
+  
+  --color-card: hsl(0, 0%, 100%);
+  --color-card-foreground: hsl(221, 39%, 11%);
+}

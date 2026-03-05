@@ -120,14 +120,14 @@ def create_app(test_config=None):
     # Before request middleware
     @app.before_request
     def before_request_funcs():
-        enforce_user_state()
+        return enforce_user_state()
 
     def enforce_user_state():
         if 'user_id' not in session:
             return
 
         exempt_endpoints = [
-            'auth.login_page', 'auth.logout', 'static', 'favicon',
+            'main.home', 'auth.login_page', 'auth.logout', 'static', 'main.favicon',
             'auth.set_password_page', 'auth.update_password',
             'auth.reset_password_page', 'auth.reset_password_with_token'
         ]
