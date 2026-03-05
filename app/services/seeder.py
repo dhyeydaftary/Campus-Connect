@@ -20,7 +20,7 @@ def seed_admin():
 
     if not email or not password:
         return
-    current_app.logger.info(f"⚙️ Seeding admin with email: {email}")
+    current_app.logger.info(f"[SEED] Seeding admin with email: {email}")
 
     # Find the specific admin by email to ensure we update the correct one.
     admin = User.query.filter_by(email=email.lower()).first()
@@ -30,7 +30,7 @@ def seed_admin():
         admin.email = email.lower()
         admin.set_password(password) # Use the model's method
         db.session.commit()
-        current_app.logger.info("✅ Admin account updated")
+        current_app.logger.info("[OK] Admin account updated")
         return
 
     admin = User(
@@ -48,4 +48,4 @@ def seed_admin():
 
     db.session.add(admin)
     db.session.commit()
-    current_app.logger.info("✅ Default admin created")
+    current_app.logger.info("[OK] Default admin created")

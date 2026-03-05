@@ -74,7 +74,20 @@ def create_app(test_config=None):
     
     is_testing = os.environ.get("TESTING") == "true"
     redis_url = app.config.get("REDIS_URL")
+    
+    # Attempt to use Redis, but fall back to memory if server is unreachable
+    use_redis = False
     if redis_url and not is_testing:
+        try:
+            import redis
+            r = redis.from_url(redis_url)
+            r.ping()
+            use_redis = True
+        except (ImportError, Exception):
+            app.logger.warning("Redis is configured but unreachable. Falling back to memory storage.")
+            use_redis = False
+
+    if use_redis:
         socketio.init_app(app, cors_allowed_origins=[], message_queue=redis_url)
         app.config["RATELIMIT_STORAGE_URI"] = redis_url
     else:
