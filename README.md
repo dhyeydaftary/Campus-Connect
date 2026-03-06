@@ -104,9 +104,9 @@
 - [Troubleshooting](#troubleshooting)
 - [Future Improvements](#future-improvements)
 - [Contributing](#contributing)
-- [License](#license)
 - [Authors](#authors)
 - [Acknowledgments](#acknowledgments)
+- [License](#license)
 
 ---
 
@@ -952,17 +952,6 @@ def like(post_id):
 
 ---
 
-## License
-
-This project is licensed under the **MIT License**.
-
-```
-MIT License — Permissions: ✅ Commercial use, ✅ Modification, ✅ Distribution
-Conditions: Include copyright notice · No warranty
-```
-
----
-
 ## Authors
 
 **Dhyey Daftary** — Creator, Lead Developer & Project Architect
@@ -1022,3 +1011,14 @@ Special thanks to everyone who tested the application and helped shape it into w
   ·
   <a href="docs/TROUBLESHOOTING.md">Troubleshooting</a>
 </p>
+
+---
+
+## License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+```text
+MIT License — Permissions: ✅ Commercial use, ✅ Modification, ✅ Distribution
+Conditions: Include copyright notice · No warranty
+```
