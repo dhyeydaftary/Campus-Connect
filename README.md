@@ -10,36 +10,49 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  &nbsp;
   <img src="https://img.shields.io/badge/flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask">
+  &nbsp;
   <img src="https://img.shields.io/badge/postgresql-13+-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
+  &nbsp;
   <img src="https://img.shields.io/badge/socket.io-real%20time-010101?style=for-the-badge&logo=socketdotio&logoColor=white" alt="Socket.IO">
+  &nbsp;
   <img src="https://img.shields.io/badge/redis-queue-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/pytest-333%20tests-0A9EDC?style=flat-square&logo=pytest&logoColor=white" alt="Tests">
-  <img src="https://img.shields.io/badge/coverage-83%25+-brightgreen?style=flat-square" alt="Coverage">
-  <img src="https://img.shields.io/badge/deployed%20on-render-46E3B7?style=flat-square&logo=render&logoColor=white" alt="Render">
-  <img src="https://img.shields.io/badge/gunicorn-eventlet-499848?style=flat-square&logo=gunicorn&logoColor=white" alt="Gunicorn">
-  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/pytest-333%20tests-0A9EDC?style=flat&logo=pytest&logoColor=white" alt="Tests">
+  &nbsp;
+  <img src="https://img.shields.io/badge/coverage-83%25+-brightgreen?style=flat" alt="Coverage">
+  &nbsp;
+  <img src="https://img.shields.io/badge/deployed%20on-render-46E3B7?style=flat&logo=render&logoColor=white" alt="Render">
+  &nbsp;
+  <img src="https://img.shields.io/badge/gunicorn-eventlet-499848?style=flat&logo=gunicorn&logoColor=white" alt="Gunicorn">
+  &nbsp;
+  <img src="https://img.shields.io/badge/license-MIT-blue?style=flat" alt="License">
 </p>
 
 <p align="center">
   <a href="https://github.com/dhyeydaftary/Campus-Connect">
     <img src="https://img.shields.io/github/last-commit/dhyeydaftary/Campus-Connect?style=flat-square&label=last%20commit" alt="Last Commit">
   </a>
+  &nbsp;
   <a href="https://github.com/dhyeydaftary/Campus-Connect">
     <img src="https://img.shields.io/github/repo-size/dhyeydaftary/Campus-Connect?style=flat-square&label=repo%20size" alt="Repo Size">
   </a>
+  &nbsp;
   <a href="https://github.com/dhyeydaftary/Campus-Connect/stargazers">
     <img src="https://img.shields.io/github/stars/dhyeydaftary/Campus-Connect?style=flat-square" alt="Stars">
   </a>
+  &nbsp;
   <a href="https://github.com/dhyeydaftary/Campus-Connect/network/members">
     <img src="https://img.shields.io/github/forks/dhyeydaftary/Campus-Connect?style=flat-square" alt="Forks">
   </a>
+  &nbsp;
   <a href="https://github.com/dhyeydaftary/Campus-Connect/issues">
     <img src="https://img.shields.io/github/issues/dhyeydaftary/Campus-Connect?style=flat-square" alt="Issues">
   </a>
+  &nbsp;
   <a href="https://github.com/dhyeydaftary/Campus-Connect/pulls">
     <img src="https://img.shields.io/github/issues-pr/dhyeydaftary/Campus-Connect?style=flat-square" alt="Pull Requests">
   </a>
@@ -47,8 +60,31 @@
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/landing_hero.png" alt="Landing Page" width="80%">
+</p>
+
+<details>
+  <summary>📸 View More Screenshots</summary>
+  <br>
+  <p align="center">
+    <img src="docs/screenshots/landing_features.png" alt="Core Features & Terminal" width="80%">
+  </p>
+  <p align="center">
+    <img src="docs/screenshots/admin_dashboard.png" alt="Admin Dashboard" width="80%">
+  </p>
+  <p align="center">
+    <img src="docs/screenshots/admin_users.png" alt="Admin User Management" width="80%">
+  </p>
+</details>
+
+---
+
 ## Table of Contents
 
+- [Screenshots](#screenshots)
 - [Quick Start](#quick-start)
 - [Project Overview](#project-overview)
 - [Core Features](#core-features)
@@ -98,7 +134,7 @@ python run.py          # → http://localhost:5000
 
 > **Prerequisites**: Python 3.9+, PostgreSQL 13+, Redis 6+ (optional, falls back to memory)
 >
-> See the [Installation Guide](#-installation-guide) for detailed setup instructions.
+> See the [Installation Guide](#installation-guide) for detailed setup instructions.
 
 ---
 
@@ -226,45 +262,45 @@ Campus Connect uses a **monolithic MVC architecture** with Flask's blueprint sys
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              Frontend (Jinja2 + Tailwind CSS + JS)       │
-│    Templates: auth, main, admin, chat, support, emails   │
-│    Static: CSS pages/admin, JS core/features/pages       │
+│              Frontend (Jinja2 + Tailwind CSS + JS)      │
+│    Templates: auth, main, admin, chat, support, emails  │
+│    Static: CSS pages/admin, JS core/features/pages      │
 ├─────────────────────────────────────────────────────────┤
-│              Flask Application Server                    │
-│                                                          │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  Blueprints (10 Domain Modules)                    │  │
-│  │                                                     │  │
-│  │  auth · main · feed · events · connections          │  │
-│  │  notifications · chat · admin · support · health    │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                          │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  Service Layer                                     │  │
-│  │  email_service · comment_queue · seeder            │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                          │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  Utilities                                         │  │
-│  │  decorators (login_required, admin_required)       │  │
-│  │  helpers (formatting, file handling, avatars)       │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                          │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  Extensions                                        │  │
-│  │  SQLAlchemy · Bcrypt · Mail · SocketIO · Limiter   │  │
-│  │  CSRF · Migrate                                    │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                          │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  Models (18 Tables via SQLAlchemy ORM)             │  │
-│  │  User · Post · Comment · Like · Event · Message    │  │
-│  │  Conversation · Connection · Notification · ...     │  │
-│  └────────────────────────────────────────────────────┘  │
+│              Flask Application Server                   │
+│                                                         │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Blueprints (10 Domain Modules)                    │ │
+│  │                                                    │ │
+│  │  auth · main · feed · events · connections         │ │
+│  │  notifications · chat · admin · support · health   │ │
+│  └────────────────────────────────────────────────────┘ │
+│                                                         │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Service Layer                                     │ │
+│  │  email_service · comment_queue · seeder            │ │
+│  └────────────────────────────────────────────────────┘ │
+│                                                         │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Utilities                                         │ │
+│  │  decorators (login_required, admin_required)       │ │
+│  │  helpers (formatting, file handling, avatars)      │ │
+│  └────────────────────────────────────────────────────┘ │
+│                                                         │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Extensions                                        │ │
+│  │  SQLAlchemy · Bcrypt · Mail · SocketIO · Limiter   │ │
+│  │  CSRF · Migrate                                    │ │
+│  └────────────────────────────────────────────────────┘ │
+│                                                         │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Models (18 Tables via SQLAlchemy ORM)             │ │
+│  │  User · Post · Comment · Like · Event · Message    │ │
+│  │  Conversation · Connection · Notification · ...    │ │
+│  └────────────────────────────────────────────────────┘ │
 ├─────────────────────────────────────────────────────────┤
 │  Flask-SocketIO (WebSocket)     │  Redis (Queue/Cache)  │
 ├─────────────────────────────────────────────────────────┤
-│              PostgreSQL Database                         │
+│              PostgreSQL Database                        │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -360,13 +396,13 @@ admin_logs (standalone)
 
 ### Testing & Quality
 
-| Tool | Purpose |
-|------|---------|
-| [pytest](https://pytest.org) 8.3 | Test framework |
-| [pytest-cov](https://pytest-cov.readthedocs.io) 7.0 | Coverage reporting |
-| [pytest-flask](https://pytest-flask.readthedocs.io) 1.3 | Flask test utilities |
-| [pytest-timeout](https://pypi.org/project/pytest-timeout/) 2.4 | Test timeout enforcement |
-| [pytest-xdist](https://pypi.org/project/pytest-xdist/) 3.8 | Parallel test execution |
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [pytest](https://pytest.org) | 8.3 | Test framework |
+| [pytest-cov](https://pytest-cov.readthedocs.io) | 7.0 | Coverage reporting |
+| [pytest-flask](https://pytest-flask.readthedocs.io) | 1.3 | Flask test utilities |
+| [pytest-timeout](https://pypi.org/project/pytest-timeout/) | 2.4 | Test timeout enforcement |
+| [pytest-xdist](https://pypi.org/project/pytest-xdist/) | 3.8 | Parallel test execution |
 
 ---
 
@@ -932,11 +968,13 @@ Conditions: Include copyright notice · No warranty
 **Dhyey Daftary** — Creator, Lead Developer & Project Architect
 
 [![GitHub](https://img.shields.io/badge/GitHub-dhyeydaftary-181717?style=flat-square&logo=github)](https://github.com/dhyeydaftary)
+&nbsp;
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Dhyey%20Daftary-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/dhyey-daftary/)
 
 **Urva Shah** — Co-Creator & Design Lead
 
 [![GitHub](https://img.shields.io/badge/GitHub-urvashah05-181717?style=flat-square&logo=github)](https://github.com/urvashah05)
+&nbsp;
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Urva%20Shah-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/urva-shah-2b289a30b/)
 
 **Twisha Agrawal** — Co-Creator
@@ -949,16 +987,16 @@ Conditions: Include copyright notice · No warranty
 
 Special thanks to everyone who tested the application and helped shape it into what it is today:
 
-- **Tanish Shah** — Comprehensive testing, bug reports, and UX feedback
-- **Saumya Prajapati** — Collaborative feedback and feature suggestions
+- [Tanish Shah](https://github.com/Tanish1808) — Comprehensive testing, bug reports, and UX feedback
+- [Saumya Prajapati](https://github.com/saumyaprajapati) — Collaborative feedback and feature suggestions
 
 ### Design & UI/UX
 
-- **Urva Shah** — UI/UX design consultation and interface optimization
+- [Urva Shah](https://github.com/urvashah05) — UI/UX design consultation and interface optimization
 
 ### Project Collaboration
 
-- **Urva Shah** — Project partner providing continuous collaboration and support throughout development
+- [Urva Shah](https://github.com/urvashah05) — Project partner providing continuous collaboration and support throughout development
 
 ### Community & Support
 
