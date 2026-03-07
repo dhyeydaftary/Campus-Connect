@@ -16,14 +16,14 @@
                 </button>
 
                 <!-- Brand Logo -->
-                <a href="{{ '/home' if user and user.is_password_set else '#' }}" class="flex items-center gap-2 font-bold text-xl group focus:outline-none">
+                <a href="{{ '/home' if user is defined and user and user.is_password_set else '#' }}" class="flex items-center gap-2 font-bold text-xl group focus:outline-none">
                     <i class="fas fa-graduation-cap text-indigo-600"></i>
                     <span class="hidden sm:block text-gray-900 group-hover:text-indigo-600 transition-colors">Campus Connect</span>
                 </a>
             </div>
 
             <!-- CENTER: Search Bar (Desktop) -->
-            {% if user and user.is_password_set %}
+            {% if user is defined and user and user.is_password_set %}
             <div class="hidden md:flex flex-1 max-w-xl px-4">
                 <div class="relative w-full group">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -48,7 +48,7 @@
                 </button>
 
                 <!-- Desktop Nav Icons -->
-                {% if user and user.is_password_set %}
+                {% if user is defined and user and user.is_password_set %}
                 <div class="hidden lg:flex items-center gap-1 mr-2 border-r border-gray-200 pr-2">
                     <a href="/home"
                         class="p-2.5 {{ 'text-indigo-600 bg-indigo-50' if request.path == '/home' else 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }} rounded-xl transition-all relative group"
@@ -104,6 +104,7 @@
                 </div>
                 {% endif %}
 
+                {% if user is defined and user %}
                 <!-- Profile Dropdown -->
                 <div class="relative ml-1" id="profile-dropdown">
                     <button onclick="NavbarUtils.toggleProfileDropdown()"
@@ -123,7 +124,7 @@
                             <p class="text-sm font-bold text-gray-900 truncate">{{ user_name }}</p>
                         </div>
                         <div class="py-2">
-                            {% if user and user.is_password_set %}
+                            {% if user.is_password_set %}
                             <a href="/profile/{{ session.user_id }}"
                                 class="group flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
                                 <div
@@ -145,9 +146,17 @@
                         </div>
                     </div>
                 </div>
+                {% else %}
+                <!-- Public Login Route -->
+                <div class="flex items-center ml-2">
+                    <a href="{{ url_for('auth.login_page') }}" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition shadow-sm">
+                        Login
+                    </a>
+                </div>
+                {% endif %}
 
                 <!-- Mobile Right Panel Toggle -->
-                {% if user and user.is_password_set %}
+                {% if user is defined and user and user.is_password_set %}
                 <button id="right-panel-toggle"
                     class="lg:hidden p-2.5 text-gray-500 hover:bg-gray-100 hover:text-indigo-600 rounded-xl ml-1 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                     aria-label="Toggle Right Panel">

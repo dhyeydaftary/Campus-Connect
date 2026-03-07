@@ -13,7 +13,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from app.extensions import db
 from app.models import (
     User, Post, Event, EventRegistration, Connection,
-    Announcement, AdminLog
+    Announcement, AdminLog, SupportTicket, IssueReport
 )
 from app.utils.decorators import admin_required
 from app.utils.helpers import _get_user_avatar, get_content_activity, _format_admin_event
@@ -55,6 +55,12 @@ def admin_logs_page():
     """Renders the admin page for viewing audit logs."""
     admin_required()
     return render_template("admin/logs.html")
+
+@admin_bp.route("/admin/tickets")
+def admin_tickets_page():
+    """Renders the admin page for viewing support tickets and reports."""
+    admin_required()
+    return render_template("admin/tickets.html")
 
 
 @admin_bp.route("/admin/api/dashboard/overview", methods=["GET"])
@@ -581,3 +587,91 @@ def admin_download_event_pdf(event_id):
     buffer.seek(0)
     return send_file(buffer, as_attachment=True, download_name=f"event_{event_id}.pdf", mimetype='application/pdf')
 
+
+# ==============================================================================
+# SUPPORT TICKETS & REPORTS MANAGEMENT
+# ==============================================================================
+
+@admin_bp.route("/admin/api/tickets", methods=["GET"])
+def admin_get_tickets():
+    """Fetches a list of support tickets, order by most recent."""
+    admin_required()
+    
+    # Optional status filter
+    status_filter = request.args.get('status')
+    
+    query = SupportTicket.query
+    if status_filter and status_filter != 'all':
+        query = query.filter_by(status=status_filter)
+        
+    tickets = query.order_by(SupportTicket.created_at.desc()).all()
+    
+    return jsonify([{
+        "id": t.id,
+        "name": t.name,
+        "email": t.email,
+        "subject": t.subject,
+        "category": t.category,
+        "status": t.status,
+        "priority": t.priority,
+        "created_at": t.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        "has_attachment": bool(t.attachment)
+    } for t in tickets]), 200
+
+@admin_bp.route("/admin/api/tickets/<int:ticket_id>/status", methods=["POST"])
+def admin_update_ticket_status(ticket_id):
+    """Updates the status of a support ticket."""
+    admin_required()
+    ticket = db.session.get(SupportTicket, ticket_id)
+    if not ticket:
+        abort(404)
+        
+    data = request.json
+    new_status = data.get('status')
+    
+    if new_status not in ['open', 'in_progress', 'resolved', 'closed']:
+        return jsonify({"error": "Invalid status"}), 400
+        
+    old_status = ticket.status
+    ticket.status = new_status
+    ticket.updated_at = datetime.now(timezone.utc)
+    
+    # Log the action
+    log = AdminLog(
+        admin_id=session["user_id"],
+        action_type="update_ticket",
+        details=f"Ticket #{ticket.id} status changed from {old_status} to {new_status}"
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    # TODO: Send email notification to user about status change if resolved
+    if new_status in ['resolved', 'closed'] and old_status not in ['resolved', 'closed']:
+        from app.services.email_service import send_status_update_email
+        send_status_update_email(ticket.email, ticket.id, new_status)
+    
+    return jsonify({"success": True, "message": f"Status updated to {new_status}"})
+
+@admin_bp.route("/admin/api/reports", methods=["GET"])
+def admin_get_reports():
+    """Fetches a list of issue reports."""
+    admin_required()
+    
+    status_filter = request.args.get('status')
+    
+    query = IssueReport.query
+    if status_filter and status_filter != 'all':
+        query = query.filter_by(status=status_filter)
+        
+    reports = query.order_by(IssueReport.created_at.desc()).all()
+    
+    return jsonify([{
+        "id": r.id,
+        "type": r.report_type,
+        "title": r.title,
+        "email": r.email,
+        "severity": r.severity,
+        "status": r.status,
+        "created_at": r.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        "has_attachments": bool(r.attachments)
+    } for r in reports]), 200

@@ -1,129 +1,88 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     // Icons
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    if (window.lucide) lucide.createIcons();
 
-    // Form handling
+    // DOM refs
     const form = document.getElementById("login-form");
     const btn = document.getElementById("login-btn");
     const btnText = document.getElementById("btn-text");
     const btnIcon = document.getElementById("btn-icon");
-    
+
     const majorSelect = document.getElementById("major");
     const enrollmentInput = document.getElementById("enrollment");
     const suggestionsBox = document.getElementById("suggestions-box");
     const nameInput = document.getElementById("student-name");
     const emailInput = document.getElementById("college-email");
-    
+
     const studentFlow = document.getElementById("student-flow");
-    const adminFlow = document.getElementById("admin-flow");
     const otpFlow = document.getElementById("otp-flow");
-    
+
     const studentPassContainer = document.getElementById("student-password-container");
     const studentPassInput = document.getElementById("student-password");
-    const adminEmailInput = document.getElementById("admin-email");
-    const adminPassInput = document.getElementById("admin-password");
-    
+
     const maskedEmailSpan = document.getElementById("masked-email");
     const loginFooter = document.getElementById("login-footer");
     const resendBtn = document.getElementById("resend-btn");
     const otpTimer = document.getElementById("otp-timer");
-    
-    let currentRole = "student"; // 'student' or 'admin'
+
     let currentStep = "credentials"; // 'credentials', 'password', 'otp'
     let studentHasPassword = false;
     let debounceTimer;
 
-    // 0. Role Switching
-    document.querySelectorAll(".role-btn").forEach(roleBtn => {
-        roleBtn.addEventListener("click", () => {
-            currentRole = roleBtn.dataset.role;
-            
-            // Update UI Buttons
-            document.querySelectorAll(".role-btn").forEach(b => {
-                b.classList.remove("bg-white", "shadow-sm", "text-indigo-600");
-                b.classList.add("text-slate-500");
-            });
-            roleBtn.classList.add("bg-white", "shadow-sm", "text-indigo-600");
-            roleBtn.classList.remove("text-slate-500");
+    // ========== TOAST SYSTEM ==========
+    function showToast(title, message, type = "info") {
+        const container = document.getElementById("toast-container");
+        if (!container) return;
 
-            // Toggle Forms
-            if (currentRole === "admin") {
-                studentFlow.classList.add("hidden");
-                adminFlow.classList.remove("hidden");
-                otpFlow.classList.add("hidden");
-                loginFooter.classList.add("hidden");
-                btn.disabled = false;
-                btnText.textContent = "Login";
-                document.getElementById("login-subtitle").textContent = "Admin Login";
-                
-                // Disable Student Inputs (Prevents validation error on hidden fields)
-                majorSelect.disabled = true;
-                enrollmentInput.disabled = true;
-                
-                // Enable Admin Inputs
-                adminEmailInput.disabled = false;
-                adminPassInput.disabled = false;
-            } else {
-                studentFlow.classList.remove("hidden");
-                adminFlow.classList.add("hidden");
-                otpFlow.classList.add("hidden");
-                loginFooter.classList.remove("hidden");
-                document.getElementById("login-subtitle").textContent = "Student Login";
-                
-                // Reset student state
-                currentStep = "credentials";
-                studentHasPassword = false;
-                btnText.textContent = "Continue";
-                
-                // Reset UI elements
-                studentPassContainer.classList.add("hidden");
-                enrollmentInput.value = "";
-                nameInput.value = "";
-                emailInput.value = "";
-                studentPassInput.value = "";
-                
-                // Re-evaluate button state based on inputs
-                btn.disabled = true;
-                
-                // Enable Student Inputs
-                majorSelect.disabled = false;
-                enrollmentInput.disabled = !majorSelect.value; // Only enable if major is selected
-                
-                // Disable Admin Inputs
-                adminEmailInput.disabled = true;
-                adminPassInput.disabled = true;
-            }
-        });
-    });
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div class="flex items-start gap-3">
+                <i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation text-red-500' :
+                type === 'success' ? 'fa-circle-check text-green-500' :
+                    type === 'warning' ? 'fa-triangle-exclamation text-yellow-500' :
+                        'fa-circle-info text-blue-500'} mt-0.5"></i>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-slate-900">${title}</p>
+                    <p class="text-sm text-slate-600 mt-0.5">${message}</p>
+                </div>
+                <button onclick="this.closest('.toast').remove()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add("show"));
+        setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => toast.remove(), 350);
+        }, 4000);
+    }
 
-    // 1. Enable Enrollment Input only after Branch Selection
+    // ========== 1. BRANCH SELECTION ==========
     majorSelect.addEventListener("change", () => {
         if (majorSelect.value) {
             enrollmentInput.disabled = false;
             enrollmentInput.placeholder = "Start typing enrollment no...";
             enrollmentInput.focus();
-            // Reset fields if branch changes
             enrollmentInput.value = "";
             nameInput.value = "";
             emailInput.value = "";
-            studentPassContainer.classList.add("hidden");
+            studentPassContainer.classList.remove("open");
             studentPassInput.value = "";
             btn.disabled = true;
         }
     });
 
-    // 2. Handle Enrollment Input with Debounce
+    // ========== 2. ENROLLMENT SUGGESTIONS (debounced) ==========
     enrollmentInput.addEventListener("input", (e) => {
         const query = e.target.value.trim();
         const major = majorSelect.value;
 
-        // Reset auto-filled fields on change
         nameInput.value = "";
         emailInput.value = "";
-        studentPassContainer.classList.add("hidden");
+        studentPassContainer.classList.remove("open");
         studentPassInput.value = "";
         btn.disabled = true;
 
@@ -140,51 +99,41 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify({ major, query })
                 });
                 const data = await response.json();
-                
                 showSuggestions(data.suggestions);
             } catch (error) {
                 console.error("Error fetching suggestions:", error);
             }
-        }, 300); // 300ms debounce
+        }, 300);
     });
 
-    // 3. Show Suggestions
+    // ========== 3. SHOW SUGGESTIONS ==========
     function showSuggestions(suggestions) {
         suggestionsBox.innerHTML = "";
-        if (suggestions.length === 0) {
+        if (!suggestions || suggestions.length === 0) {
             suggestionsBox.classList.add("hidden");
             return;
         }
 
         suggestions.forEach(enrollment => {
-            // Use a <button> with type="button" to prevent unintended form submissions.
-            // This is the standard, robust way to create clickable actions inside a form.
             const button = document.createElement("button");
             button.type = "button";
-            button.className = "w-full text-left px-4 py-2 hover:bg-indigo-50 cursor-pointer text-sm text-gray-700 transition-colors";
+            button.className = "suggestion-item w-full text-left px-4 py-2.5 cursor-pointer text-sm text-slate-700";
             button.textContent = enrollment;
-            button.addEventListener('mousedown', (e) => {
-                // Prevents the input from blurring when a suggestion is clicked.
-                // This stops the 'change' event from firing with partial data, which was causing the 404.
-                e.preventDefault();
-            });
-            button.addEventListener('click', () => {
-                selectEnrollment(enrollment);
-            });
+            button.addEventListener("mousedown", (e) => e.preventDefault());
+            button.addEventListener("click", () => selectEnrollment(enrollment));
             suggestionsBox.appendChild(button);
         });
 
         suggestionsBox.classList.remove("hidden");
     }
 
-    // 4. Select Enrollment & Fetch Details
+    // ========== 4. SELECT ENROLLMENT ==========
     function selectEnrollment(enrollment) {
         enrollmentInput.value = enrollment;
         suggestionsBox.classList.add("hidden");
         checkStudentDetails(enrollment);
     }
 
-    // Helper: Check student details for password/OTP flow
     async function checkStudentDetails(enrollment) {
         try {
             const response = await fetch("/api/auth/student_details", {
@@ -192,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ enrollment_no: enrollment })
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
                 nameInput.value = data.full_name;
@@ -200,19 +149,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 studentHasPassword = data.has_password;
 
                 if (studentHasPassword) {
-                    studentPassContainer.classList.remove("hidden");
+                    studentPassContainer.classList.add("open");
                     btnText.textContent = "Login";
                     currentStep = "password";
-                    setTimeout(() => studentPassInput.focus(), 100);
+                    setTimeout(() => studentPassInput.focus(), 150);
                 } else {
-                    studentPassContainer.classList.add("hidden");
+                    studentPassContainer.classList.remove("open");
                     btnText.textContent = "Send OTP";
                     currentStep = "credentials";
                 }
-
                 btn.disabled = false;
             } else {
-                // Improve error handling: Show the actual error from the backend.
                 const errorData = await response.json().catch(() => ({ error: "An unknown error occurred." }));
                 showToast("Error", errorData.error || "Student details not found.", "error");
                 btn.disabled = true;
@@ -222,69 +169,55 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Handle manual entry (Blur/Enter)
     enrollmentInput.addEventListener("change", () => {
         const val = enrollmentInput.value.trim();
         if (val) checkStudentDetails(val);
     });
 
-    // Hide suggestions when clicking outside
     document.addEventListener("click", (e) => {
         if (!enrollmentInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
             suggestionsBox.classList.add("hidden");
         }
     });
 
-    // 5. OTP Timer Logic
+    // ========== 5. OTP TIMER ==========
     let otpInterval;
 
-    function startOtpTimer(expiryIso, timerId = "otp-timer", resendId = "resend-btn") {
-        // Clear any existing timer
+    function startOtpTimer(expiryIso) {
         if (otpInterval) clearInterval(otpInterval);
-        
-        const timerEl = document.getElementById(timerId);
-        const resendEl = document.getElementById(resendId);
-        
-        if (!timerEl) return;
-        
+
         const expiryTime = new Date(expiryIso).getTime();
-        timerEl.classList.remove("hidden");
-        if (resendEl) {
-            resendEl.disabled = true;
-            resendEl.textContent = "Resend OTP";
+        otpTimer.classList.remove("hidden");
+        if (resendBtn) {
+            resendBtn.disabled = true;
+            resendBtn.textContent = "Resend OTP";
         }
 
         function updateTimer() {
-            const now = new Date().getTime();
-            const distance = expiryTime - now;
-
+            const distance = expiryTime - Date.now();
             if (distance < 0) {
                 clearInterval(otpInterval);
-                timerEl.textContent = "OTP Expired";
-                timerEl.classList.add("text-red-500");
-                if (resendEl) resendEl.disabled = false;
+                otpTimer.textContent = "OTP Expired";
+                otpTimer.classList.add("text-red-500");
+                if (resendBtn) resendBtn.disabled = false;
                 return;
             }
-
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            timerEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-            timerEl.classList.remove("text-red-500");
+            const minutes = Math.floor((distance % 3600000) / 60000);
+            const seconds = Math.floor((distance % 60000) / 1000);
+            otpTimer.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            otpTimer.classList.remove("text-red-500");
         }
 
-        updateTimer(); // Run immediately
+        updateTimer();
         otpInterval = setInterval(updateTimer, 1000);
     }
 
-    // 6. Reusable Send OTP Function
+    // ========== 6. SEND OTP ==========
     async function sendOtp() {
         const enrollment = enrollmentInput.value.trim();
         const major = majorSelect.value;
-
         if (!enrollment || !major) return;
 
-        // UI Loading State
         btn.disabled = true;
         if (currentStep === "credentials") btnText.textContent = "Sending OTP...";
         resendBtn.disabled = true;
@@ -295,7 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ enrollment_no: enrollment, major: major })
             });
-
             const result = await response.json();
 
             if (response.ok) {
@@ -304,11 +236,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 otpFlow.classList.remove("hidden");
                 maskedEmailSpan.textContent = result.email;
                 btnText.textContent = "Verify & Login";
-                showToast("OTP Sent", `Check your email at ${result.email}`, 'info');
+                showToast("OTP Sent", `Check your email at ${result.email}`, "info");
                 startOtpTimer(result.expiry_time);
+                // Focus OTP input
+                setTimeout(() => document.getElementById("otp")?.focus(), 200);
             } else {
                 showToast("Error", result.error || "Failed to send OTP", "error");
-                resendBtn.disabled = false; // Re-enable if failed
+                resendBtn.disabled = false;
             }
         } catch (error) {
             showToast("Network Error", "Please try again.", "error");
@@ -319,7 +253,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Attach Resend Handler
     if (resendBtn) {
         resendBtn.addEventListener("click", (e) => {
             e.preventDefault();
@@ -327,37 +260,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // ========== 7. FORM SUBMIT ==========
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
-
-        // Common loading state
         btn.disabled = true;
+        btn.classList.add("btn-loading");
         btnIcon.classList.add("hidden");
 
         try {
-            // --- ADMIN LOGIN ---
-            if (currentRole === "admin") {
-                const email = adminEmailInput.value.trim();
-                const password = adminPassInput.value;
-
-                if (!email || !password) throw new Error("Missing credentials");
-
-                const response = await fetch("/api/auth/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ role: "admin", email, password })
-                });
-                const result = await response.json();
-                
-                if (response.ok) {
-                    showToast("Success", "Login successful, redirecting...", 'success');
-                    window.location.replace(result.redirect_url);
-                } else {
-                    showToast("Login Failed", result.error, "error");
-                }
-            }
-            // --- STUDENT PASSWORD LOGIN ---
-            else if (currentRole === "student" && studentHasPassword) {
+            // --- PASSWORD LOGIN ---
+            if (studentHasPassword && currentStep === "password") {
                 const enrollment = enrollmentInput.value.trim();
                 const password = studentPassInput.value;
 
@@ -369,26 +281,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 const result = await response.json();
 
                 if (response.ok) {
-                    showToast("Success", "Login successful, redirecting...", 'success');
+                    showToast("Success", "Login successful, redirecting...", "success");
                     window.location.replace(result.redirect_url);
+                    return; // Don't reset button
                 } else {
                     showToast("Login Failed", result.error, "error");
+                    studentPassInput.parentElement.classList.add("animate-shake");
+                    setTimeout(() => studentPassInput.parentElement.classList.remove("animate-shake"), 400);
                 }
             }
-            // --- STUDENT OTP REQUEST ---
-            else if (currentRole === "student" && currentStep === "credentials") {
-                // STEP 1: Request OTP
+            // --- OTP REQUEST ---
+            else if (currentStep === "credentials") {
                 if (!enrollmentInput.value || !majorSelect.value || !nameInput.value) {
                     showToast("Incomplete", "Please select a valid student from the suggestions.", "warning");
                     throw new Error("Validation failed");
                 }
-                
-                // Use the shared function
                 await sendOtp();
-            } 
-            // --- STUDENT OTP VERIFY ---
-            else if (currentRole === "student" && currentStep === "otp") {
-                // STEP 2: Verify OTP
+            }
+            // --- OTP VERIFY ---
+            else if (currentStep === "otp") {
                 const enrollment = enrollmentInput.value.trim();
                 const otp = document.getElementById("otp").value.trim();
 
@@ -398,48 +309,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 btnText.textContent = "Verifying...";
-
                 const response = await fetch("/api/auth/verify-otp", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ enrollment_no: enrollment, otp: otp })
+                    body: JSON.stringify({ enrollment_no: enrollment, otp })
                 });
-
                 const result = await response.json();
 
                 if (response.ok) {
-                    showToast("Success", "Login successful! Redirecting...", 'success');
-                    setTimeout(() => {
-                        window.location.replace(result.redirect_url || "/home");
-                    }, 800);
+                    showToast("Success", "Login successful! Redirecting...", "success");
+                    setTimeout(() => window.location.replace(result.redirect_url || "/home"), 800);
+                    return;
                 } else {
                     showToast("Verification Failed", result.error || "Invalid OTP.", "error");
                 }
             }
         } catch (error) {
-            if (error.message !== "Validation failed" && error.message !== "Missing credentials") {
+            if (error.message !== "Validation failed") {
                 showToast("System Error", "Something went wrong. Please try again.", "error");
             }
         } finally {
-            // Reset button state (unless redirecting)
             btn.disabled = false;
+            btn.classList.remove("btn-loading");
             btnIcon.classList.remove("hidden");
-            
-            if (currentRole === "admin") {
-                btnText.textContent = "Login";
-            } else if (currentStep === "password") {
-                btnText.textContent = "Login";
-            } else if (currentStep === "credentials") {
-                btnText.textContent = "Send OTP";
-            } else if (currentStep === "otp") {
-                btnText.textContent = "Verify & Login";
-            }
+
+            if (currentStep === "password") btnText.textContent = "Login";
+            else if (currentStep === "credentials") btnText.textContent = "Send OTP";
+            else if (currentStep === "otp") btnText.textContent = "Verify & Login";
         }
     });
-    
-    // ==========================================
-    // FORGOT PASSWORD MODAL LOGIC
-    // ==========================================
+
+    // ========== 8. FORGOT PASSWORD MODAL ==========
     const forgotLink = document.getElementById("forgot-password-link");
     const forgotModal = document.getElementById("forgot-password-modal");
     const closeForgotModal = document.getElementById("close-forgot-modal");
@@ -453,24 +353,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const openModal = () => {
         forgotModal.classList.remove("hidden");
         forgotModal.classList.add("flex");
+        // Trigger animation
+        requestAnimationFrame(() => forgotModal.classList.add("active"));
         fpIdentifier.value = "";
         fpStatus.textContent = "A link to reset your password will be sent to your email.";
-        fpStatus.className = "text-xs text-gray-500 mt-2";
+        fpStatus.className = "text-xs text-slate-500 mt-2";
         fpBtn.disabled = false;
         fpBtnText.classList.remove("hidden");
         fpBtnSpinner.classList.add("hidden");
         fpBtnText.textContent = "Send Reset Link";
+        setTimeout(() => fpIdentifier.focus(), 200);
     };
 
     const closeModal = () => {
-        forgotModal.classList.add("hidden");
-        forgotModal.classList.remove("flex");
+        forgotModal.classList.remove("active");
+        setTimeout(() => {
+            forgotModal.classList.add("hidden");
+            forgotModal.classList.remove("flex");
+        }, 300);
     };
 
     forgotLink?.addEventListener("click", (e) => { e.preventDefault(); openModal(); });
     closeForgotModal?.addEventListener("click", closeModal);
+    // Close on overlay click
+    forgotModal?.addEventListener("click", (e) => {
+        if (e.target === forgotModal) closeModal();
+    });
+    // Close on Escape
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !forgotModal.classList.contains("hidden")) closeModal();
+    });
 
-    forgotForm?.addEventListener("submit", async(e) => {
+    forgotForm?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const identifier = fpIdentifier.value.trim();
 
@@ -480,12 +394,11 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Set loading state
         fpBtn.disabled = true;
         fpBtnText.classList.add("hidden");
         fpBtnSpinner.classList.remove("hidden");
         fpStatus.textContent = "Sending request...";
-        fpStatus.className = "text-xs text-gray-500 mt-2";
+        fpStatus.className = "text-xs text-slate-500 mt-2";
 
         try {
             const response = await fetch("/api/auth/forgot-password/request", {
@@ -494,16 +407,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({ identifier })
             });
             const data = await response.json();
-            // Always show a generic success message for security (prevents user enumeration)
             fpStatus.textContent = data.message;
             fpStatus.className = "text-xs text-green-600 mt-2";
         } catch (err) {
-            // On network error, still show a generic message
             fpStatus.textContent = "If an account exists, an email has been sent.";
             fpStatus.className = "text-xs text-green-600 mt-2";
         } finally {
-            // Keep button disabled and message shown. User should check their email.
-            fpBtnText.textContent = "Link Sent";
+            fpBtnText.textContent = "Link Sent ✓";
             fpBtnText.classList.remove("hidden");
             fpBtnSpinner.classList.add("hidden");
         }

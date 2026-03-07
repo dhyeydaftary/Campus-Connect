@@ -1,0 +1,37 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h2>New Support Ticket Received</h2>
+<p>A new support ticket has been submitted to the Campus Connect help desk.</p>
+
+<table style="width: 100%; text-align: left; margin-top: 15px; border-collapse: collapse;">
+    <tr>
+        <th style="padding: 8px; border-bottom: 1px solid #ddd;">Ticket ID</th>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">#{{ ticket.id }}</td>
+    </tr>
+    <tr>
+        <th style="padding: 8px; border-bottom: 1px solid #ddd;">User</th>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ ticket.name }} ({{ ticket.email }})</td>
+    </tr>
+    <tr>
+        <th style="padding: 8px; border-bottom: 1px solid #ddd;">Category</th>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ ticket.category }}</td>
+    </tr>
+    <tr>
+        <th style="padding: 8px; border-bottom: 1px solid #ddd;">Priority</th>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong style="color: {% if ticket.priority == 'high' %}#e53e3e{% elif ticket.priority == 'normal' %}#dd6b20{% else %}#3182ce{% endif %};">{{ ticket.priority|title }}</strong></td>
+    </tr>
+    <tr>
+        <th style="padding: 8px; border-bottom: 1px solid #ddd;">Subject</th>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ ticket.subject }}</td>
+    </tr>
+</table>
+
+<h3 style="margin-top: 25px;">Message Content</h3>
+<div style="background-color: #f7fafc; padding: 15px; border-radius: 5px; border: 1px solid #e2e8f0; white-space: pre-wrap;">{{ ticket.message }}</div>
+
+<div style="text-align: center; margin-top: 30px;">
+    <!-- Link to the admin dashboard (to be built) -->
+    <a href="{{ config['FRONTEND_URL'] }}/admin/tickets" class="button">View in Admin Dashboard</a>
+</div>
+{% endblock %}

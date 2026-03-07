@@ -1,0 +1,26 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h2>Update on Your Support Ticket</h2>
+<p>There has been a status update regarding your recent support ticket (#{{ ticket.id }}).</p>
+
+<div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 20px; text-align: center; margin: 20px 0; border-radius: 6px;">
+    <p style="margin: 0; color: #4a5568; font-size: 14px;">Current Status</p>
+    <h3 style="margin: 5px 0 0 0; color: {% if ticket.status == 'resolved' or ticket.status == 'closed' %}#38a169{% elif ticket.status == 'in_progress' %}#d69e2e{% else %}#3182ce{% endif %}; font-size: 24px; text-transform: uppercase;">
+        {{ ticket.status.replace('_', ' ') }}
+    </h3>
+</div>
+
+<p><strong>Subject:</strong> {{ ticket.subject }}</p>
+
+{% if ticket.status == 'resolved' or ticket.status == 'closed' %}
+<p>This ticket has now been marked as resolved/closed. We hope our team was able to provide the assistance you needed.</p>
+<p>If you are still experiencing issues, or have a new issue to report, please consider submitting a new ticket.</p>
+{% else %}
+<p>Our team is currently working on this ticket and will provide further updates or reach out if we require additional information.</p>
+{% endif %}
+
+<div style="text-align: center; margin-top: 30px;">
+    <a href="{{ config['FRONTEND_URL'] }}/support/help_center" class="button">Visit Help Center</a>
+</div>
+{% endblock %}

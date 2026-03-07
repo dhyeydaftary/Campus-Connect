@@ -1,0 +1,20 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h2>Thank you for contacting us!</h2>
+<p>We wanted to let you know that we have received your support ticket and are currently reviewing your request.</p>
+
+<div style="background-color: #ebf8ff; border-left: 4px solid #3182ce; padding: 15px; margin: 20px 0; border-radius: 4px;">
+    <p style="margin: 0; font-weight: bold; color: #2c5282;">Ticket Details</p>
+    <p style="margin: 5px 0 0 0; color: #2a4365;"><strong>Ticket #:</strong> {{ ticket_id }}</p>
+    <p style="margin: 5px 0 0 0; color: #2a4365;"><strong>Subject:</strong> {{ subject }}</p>
+</div>
+
+<p>Our support team generally responds within 24-48 hours. If you have any additional information that you think would help us assist you, please reply to this email to add it to your ticket.</p>
+
+<p>Thank you for your patience,<br>The Campus Connect Support Team</p>
+
+<div style="text-align: center; margin-top: 30px;">
+    <a href="{{ config['FRONTEND_URL'] }}/support/help_center" class="button">Visit Help Center</a>
+</div>
+{% endblock %}
