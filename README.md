@@ -78,6 +78,8 @@
   <p align="center">
     <img src="docs/screenshots/admin_users.png" alt="Admin User Management" width="80%">
   </p>
+</details>
+
 ---
 
 ## 📑 Table of Contents
