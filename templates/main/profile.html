@@ -1,8 +1,7 @@
 <!--
-    User Profile Page
-    This template renders the main profile view for a user. It is heavily dynamic,
-    with most of its content populated by `profile.js` using data from the
-    `/api/profile/<user_id>` endpoint.
+  Campus Connect · User Profile Page
+  Flask + Jinja2 + Tailwind CSS + Vanilla JS
+  Mobile-first. All Jinja2/Flask references preserved exactly.
 -->
 <html lang="en">
 
@@ -11,365 +10,386 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Campus Connect</title>
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
-
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/profile.css') }}">
 
-    <!-- Shared utilities -->
     <script src="{{ url_for('static', filename='js/features/post-utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/core/upload-utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/features/feed-loader.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/pages/profile.js') }}"></script>
 
-    <!--
-        Injects server-side data into the global window object for client-side JavaScript.
-        This is used to identify the profile being viewed and the current logged-in user.
-    -->
     <script>
         window.profileUserId = Number("{{ profile_user.id }}");
         window.isOwnProfile = "{{ is_own_profile }}" === "true";
         window.currentUserId = Number("{{ current_user_id }}");
     </script>
-
 </head>
 
-<body class="bg-background min-h-screen">
-    <!-- Header -->
+<body>
     {% include 'partials/_navbar.html' %}
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
-        <!-- Profile Header -->
-        <div class="bg-card rounded-xl shadow-card border border-border p-4 sm:p-6 mb-6">
-            <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
-                <!-- Avatar -->
-                <div class="relative group w-24 h-24 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-3xl ring-4 ring-primary-light overflow-hidden flex-shrink-0"
-                    id="profileAvatar"> <!-- Avatar image is populated by profile.js -->
+        <!-- ═══════════════════════════════════
+         PROFILE HEADER CARD
+    ════════════════════════════════════ -->
+        <div class="pf-header-card mb-6">
+            <div class="p-5 sm:p-6">
 
-                    <!-- Upload Overlay: Shown on hover for the user's own profile -->
-                    <div id="avatarOverlay"
-                        class="hidden absolute inset-0 bg-black/40 items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                        onclick="document.getElementById('profile-photo-input').click()">
-                        <i class="fas fa-camera text-white text-xl"></i>
+                <!-- Avatar row + info -->
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
+
+                    <!-- Avatar -->
+                    <div id="profileAvatar" class="pf-avatar flex-shrink-0 mr-2 sm:mr-4">
                     </div>
-
-                    <!-- Hidden file input for avatar uploads -->
                     <input type="file" id="profile-photo-input" hidden accept="image/*">
-                </div>
-                <!-- Info -->
-                <div class="flex-1 w-full text-center md:text-left">
-                    <div
-                        class="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-2 justify-center md:justify-start">
-                        <h1 class="text-2xl font-bold text-foreground break-words" id="profileName"></h1>
-                        <div class="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-                            <span
-                                class="px-3 py-1 bg-primary-light text-primary text-sm font-medium rounded-full whitespace-nowrap"
-                                id="profileMajor"></span>
-                            <span class="text-muted-foreground text-sm whitespace-nowrap" id="profileBatch"></span>
+
+                    <!-- All info -->
+                    <div class="flex-1 min-w-0 w-full flex flex-col sm:flex-row justify-between items-center sm:items-start gap-4">
+                        
+                        <!-- Left Info -->
+                        <div class="flex flex-col gap-2 items-center sm:items-start text-center sm:text-left">
+                            <!-- Name, Actions, and Badges Row -->
+                            <div class="flex flex-col sm:flex-row items-center sm:items-baseline gap-2 sm:gap-4">
+                                <!-- Name -->
+                                <h1 class="pf-name leading-none" id="profileName">Loading…</h1>
+
+                                <!-- Badges -->
+                                <div class="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+                                    <span class="badge badge-major" id="profileMajor"></span>
+                                    <span class="badge badge-batch" id="profileBatch"></span>
+                                </div>
+                            </div>
+
+                            <!-- Location -->
+                            <p class="pf-location justify-center sm:justify-start">
+                                <i class="fas fa-map-marker-alt" style="color:#6366f1; font-size:0.65rem;"></i>
+                                <span id="profileLocation"></span>
+                            </p>
+
+                            <!-- Stats -->
+                            <div class="flex items-center gap-0 pt-1 justify-center sm:justify-start">
+                                <div class="pf-stat" style="padding-left:0;">
+                                    <span class="pf-stat-value" id="connectionsCount">—</span>
+                                    <span class="pf-stat-label">Connections</span>
+                                </div>
+                                <div class="w-px h-8 bg-gray-200 mx-3"></div>
+                                <div class="pf-stat" style="padding-left:0;">
+                                    <span class="pf-stat-value" id="postsCount">—</span>
+                                    <span class="pf-stat-label">Posts</span>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Right Actions -->
+                        <div class="flex-shrink-0" id="profileActions"></div>
+
                     </div>
-                    <p class="text-muted-foreground flex items-center justify-center md:justify-start gap-1 mb-4">
-                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span id="profileLocation" class="break-words"></span>
-                    </p>
-                    <!-- Stats -->
-                    <div class="flex items-center justify-center md:justify-start gap-6">
-                        <div class="text-center">
-                            <div class="text-xl font-bold text-foreground" id="connectionsCount"></div>
-                            <div class="text-sm text-muted-foreground">Connections</div>
-                        </div>
-                        <div class="w-px h-8 bg-border"></div>
-                        <div class="text-center">
-                            <div class="text-xl font-bold text-foreground" id="postsCount"></div>
-                            <div class="text-sm text-muted-foreground">Posts</div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Actions -->
-                <div class="flex flex-wrap justify-center md:justify-end gap-2 w-full md:w-auto" id="profileActions">
-                    <!-- e.g., "Connect", "Message", "Edit Profile" buttons -->
-                    <!-- Actions will be populated by JavaScript based on profile ownership -->
                 </div>
             </div>
         </div>
-        <!-- Tabs -->
-        <div class="bg-card rounded-xl shadow-card border border-border overflow-hidden mb-6">
-            <div class="flex border-b border-border overflow-x-auto no-scrollbar">
-                <button onclick="switchTab('posts')"
-                    class="tab-btn active flex-none flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative whitespace-nowrap"
-                    data-tab="posts">
-                    <i class="fas fa-th"></i>
+
+        <!-- ═══════════════════════════════════
+         TAB BAR
+    ════════════════════════════════════ -->
+        <div class="pf-tabs-bar mb-6">
+            <div class="flex border-b border-gray-100 overflow-x-auto no-scrollbar">
+                <button onclick="switchTab('posts')" class="tab-btn active" data-tab="posts">
+                    <i class="fas fa-th-large" style="font-size:0.75rem;"></i>
                     Posts
                     <span class="tab-indicator"></span>
                 </button>
-                <button onclick="switchTab('connections')"
-                    class="tab-btn flex-none flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative whitespace-nowrap"
-                    data-tab="connections">
-                    <i class="fas fa-users"></i>
+                <button onclick="switchTab('connections')" class="tab-btn" data-tab="connections">
+                    <i class="fas fa-users" style="font-size:0.75rem;"></i>
                     Connections
                     <span class="tab-indicator"></span>
                 </button>
             </div>
         </div>
-        <!-- Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <!-- Sidebar -->
-            <div class="space-y-6">
+        <!-- ═══════════════════════════════════
+         CONTENT GRID
+    ════════════════════════════════════ -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-                <!-- About Card -->
-                <div class="bg-card rounded-xl shadow-card border border-border p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-foreground">About</h3>
+            <!-- ── SIDEBAR ── -->
+            <div class="space-y-4">
+
+                <!-- About -->
+                <div class="pf-card">
+                    <div class="pf-card-head">
+                        <span class="pf-card-title">
+                            <span class="pf-card-icon"><i class="fas fa-user"></i></span>
+                            About
+                        </span>
                         <div id="aboutEditButton">
-                            <button onclick="openEditModal('about')"
-                                class="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
+                            <button onclick="openEditModal('about')" class="pf-edit-btn" title="Edit bio">
+                                <i class="fas fa-pen"></i>
                             </button>
                         </div>
                     </div>
-                    <p class="text-muted-foreground text-sm leading-relaxed" id="aboutText"></p>
+                    <div class="pf-card-body">
+                        <p class="pf-about-text" id="aboutText">Loading…</p>
+                    </div>
                 </div>
-                <!-- Skills Card -->
-                <div class="bg-card rounded-xl shadow-card border border-border p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-foreground">Skills</h3>
+
+                <!-- Skills -->
+                <div class="pf-card">
+                    <div class="pf-card-head">
+                        <span class="pf-card-title">
+                            <span class="pf-card-icon"><i class="fas fa-bolt"></i></span>
+                            Skills
+                        </span>
                         <div id="skillsEditButton">
-                            <button onclick="openEditModal('skills')"
-                                class="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
+                            <button onclick="openEditModal('skills')" class="pf-edit-btn" title="Edit skills">
+                                <i class="fas fa-pen"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-2" id="skillsContainer">
-                        <!-- Skill badges are populated by profile.js -->
+                    <div class="pf-card-body">
+                        <div class="flex flex-wrap gap-2" id="skillsContainer"></div>
                     </div>
                 </div>
-                <!-- Experience Card -->
-                <div class="bg-card rounded-xl shadow-card border border-border p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-foreground">Experience</h3>
+
+                <!-- Experience -->
+                <div class="pf-card">
+                    <div class="pf-card-head">
+                        <span class="pf-card-title">
+                            <span class="pf-card-icon"><i class="fas fa-briefcase"></i></span>
+                            Experience
+                        </span>
                         <div id="experienceEditButton">
-                            <button onclick="openEditModal('experience')"
-                                class="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
+                            <button onclick="openEditModal('experience')" class="pf-edit-btn" title="Edit experience">
+                                <i class="fas fa-pen"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="space-y-4" id="experienceContainer">
-                        <!-- Experience items are populated by profile.js -->
+                    <div class="pf-card-body">
+                        <div id="experienceContainer"></div>
                     </div>
                 </div>
-                <!-- Education Card -->
-                <div class="bg-card rounded-xl shadow-card border border-border p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-foreground">Education</h3>
+
+                <!-- Education -->
+                <div class="pf-card">
+                    <div class="pf-card-head">
+                        <span class="pf-card-title">
+                            <span class="pf-card-icon"><i class="fas fa-graduation-cap"></i></span>
+                            Education
+                        </span>
                         <div id="educationEditButton">
-                            <button onclick="openEditModal('education')"
-                                class="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
+                            <button onclick="openEditModal('education')" class="pf-edit-btn" title="Edit education">
+                                <i class="fas fa-pen"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="space-y-4" id="educationContainer">
-                        <!-- Education items are populated by profile.js -->
+                    <div class="pf-card-body">
+                        <div id="educationContainer"></div>
                     </div>
                 </div>
-            </div>
-            <!-- Main Content Area -->
-            <div class="lg:col-span-2 space-y-6">
+
+            </div><!-- /sidebar -->
+
+            <!-- ── MAIN CONTENT ── -->
+            <div class="lg:col-span-2 space-y-4">
 
                 <!-- Posts Tab -->
                 <div id="postsTab" class="tab-content">
-                    <!-- Container for the user's post feed -->
-                    <div id="post-feed" class="space-y-6"></div>
+                    <div id="post-feed" class="space-y-4"></div>
 
-                    <!-- Loading State -->
-                    <div id="feed-loading" class="hidden py-12 flex justify-center">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                    <!-- Loading -->
+                    <div id="feed-loading" class="hidden py-10 flex justify-center">
+                        <div class="flex flex-col items-center gap-3">
+                            <div class="animate-spin rounded-full h-7 w-7 border-2 border-gray-200"
+                                style="border-top-color:#4f46e5;"></div>
+                            <p class="text-xs font-medium text-gray-400">Loading posts…</p>
+                        </div>
                     </div>
 
-                    <!-- Error State -->
-                    <div id="feed-error" class="hidden py-12 text-center">
-                        <p class="text-red-500 mb-2">Failed to load posts</p>
-                        <button onclick="window.feedLoader.loadPosts()" class="text-indigo-600 hover:underline">Try
-                            Again</button>
+                    <!-- Error -->
+                    <div id="feed-error" class="hidden">
+                        <div class="feed-empty-state">
+                            <div class="feed-empty-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                            <p class="text-sm font-bold text-gray-800">Couldn't load posts</p>
+                            <button onclick="window.feedLoader.loadPosts()"
+                                class="mt-1 text-xs font-semibold px-4 py-2 rounded-lg"
+                                style="color:#4f46e5; background:#eef2ff;">Try again</button>
+                        </div>
                     </div>
 
-                    <!-- Empty State -->
-                    <div id="feed-empty" class="hidden py-12 text-center text-gray-500">
-                        No posts yet
+                    <!-- Empty -->
+                    <div id="feed-empty" class="hidden">
+                        <div class="feed-empty-state">
+                            <div class="feed-empty-icon"><i class="fas fa-pen-nib"></i></div>
+                            <p class="text-sm font-bold text-gray-800">No posts yet</p>
+                            <p class="text-xs text-gray-400 max-w-xs">Posts shared by this user will appear here.</p>
+                        </div>
                     </div>
 
-                    <!-- End State -->
-                    <div id="feed-end" class="hidden py-8 text-center text-gray-500 text-sm">
-                        No more posts
+                    <!-- End -->
+                    <div id="feed-end" class="hidden py-6 text-center">
+                        <span class="text-xs text-gray-400 font-medium">You've reached the end</span>
                     </div>
                 </div>
 
                 <!-- Connections Tab -->
                 <div id="connectionsTab" class="tab-content hidden">
-                    <div class="bg-card rounded-xl shadow-card border border-border p-4">
-                        <!-- Sub-tabs for Connections -->
-                        <div class="flex space-x-1 bg-muted/50 p-1 rounded-lg mb-4 overflow-x-auto no-scrollbar">
-                            <button onclick="switchConnectionTab('my-connections')"
-                                class="conn-tab-btn active flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap"
-                                data-conn-tab="my-connections">
-                                <i class="fas fa-user-check"></i> My Connections (<span
-                                    id="count-my-connections">0</span>)
-                            </button>
-                            {% if is_own_profile %}
-                            <button onclick="switchConnectionTab('received')"
-                                class="conn-tab-btn flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap"
-                                data-conn-tab="received">
-                                <i class="fas fa-inbox"></i> Received (<span id="count-received">0</span>)
-                            </button>
-                            <button onclick="switchConnectionTab('sent')"
-                                class="conn-tab-btn flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap"
-                                data-conn-tab="sent">
-                                <i class="fas fa-paper-plane"></i> Sent (<span id="count-sent">0</span>)
-                            </button>
-                            <button onclick="switchConnectionTab('suggestions')"
-                                class="conn-tab-btn flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap"
-                                data-conn-tab="suggestions">
-                                <i class="fas fa-lightbulb"></i> Suggestions
-                            </button>
-                            {% endif %}
+                    <div class="pf-card">
+
+                        <!-- Sub-tabs -->
+                        <div class="p-4 border-b border-gray-100">
+                            <div class="flex gap-1.5 p-1 rounded-xl overflow-x-auto no-scrollbar"
+                                style="background:#f3f4f6;">
+                                <button onclick="switchConnectionTab('my-connections')" class="conn-tab-btn active"
+                                    data-conn-tab="my-connections">
+                                    <i class="fas fa-user-check mr-1" style="font-size:0.65rem;"></i>
+                                    Connected (<span id="count-my-connections">0</span>)
+                                </button>
+                                {% if is_own_profile %}
+                                <button onclick="switchConnectionTab('received')" class="conn-tab-btn"
+                                    data-conn-tab="received">
+                                    <i class="fas fa-inbox mr-1" style="font-size:0.65rem;"></i>
+                                    Received (<span id="count-received">0</span>)
+                                </button>
+                                <button onclick="switchConnectionTab('sent')" class="conn-tab-btn" data-conn-tab="sent">
+                                    <i class="fas fa-paper-plane mr-1" style="font-size:0.65rem;"></i>
+                                    Sent (<span id="count-sent">0</span>)
+                                </button>
+                                <button onclick="switchConnectionTab('suggestions')" class="conn-tab-btn"
+                                    data-conn-tab="suggestions">
+                                    <i class="fas fa-lightbulb mr-1" style="font-size:0.65rem;"></i>
+                                    Suggestions
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
 
-                        <div class="flex flex-col gap-3" id="connectionsContainer">
-                            <!-- Connection cards are populated by profile.js -->
+                        <!-- Connection cards container -->
+                        <div class="p-4">
+                            <div class="flex flex-col gap-3" id="connectionsContainer"></div>
                         </div>
+
                     </div>
                 </div>
-            </div>
+
+            </div><!-- /main -->
         </div>
     </main>
-    <!-- Edit Modal -->
+
+    <!-- ═══════════════════════════════════
+       EDIT MODAL
+  ════════════════════════════════════ -->
     <div id="editModal" class="fixed inset-0 z-50 hidden">
-        <div class="fixed inset-0 bg-black/50" onclick="closeEditModal()"></div>
+        <div class="fixed inset-0" style="background:rgba(17,24,39,.55); backdrop-filter:blur(4px);"
+            onclick="closeEditModal()"></div>
         <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
-            <div
-                class="bg-card rounded-xl shadow-xl border border-border w-full max-w-lg max-h-[90vh] overflow-y-auto pointer-events-auto">
-                <div class="flex items-center justify-between p-4 border-b border-border">
-                    <h2 class="text-lg font-semibold text-foreground" id="modalTitle">Edit</h2>
-                    <button onclick="closeEditModal()" class="p-1.5 hover:bg-muted rounded-lg transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+            <div class="pf-modal-panel bg-white rounded-2xl shadow-2xl border border-gray-100
+                  w-full max-w-lg max-h-[90vh] overflow-y-auto pointer-events-auto">
+                <!-- Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <h2 class="font-display text-base font-bold text-gray-900" id="modalTitle">Edit</h2>
+                    <button onclick="closeEditModal()" class="w-8 h-8 flex items-center justify-center rounded-lg
+                         text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-times text-sm"></i>
                     </button>
                 </div>
-                <div class="p-4" id="modalContent">
-                    <!-- Dynamic form content for editing profile sections is injected here -->
-                </div>
-                <div class="flex justify-end gap-2 p-4 border-t border-border">
-                    <button onclick="closeEditModal()"
-                        class="px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors">
-                        Cancel
-                    </button>
-                    <button onclick="saveModal()"
-                        class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity">
-                        Save Changes
-                    </button>
+                <!-- Body -->
+                <div class="px-6 py-5" id="modalContent"></div>
+                <!-- Footer -->
+                <div class="flex justify-end gap-2.5 px-6 py-4 border-t border-gray-100" style="background:#fafafa;">
+                    <button onclick="closeEditModal()" class="btn-cc-secondary text-sm">Cancel</button>
+                    <button onclick="saveModal()" class="btn-cc-primary text-sm">Save Changes</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Remove Connection Confirmation Modal -->
+    <!-- ═══════════════════════════════════
+       REMOVE CONNECTION MODAL
+  ════════════════════════════════════ -->
     <div id="removeConnectionModal" class="fixed inset-0 z-50 hidden">
-        <div class="fixed inset-0 bg-black/50" onclick="closeRemoveConnectionModal()"></div>
+        <div class="fixed inset-0" style="background:rgba(17,24,39,.55); backdrop-filter:blur(4px);"
+            onclick="closeRemoveConnectionModal()"></div>
         <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
-            <div
-                class="bg-card rounded-xl shadow-xl border border-border w-full max-w-sm pointer-events-auto p-6 text-center">
-                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
-                    <i class="fas fa-user-slash text-red-600 text-lg"></i>
+            <div class="pf-modal-panel bg-white rounded-2xl shadow-2xl border border-gray-100
+                  w-full max-w-sm pointer-events-auto p-7 text-center">
+                <div class="w-11 h-11 rounded-2xl bg-red-50 border border-red-100
+                    flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user-slash text-red-500"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-foreground mb-2">Remove Connection?</h3>
-                <p class="text-muted-foreground text-sm mb-6">Are you sure you want to remove this connection?</p>
+                <h3 class="font-display text-base font-bold text-gray-900 mb-1.5">Remove Connection?</h3>
+                <p class="text-sm text-gray-500 mb-6">This will remove the connection between you and this person.</p>
                 <div class="flex justify-center gap-3">
-                    <button onclick="closeRemoveConnectionModal()"
-                        class="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">
-                        Cancel
-                    </button>
-                    <button onclick="confirmRemoveConnection()"
-                        class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
-                        Remove
-                    </button>
+                    <button onclick="closeRemoveConnectionModal()" class="btn-cc-secondary text-sm">Cancel</button>
+                    <button onclick="confirmRemoveConnection()" class="text-sm font-semibold px-4 py-2 rounded-lg text-white
+                         bg-red-500 hover:bg-red-600 transition-colors">Remove</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Share Post Modal -->
-    <div id="share-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50"
+    <!-- ═══════════════════════════════════
+       SHARE POST MODAL
+  ════════════════════════════════════ -->
+    <div id="share-modal" class="fixed inset-0 hidden items-center justify-center z-50"
+        style="background:rgba(17,24,39,.55); backdrop-filter:blur(4px);"
         onclick="if(event.target===this) this.classList.add('hidden')">
-        <div class="bg-white w-full max-w-md rounded-xl shadow-xl flex flex-col max-h-[80vh] mx-4">
-            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="font-bold text-lg text-gray-900">Share Post</h3>
-                <button onclick="document.getElementById('share-modal').classList.add('hidden')"
-                    class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+        <div class="pf-modal-panel bg-white w-full max-w-md rounded-2xl shadow-2xl
+                flex flex-col max-h-[80vh] mx-4 border border-gray-100">
+            <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="font-display text-base font-bold text-gray-900">Share Post</h3>
+                <button onclick="document.getElementById('share-modal').classList.add('hidden')" class="w-8 h-8 flex items-center justify-center rounded-lg
+                       text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
             </div>
-            <div class="p-4 border-b border-gray-100">
-                <input type="text" id="share-search" placeholder="Search connections..."
-                    class="w-full px-4 py-2 bg-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            <div class="px-4 py-3 border-b border-gray-100">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                        style="font-size:0.7rem;"></i>
+                    <input type="text" id="share-search" placeholder="Search connections…" class="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200
+                        rounded-xl text-sm outline-none transition-all">
+                </div>
             </div>
-            <div id="share-connections-list" class="flex-1 overflow-y-auto p-2 space-y-1 min-h-[200px]">
-                <!-- List of connections to share with is loaded here -->
-            </div>
+            <div id="share-connections-list" class="flex-1 overflow-y-auto p-3 space-y-1 min-h-[180px]"></div>
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
-
-    <!-- COMMENT MODAL -->
-    <div id="comment-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
-        <div class="bg-white w-full max-w-lg rounded-lg overflow-hidden max-h-[80vh] flex flex-col shadow-xl"
-            onclick="event.stopPropagation()">
-            <header class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="font-bold text-gray-900 text-lg">Comments</h3>
-                <button onclick="closeComments()" class="text-gray-400 hover:text-gray-600 transition">
-                    <i class="fas fa-times text-xl"></i>
+    <!-- ═══════════════════════════════════
+       COMMENT MODAL
+  ════════════════════════════════════ -->
+    <div id="comment-modal" class="fixed inset-0 hidden items-center justify-center z-50"
+        style="background:rgba(17,24,39,.55); backdrop-filter:blur(4px);">
+        <div class="pf-modal-panel bg-white w-full max-w-lg rounded-2xl overflow-hidden
+                max-h-[80vh] flex flex-col shadow-2xl border border-gray-100 mx-4" onclick="event.stopPropagation()">
+            <header class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="font-display text-base font-bold text-gray-900">Comments</h3>
+                <button onclick="closeComments()" class="w-8 h-8 flex items-center justify-center rounded-lg
+                       text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times text-sm"></i>
                 </button>
             </header>
-            <div id="modal-comments-list" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
-            <div class="p-4 border-t border-gray-200 flex gap-3">
-                <img id="comment-modal-avatar" src="https://ui-avatars.com/api/?name=U" alt="Your avatar"
-                    class="w-8 h-8 rounded-full bg-muted">
-                <input id="comment-input" type="text" placeholder="Write a comment..."
-                    class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                    onkeydown="if(event.key==='Enter') submitComment()">
-                <button onclick="submitComment()"
-                    class="text-indigo-600 hover:text-indigo-700 font-semibold text-sm px-3 transition">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+            <div id="modal-comments-list" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
+            <div class="px-5 py-4 border-t border-gray-100 flex gap-3 items-center" style="background:#fafafa;">
+                <img id="comment-modal-avatar" src="https://ui-avatars.com/api/?name=U" alt="avatar"
+                    class="w-8 h-8 rounded-full object-cover border border-gray-200 flex-shrink-0">
+                <div class="flex-1 relative">
+                    <input id="comment-input" type="text" placeholder="Write a comment…" class="w-full bg-white border border-gray-200 rounded-xl
+                        px-4 py-2.5 text-sm outline-none pr-11" onkeydown="if(event.key==='Enter') submitComment()">
+                    <button onclick="submitComment()" class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7
+                         flex items-center justify-center rounded-lg
+                         text-indigo-500 hover:bg-indigo-50 transition-colors">
+                        <i class="fas fa-paper-plane" style="font-size:0.7rem;"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Toast Container: created dynamically by utils.js with responsive positioning -->
+
 </body>
 
 </html>
