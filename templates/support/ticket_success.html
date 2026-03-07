@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ticket Submitted | Campus Connect</title>
+    <!-- Favicon (Emoji) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes checkDraw {
+            0% {
+                stroke-dashoffset: 50;
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes ringPulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.6);
+                opacity: 0;
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out both;
+        }
+
+        .animate-scale-in {
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        .delay-100 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-300 {
+            animation-delay: 0.3s;
+        }
+
+        .delay-400 {
+            animation-delay: 0.4s;
+        }
+
+        .success-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            border: 3px solid #22c55e;
+            animation: ringPulse 1.5s ease-out 0.5s both;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 flex flex-col min-h-screen antialiased">
+    {% include 'partials/_navbar.html' %}
+    <main class="flex-grow flex items-center justify-center p-4 py-16">
+        <div
+            class="max-w-xl w-full mx-auto text-center bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-14 animate-fade-in-up">
+
+            <!-- Success Icon -->
+            <div class="relative w-24 h-24 mx-auto mb-8 animate-scale-in">
+                <div class="success-ring"></div>
+                <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"
+                            style="stroke-dasharray: 50; stroke-dashoffset: 50; animation: checkDraw 0.5s ease-out 0.3s forwards;" />
+                    </svg>
+                </div>
+            </div>
+
+            <h1 class="text-2xl sm:text-3xl font-bold mb-4 animate-fade-in-up delay-100">Ticket Submitted Successfully!
+            </h1>
+
+            {% if ticket_id and ticket_id != 'Unknown' %}
+            <div
+                class="inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-5 py-2.5 rounded-lg font-mono mb-6 border border-slate-200 animate-fade-in-up delay-200">
+                <i class="fa-solid fa-ticket text-indigo-500 text-sm"></i>
+                Reference: <span class="font-bold text-indigo-700">{{ ticket_id }}</span>
+            </div>
+            {% endif %}
+
+            <p class="text-slate-500 mb-8 max-w-md mx-auto leading-relaxed text-base animate-fade-in-up delay-300">
+                Thank you for reaching out. Our support team is reviewing your submission.
+                {% if email %}
+                A confirmation has been sent to <strong class="text-slate-700">{{ email }}</strong>. We'll respond
+                within 24–48 hours.
+                {% endif %}
+            </p>
+
+            <div
+                class="flex flex-col sm:flex-row items-center justify-center gap-3 border-t border-slate-100 pt-8 mt-2 animate-fade-in-up delay-400">
+                <a href="{{ url_for('main.home') }}"
+                    class="w-full sm:w-auto px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 font-medium text-sm">
+                    <i class="fa-solid fa-house text-slate-400 mr-2"></i>Return Home
+                </a>
+                <a href="{{ url_for('support.help_center') }}"
+                    class="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 font-medium shadow-lg shadow-indigo-500/20 text-sm">
+                    <i class="fa-solid fa-book-open mr-2"></i>Back to Help Center
+                </a>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>

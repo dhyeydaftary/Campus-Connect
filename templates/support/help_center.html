@@ -4,12 +4,703 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Help Center - Campus Connect</title>
+    <!-- Favicon (Emoji) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 1.25rem;
+            left: 1.25rem;
+            z-index: 100;
+            width: 2.75rem;
+            height: 2.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            background: hsl(0 0% 100% / 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid hsl(0 0% 100% / 0.15);
+            color: white;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+
+        .back-btn:hover {
+            background: hsl(0 0% 100% / 0.22);
+            transform: translateX(-2px);
+        }
+
+        .back-btn.scrolled {
+            background: white;
+            color: #334155;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px hsl(221 30% 50% / 0.1);
+        }
+
+        .back-btn.scrolled:hover {
+            background: #f1f5f9;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1.visible {
+            transition-delay: 0.1s;
+        }
+
+        .reveal-delay-2.visible {
+            transition-delay: 0.2s;
+        }
+
+        .reveal-delay-3.visible {
+            transition-delay: 0.3s;
+        }
+
+        .reveal-delay-4.visible {
+            transition-delay: 0.4s;
+        }
+
+        .reveal-delay-5.visible {
+            transition-delay: 0.5s;
+        }
+
+        .help-hero {
+            background: linear-gradient(135deg, hsl(221, 55%, 13%) 0%, hsl(221, 68%, 28%) 50%, hsl(262, 47%, 30%) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .help-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 50% at 50% -10%, hsl(221 68% 50% / 0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .help-hero .dot-grid {
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            opacity: 0.04;
+            background-image: radial-gradient(circle, hsl(0, 0%, 100%) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .search-input {
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            box-shadow: 0 0 0 4px hsl(221 68% 50% / 0.2), 0 20px 40px -12px hsl(221 68% 28% / 0.25);
+            border-color: hsl(221, 68%, 60%);
+        }
+
+        .category-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.75rem;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 1px 3px 0 hsl(221 30% 50% / 0.06);
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .category-card:hover {
+            box-shadow: 0 8px 24px -6px hsl(221 50% 30% / 0.14);
+            border-color: hsl(221 68% 28% / 0.2);
+            transform: translateY(-3px);
+        }
+
+        .category-card .card-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .category-card:hover .card-icon {
+            transform: scale(1.1);
+        }
+
+        .category-card .card-arrow {
+            transition: gap 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .category-card:hover .card-arrow {
+            gap: 0.75rem;
+        }
+
+        .faq-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background: white;
+        }
+
+        .faq-item:hover,
+        .faq-item.open {
+            border-color: hsl(221 68% 28% / 0.2);
+        }
+
+        .faq-item.open {
+            box-shadow: 0 4px 12px -2px hsl(221 50% 30% / 0.08);
+        }
+
+        .faq-btn {
+            width: 100%;
+            padding: 1.125rem 1.375rem;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #1e293b;
+            transition: background 0.2s ease, color 0.2s ease;
+            font-family: inherit;
+        }
+
+        .faq-btn:hover {
+            background: #f8fafc;
+        }
+
+        .faq-item.open .faq-btn {
+            color: hsl(221, 68%, 28%);
+        }
+
+        .faq-chevron {
+            width: 1.75rem;
+            height: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #f1f5f9;
+            flex-shrink: 0;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .faq-item.open .faq-chevron {
+            transform: rotate(180deg);
+            background: hsl(221 68% 28% / 0.1);
+        }
+
+        .faq-content-wrapper {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .faq-item.open .faq-content-wrapper {
+            grid-template-rows: 1fr;
+        }
+
+        .faq-content {
+            overflow: hidden;
+        }
+
+        .faq-content-inner {
+            padding: 0 1.375rem 1.125rem 1.375rem;
+            color: #64748b;
+            font-size: 0.875rem;
+            line-height: 1.75;
+        }
+
+        .cta-card {
+            background: linear-gradient(135deg, hsl(221, 55%, 13%) 0%, hsl(221, 68%, 28%) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 60% at 80% 20%, hsl(221 68% 50% / 0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .section-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: hsl(221, 68%, 50%);
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Help Center</h1>
-    <p>Coming soon.</p>
+    <a href="{{ url_for('main.home') }}" class="back-btn" id="back-btn" title="Back to Home">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+    </a>
+
+    <section class="help-hero text-white py-24 sm:py-28 px-4 sm:px-6 lg:px-8">
+        <div class="dot-grid"></div>
+        <div class="relative z-10 max-w-3xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-widest mb-8"
+                style="border:1px solid hsl(0 0% 100% / 0.1);background:hsl(0 0% 100% / 0.05);">
+                <span class="animate-pulse"
+                    style="background:#22c55e;width:7px;height:7px;border-radius:50%;display:inline-block;box-shadow:0 0 8px #22c55e"></span>
+                Support Center
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5"
+                style="letter-spacing:-0.025em;line-height:1.1;">
+                How can we <span style="color:hsl(221, 68%, 60%);">help you</span> today?
+            </h1>
+            <p class="text-base md:text-lg mb-10 max-w-xl mx-auto font-medium" style="color:hsl(217, 19%, 72%);">
+                Search our knowledge base, browse categories, or discover helpful guides below.
+            </p>
+            <div class="relative max-w-xl mx-auto">
+                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none"
+                    style="color:#94a3b8;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <input type="text" id="help-search"
+                    class="search-input w-full pr-5 py-4 rounded-2xl text-slate-900 bg-white border-2 border-transparent focus:outline-none shadow-xl text-base font-medium"
+                    style="padding-left:3.25rem;" placeholder="Search for articles, guides, and FAQs..."
+                    autocomplete="off">
+            </div>
+        </div>
+    </section>
+
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+        <div class="reveal text-center max-w-xl mx-auto mb-12">
+            <span class="section-label">Knowledge Base</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3" style="letter-spacing:-0.025em;">Browse by
+                Category</h2>
+            <p class="text-slate-500 text-sm sm:text-base">Detailed guides covering everything you need to know about
+                Campus Connect.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" id="category-grid">
+            <a href="#faq-account" class="category-card reveal flex flex-col group" data-category="account">
+                <div
+                    class="card-icon w-11 h-11 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg mb-4">
+                    <i class="fa-solid fa-user-shield"></i></div>
+                <h3 class="text-base font-bold text-slate-900 mb-1.5 group-hover:text-indigo-700 transition-colors">
+                    Account & Security</h3>
+                <p class="text-slate-500 text-sm mb-4 flex-grow leading-relaxed">Login issues, password resets, profile
+                    management, and privacy settings.</p>
+                <div class="card-arrow font-semibold text-indigo-600 text-sm">Explore <i
+                        class="fa-solid fa-arrow-right text-xs"></i></div>
+            </a>
+            <a href="#faq-events" class="category-card reveal reveal-delay-1 flex flex-col group"
+                data-category="events">
+                <div
+                    class="card-icon w-11 h-11 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg mb-4">
+                    <i class="fa-solid fa-calendar-check"></i></div>
+                <h3 class="text-base font-bold text-slate-900 mb-1.5 group-hover:text-indigo-700 transition-colors">
+                    Events & Activities</h3>
+                <p class="text-slate-500 text-sm mb-4 flex-grow leading-relaxed">Registering for events, managing RSVPs,
+                    and discovering campus happenings.</p>
+                <div class="card-arrow font-semibold text-indigo-600 text-sm">Explore <i
+                        class="fa-solid fa-arrow-right text-xs"></i></div>
+            </a>
+            <a href="#faq-feed" class="category-card reveal reveal-delay-2 flex flex-col group" data-category="feed">
+                <div
+                    class="card-icon w-11 h-11 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg mb-4">
+                    <i class="fa-solid fa-newspaper"></i></div>
+                <h3 class="text-base font-bold text-slate-900 mb-1.5 group-hover:text-indigo-700 transition-colors">
+                    Campus Feed</h3>
+                <p class="text-slate-500 text-sm mb-4 flex-grow leading-relaxed">Content posting guidelines, commenting,
+                    visibility controls, and moderation.</p>
+                <div class="card-arrow font-semibold text-indigo-600 text-sm">Explore <i
+                        class="fa-solid fa-arrow-right text-xs"></i></div>
+            </a>
+            <a href="#faq-connections" class="category-card reveal reveal-delay-3 flex flex-col group"
+                data-category="connections">
+                <div
+                    class="card-icon w-11 h-11 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg mb-4">
+                    <i class="fa-solid fa-user-group"></i></div>
+                <h3 class="text-base font-bold text-slate-900 mb-1.5 group-hover:text-indigo-700 transition-colors">
+                    Connections</h3>
+                <p class="text-slate-500 text-sm mb-4 flex-grow leading-relaxed">Finding peers, adding friends, sending
+                    direct messages, and networking.</p>
+                <div class="card-arrow font-semibold text-indigo-600 text-sm">Explore <i
+                        class="fa-solid fa-arrow-right text-xs"></i></div>
+            </a>
+            <a href="#faq-rules" class="category-card reveal reveal-delay-4 flex flex-col group" data-category="rules">
+                <div
+                    class="card-icon w-11 h-11 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg mb-4">
+                    <i class="fa-solid fa-gavel"></i></div>
+                <h3 class="text-base font-bold text-slate-900 mb-1.5 group-hover:text-indigo-700 transition-colors">
+                    Rules & Policies</h3>
+                <p class="text-slate-500 text-sm mb-4 flex-grow leading-relaxed">Community guidelines, terms of use,
+                    privacy notice, and data protection.</p>
+                <div class="card-arrow font-semibold text-indigo-600 text-sm">Explore <i
+                        class="fa-solid fa-arrow-right text-xs"></i></div>
+            </a>
+            <a href="{{ url_for('support.report_issue') }}"
+                class="category-card reveal reveal-delay-5 flex flex-col group" data-category="report">
+                <div
+                    class="card-icon w-11 h-11 bg-red-50 text-red-500 rounded-xl flex items-center justify-center text-lg mb-4">
+                    <i class="fa-solid fa-triangle-exclamation"></i></div>
+                <h3 class="text-base font-bold text-slate-900 mb-1.5 group-hover:text-red-600 transition-colors">Report
+                    a Problem</h3>
+                <p class="text-slate-500 text-sm mb-4 flex-grow leading-relaxed">Found a bug? See something abusive?
+                    Having login trouble? Let us know immediately.</p>
+                <div class="card-arrow font-semibold text-red-500 text-sm">Report Now <i
+                        class="fa-solid fa-arrow-right text-xs"></i></div>
+            </a>
+        </div>
+    </section>
+
+    <section class="max-w-3xl mx-auto px-4 sm:px-6 pb-12" id="faq-section">
+        <div class="reveal bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 md:p-10"
+            style="box-shadow:0 1px 3px 0 hsl(221 30% 50% / 0.06);">
+            <div class="text-center mb-8">
+                <span class="section-label">FAQ</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-slate-900">Frequently Asked Questions</h2>
+            </div>
+            <div class="space-y-2.5" id="faq-accordion">
+                <div class="faq-item" data-category="help-account" id="faq-account">
+                    <button class="faq-btn" aria-expanded="false"><span>How do I reset my password if I forget
+                            it?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>You can reset your password by going to the login page and clicking "Forgot
+                                    Password". You will need access to your verified college email to receive the secure
+                                    reset link.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-account">
+                    <button class="faq-btn" aria-expanded="false"><span>Why is my account marked as pending?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>New student accounts pre-created by the university administration remain in a
+                                    "pending" state until you log in for the first time, change your temporary password,
+                                    and complete your profile setup.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-account">
+                    <button class="faq-btn" aria-expanded="false"><span>How do I enable two-factor
+                            authentication?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Go to Settings → Security and toggle on "Two-Factor Authentication." You can choose
+                                    email-based OTP verification. Once enabled, you'll need the code each time you log
+                                    in from a new device.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-account">
+                    <button class="faq-btn" aria-expanded="false"><span>Can I change my registered email address?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Your primary email is tied to your university enrollment and cannot be changed
+                                    directly. If your institution has issued you a new email, contact your campus
+                                    administrator to update it in the system.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-events" id="faq-events">
+                    <button class="faq-btn" aria-expanded="false"><span>Who can create events?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Currently, only verified administrators and registered club representatives can
+                                    create official campus events. Students can browse, register their interest, and
+                                    RSVP to these events.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-events">
+                    <button class="faq-btn" aria-expanded="false"><span>How do I RSVP or register for an event?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Open the event details page and click the "Register" or "RSVP" button. You'll receive
+                                    a confirmation email and the event will appear in your personal calendar.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-events">
+                    <button class="faq-btn" aria-expanded="false"><span>Can I get notified about upcoming events?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Yes! Enable event notifications in Settings → Notifications. You can choose to be
+                                    notified about all campus events or only events from clubs and categories you
+                                    follow.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-feed" id="faq-feed">
+                    <button class="faq-btn" aria-expanded="false"><span>Can I edit a post after publishing?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>At this time, posts cannot be edited once published to maintain platform transparency
+                                    and safety. You can delete your post and create a new one if you made a mistake.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-feed">
+                    <button class="faq-btn" aria-expanded="false"><span>What are the different feed categories?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>The campus feed is organized into categories including Announcements, Academics, Lost
+                                    & Found, Buy & Sell, Clubs, and General Discussion. You can filter by category using
+                                    the tabs at the top of the feed page.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-feed">
+                    <button class="faq-btn" aria-expanded="false"><span>How does content moderation work on the
+                            feed?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>All posts go through automated content filtering. Flagged content is reviewed by
+                                    campus moderators. Users can also report posts using the three-dot menu. Spam, hate
+                                    speech, and explicit content are removed immediately.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-feed">
+                    <button class="faq-btn" aria-expanded="false"><span>Who can see my posts?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>By default, your posts are visible to all verified students in your campus. When
+                                    creating a post, you can choose visibility: "Campus-wide", "My Connections", or
+                                    "Branch Only".</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-connections" id="faq-connections">
+                    <button class="faq-btn" aria-expanded="false"><span>How do I find and connect with
+                            classmates?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Use the "Connections" tab to search by name, branch, or batch. Send a connection
+                                    request, and once accepted, you can chat and share content directly with each other.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-connections">
+                    <button class="faq-btn" aria-expanded="false"><span>Can I block or remove a connection?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Yes. Visit the person's profile and select "Remove Connection" or "Block User" from
+                                    the options menu. Blocked users cannot see your profile, send you messages, or view
+                                    your posts.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-connections">
+                    <button class="faq-btn" aria-expanded="false"><span>Is there a limit to how many connections I can
+                            have?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>There is no hard limit on the number of connections. However, to prevent spam, you
+                                    can send a maximum of 50 connection requests per day. Pending requests expire after
+                                    30 days.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-connections">
+                    <button class="faq-btn" aria-expanded="false"><span>How do direct messages work?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>You can send direct messages to anyone in your connections list. Messages support
+                                    text, images, and file attachments up to 10 MB. All messages are encrypted and only
+                                    visible to the sender and recipient.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-rules" id="faq-rules">
+                    <button class="faq-btn" aria-expanded="false"><span>What happens if I violate community
+                            guidelines?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Violations may result in a warning, temporary suspension, or permanent ban depending
+                                    on the severity. Abusive content, spam, and harassment are taken very seriously.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-rules">
+                    <button class="faq-btn" aria-expanded="false"><span>What content is not allowed on Campus
+                            Connect?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Prohibited content includes hate speech, bullying, explicit material, misinformation,
+                                    spam, unauthorized advertisements, and any content that violates your institution's
+                                    code of conduct.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-rules">
+                    <button class="faq-btn" aria-expanded="false"><span>How can I appeal a suspension or content
+                            removal?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Submit an appeal through the Contact Support page. Include your username and a
+                                    description. Appeals are typically reviewed within 3-5 business days.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item" data-category="help-rules">
+                    <button class="faq-btn" aria-expanded="false"><span>How is my personal data protected?</span>
+                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                    </button>
+                    <div class="faq-content-wrapper">
+                        <div class="faq-content">
+                            <div class="faq-content-inner">
+                                <p>Campus Connect follows industry-standard data protection practices. Your data is
+                                    encrypted at rest and in transit, never sold to third parties. You can download or
+                                    delete your data anytime from Settings → Privacy.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="no-results" class="hidden text-center py-10">
+                <div
+                    class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-slate-100 text-slate-400 mb-3">
+                    <i class="fa-solid fa-magnifying-glass text-xl"></i></div>
+                <h3 class="text-lg font-bold text-slate-800 mb-1">No results found</h3>
+                <p class="text-slate-500 text-sm">Try a different keyword or browse the categories above.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="max-w-3xl mx-auto px-4 sm:px-6 pb-16 sm:pb-20">
+        <div class="reveal cta-card rounded-2xl p-8 sm:p-10 text-center text-white relative z-10">
+            <div class="dot-grid" style="opacity:0.03;"></div>
+            <div class="relative z-10">
+                <h2 class="text-xl sm:text-2xl font-bold mb-3">Still need help?</h2>
+                <p class="mb-7 max-w-md mx-auto text-sm" style="color:hsl(217, 19%, 72%);">Can't find what you're
+                    looking for? Our support team is ready to assist you.</p>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <a href="{{ url_for('support.contact_support') }}"
+                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
+                        style="background:white;color:hsl(221, 68%, 28%);text-decoration:none;box-shadow:0 4px 12px hsl(221 68% 28% / 0.3);">
+                        <i class="fa-solid fa-envelope text-xs"></i> Contact Support
+                    </a>
+                    <a href="{{ url_for('support.report_issue') }}"
+                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
+                        style="border:1px solid hsl(0 0% 100% / 0.2);background:hsl(0 0% 100% / 0.08);color:white;text-decoration:none;">
+                        <i class="fa-solid fa-bug text-xs"></i> Report an Issue
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="{{ url_for('static', filename='js/support/help_center.js') }}"></script>
+
 </body>
 
 </html>

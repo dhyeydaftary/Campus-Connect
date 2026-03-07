@@ -13,10 +13,11 @@ def admin_required():
     Decorator to protect routes that require administrator privileges.
     """
     if "user_id" not in session:
-        abort(redirect(url_for("auth.login_page")))  # Redirect to login if not authenticated
+        abort(redirect(url_for("auth.admin_login_page")))  # Redirect to admin login if not authenticated
     
     if session.get("account_type") != "admin":
-        abort(403)  # Forbidden - not an admin
+        flash("Administrator access required.", "error")
+        abort(redirect(url_for("auth.login_page")))  # Redirect regular student to student login
 
 
 def login_required(f):

@@ -954,6 +954,82 @@ class Message(db.Model):
             db.session.commit()
         
         return count
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SUPPORT TABLES
+# ═══════════════════════════════════════════════════════════════════════════
+
+class SupportTicket(db.Model):
+    """
+    Represents a generalized support request from a user (or guest).
+    """
+    __tablename__ = "support_tickets"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    
+    # Author details
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    
+    # Ticket details
+    subject = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    attachment = db.Column(db.String(255), nullable=True)
+    
+    # State tracking
+    status = db.Column(db.String(20), default="open", nullable=False)  # open, in_progress, resolved, closed
+    priority = db.Column(db.String(20), default="normal", nullable=False)  # low, normal, high
+    assigned_to = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    response_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("idx_support_user_status", "user_id", "status"),
+        Index("idx_support_created", "created_at"),
+    )
+
+
+class IssueReport(db.Model):
+    """
+    Specifically for actionable reports (Bugs, Abuse, Security).
+    """
+    __tablename__ = "issue_reports"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    
+    # Issue specifics
+    report_type = db.Column(db.String(50), nullable=False)  # bug, abuse, security, other
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    steps_to_reproduce = db.Column(db.Text, nullable=True)
+    severity = db.Column(db.String(20), nullable=True)  # low, medium, high, critical
+    
+    # Author & evidence
+    email = db.Column(db.String(120), nullable=False)
+    attachments = db.Column(db.JSON, nullable=True)  # Store list of paths
+    
+    # State tracking
+    status = db.Column(db.String(20), default="new", nullable=False)  # new, investigating, resolved, closed, duplicate
+    assigned_to = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    duplicate_of = db.Column(db.Integer, db.ForeignKey("issue_reports.id", ondelete="SET NULL"), nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    resolved_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("idx_report_type", "report_type"),
+        Index("idx_report_status", "status"),
+        Index("idx_report_created", "created_at"),
+    )
+
 # 
 # EVENT LISTENERS (POLYMORPHIC CLEANUP)
 # 

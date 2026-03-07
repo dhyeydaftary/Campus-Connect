@@ -20,7 +20,46 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route("/login")
 def login_page():
     """Renders the login/authentication page."""
+    if "user_id" in session:
+        if session.get("account_type") == "admin":
+            return redirect(url_for("admin.admin_dashboard_page"))
+        return redirect(url_for("main.home_page"))
     return render_template("auth/login.html")
+
+@auth_bp.route("/admin/login", methods=["GET", "POST"])
+def admin_login_page():
+    """Admin-only dedicated login page."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    if "user_id" in session:
+        if session.get("account_type") == "admin":
+            return redirect(url_for("admin.admin_dashboard_page"))
+        else:
+            return redirect(url_for("main.home_page"))
+            
+    if request.method == "POST":
+        from flask import flash
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password")
+        
+        user = User.query.filter_by(email=email, account_type="admin").first()
+        
+        if user and user.check_password(password):
+            session.clear()
+            session["user_id"] = user.id
+            session["user_name"] = user.full_name
+            session["account_type"] = user.account_type
+            
+            logger.info(f"Admin login successful: {email}")
+            return redirect(url_for("admin.admin_dashboard_page"))
+        else:
+            logger.warning(f"Failed admin login attempt: {email}")
+            from flask import flash
+            flash("Invalid admin credentials", "error")
+            return redirect(url_for("auth.admin_login_page"))
+            
+    return render_template("admin/admin_login.html")
 
 
 @auth_bp.route("/logout")
@@ -248,8 +287,7 @@ def login_with_password():
     user = None
     
     if role == "admin":
-        email = data.get("email", "").strip().lower()
-        user = User.query.filter_by(email=email, account_type="admin").first()
+        return jsonify({"error": "Administrators must use the dedicated /admin/login page."}), 403
     elif role == "student":
         enrollment = data.get("enrollment_no", "").strip()
         user = User.query.filter_by(enrollment_no=enrollment, account_type="student").first()
