@@ -3,37 +3,6 @@
  * Vanilla JS implementation for Flask integration
  */
 
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        primary: {
-          DEFAULT: 'hsl(238, 73%, 67%)',
-          foreground: 'hsl(0, 0%, 100%)',
-          light: 'hsl(238, 73%, 95%)',
-        },
-        background: 'hsl(240, 20%, 98%)',
-        foreground: 'hsl(240, 10%, 10%)',
-        card: 'hsl(0, 0%, 100%)',
-        muted: {
-          DEFAULT: 'hsl(240, 10%, 96%)',
-          foreground: 'hsl(240, 5%, 46%)',
-        },
-        border: 'hsl(240, 10%, 90%)',
-        accent: {
-          DEFAULT: 'hsl(238, 73%, 67%)',
-          foreground: 'hsl(0, 0%, 100%)',
-        },
-      },
-      boxShadow: {
-        'card': '0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 4px 12px -4px rgba(0, 0, 0, 0.04)',
-        'card-hover': '0 8px 24px -8px rgba(0, 0, 0, 0.12), 0 12px 32px -12px rgba(0, 0, 0, 0.08)',
-      },
-    }
-  }
-}
-
-
 // ============================================
 // PROFILE DATA - Fetched from API
 // ============================================
@@ -60,19 +29,23 @@ function renderExperience() {
   const experiences = profileData.experiences || [];
 
   if (experiences.length === 0) {
-    container.innerHTML = '<p class="text-sm text-muted-foreground">No experience added yet.</p>';
+    container.innerHTML = `
+      <div class="pf-empty">
+        <div class="pf-empty-icon"><i class="fas fa-briefcase"></i></div>
+        <span>No experience added yet.</span>
+      </div>`;
     return;
   }
 
-  container.innerHTML = experiences.map(exp => `
-    <div class="relative pl-4 border-l-2 border-primary/30">
-      <div class="absolute -left-1.5 top-1 w-3 h-3 bg-primary rounded-full"></div>
-      <h4 class="font-medium text-foreground">${exp.title}</h4>
-      <p class="text-sm text-primary">${exp.company}</p>
-      <p class="text-xs text-muted-foreground mt-1">${exp.start_date} - ${exp.end_date || 'Present'}</p>
-      ${exp.description ? `<p class="text-sm text-muted-foreground mt-2">${exp.description}</p>` : ''}
+  container.innerHTML = `<div class="pf-timeline">${experiences.map(exp => `
+    <div class="pf-tl-item">
+      <div class="pf-tl-dot"></div>
+      <p class="pf-tl-role">${exp.title}</p>
+      <p class="pf-tl-company">${exp.company}</p>
+      <p class="pf-tl-meta">${exp.start_date} – ${exp.end_date || 'Present'}${exp.location ? ' · ' + exp.location : ''}</p>
+      ${exp.description ? `<p class="pf-tl-desc">${exp.description}</p>` : ''}
     </div>
-  `).join('');
+  `).join('')}</div>`;
 }
 
 function renderEducation() {
@@ -80,34 +53,32 @@ function renderEducation() {
   const educations = profileData.educations || [];
 
   if (educations.length === 0) {
-    container.innerHTML = '<p class="text-sm text-muted-foreground">No education added yet.</p>';
+    container.innerHTML = `
+      <div class="pf-empty">
+        <div class="pf-empty-icon"><i class="fas fa-graduation-cap"></i></div>
+        <span>No education added yet.</span>
+      </div>`;
     return;
   }
 
-  container.innerHTML = educations.map(edu => `
-    <div class="flex items-start gap-3">
-      <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path d="M12 14l9-5-9-5-9 5 9 5z"/>
-          <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
-        </svg>
-      </div>
-      <div>
-        <h4 class="font-medium text-foreground">${edu.degree}</h4>
-        <p class="text-sm text-primary">${edu.field}</p>
-        <p class="text-sm text-muted-foreground">${edu.institution}</p>
-        <p class="text-xs text-muted-foreground mt-1">${edu.year}</p>
+  container.innerHTML = `<div class="space-y-4">${educations.map(edu => `
+    <div class="pf-edu-item">
+      <div class="pf-edu-icon"><i class="fas fa-graduation-cap"></i></div>
+      <div class="min-w-0">
+        <p class="pf-edu-degree">${edu.degree}</p>
+        <p class="pf-edu-field">${edu.field}</p>
+        <p class="pf-edu-institution">${edu.institution}</p>
+        <p class="pf-edu-year">${edu.year}</p>
       </div>
     </div>
-  `).join('');
+  `).join('')}</div>`;
 }
 
 async function renderConnections() {
   const container = document.getElementById('connectionsContainer');
   if (!container) return;
 
-  container.innerHTML = '<div class="col-span-full text-center py-8 text-muted-foreground">Loading...</div>';
+  container.innerHTML = '<div class="py-8 flex justify-center"><div class="animate-spin rounded-full h-6 w-6 border-2 border-gray-200" style="border-top-color:#4f46e5;"></div></div>';
 
   try {
     let data = [];
@@ -125,31 +96,30 @@ async function renderConnections() {
       if (countEl) countEl.textContent = data.length || 0;
 
       if (data.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-8 text-muted-foreground">${emptyMessage}</div>`;
+        container.innerHTML = `<div class="py-8 text-center text-sm text-gray-400">No connections yet.</div>`;
         return;
       }
 
       container.innerHTML = data.map(conn => `
-        <div class="flex items-center justify-between p-4 bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow">
-          <div class="flex items-center gap-4 flex-1 min-w-0">
+        <div class="conn-card">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
             <a href="/profile/${conn.id}" class="flex-shrink-0">
-              <img src="${conn.profile_picture}" class="w-12 h-12 rounded-full object-cover border border-border flex-shrink-0" alt="${conn.full_name}">
+              <img src="${conn.profile_picture}" class="conn-card-avatar" alt="${conn.full_name}">
             </a>
             <div class="min-w-0">
-              <a href="/profile/${conn.id}" class="font-semibold text-foreground hover:text-primary transition-colors truncate block">
-                ${conn.full_name}
-              </a>
-              <p class="text-sm text-muted-foreground truncate">${conn.email}</p>
-              <p class="text-xs text-muted-foreground mt-0.5">Connected since ${conn.connected_since || 'Unknown'}</p>
+              <a href="/profile/${conn.id}" class="conn-card-name block truncate">${conn.full_name}</a>
+              <p class="conn-card-meta truncate">${conn.email}</p>
+              <p class="conn-card-meta">Since ${conn.connected_since || '—'}</p>
             </div>
           </div>
-          <div class="flex gap-2 ml-4">
-            <button onclick="startMessage(${conn.id}, this)" class="message-btn px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2" data-user-id="${conn.id}">
-              <i class="fas fa-paper-plane"></i>
+          <div class="flex gap-2 flex-shrink-0">
+            <button onclick="startMessage(${conn.id}, this)" class="message-btn btn-cc-secondary" data-user-id="${conn.id}">
+              <i class="fas fa-paper-plane" style="font-size:0.7rem;"></i>
             </button>
             ${isOwnProfile ? `
-            <button onclick="removeConnection(${conn.id})" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors flex items-center gap-2">
-              <i class="fas fa-user-minus"></i>
+            <button onclick="removeConnection(${conn.id})"
+              class="btn-cc-secondary" style="color:#ef4444; border-color:#fecaca;">
+              <i class="fas fa-user-minus" style="font-size:0.7rem;"></i>
             </button>` : ''}
           </div>
         </div>
@@ -164,29 +134,27 @@ async function renderConnections() {
       if (countEl) countEl.textContent = json.count !== undefined ? json.count : 0;
 
       if (data.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-8 text-muted-foreground">No pending received requests.</div>`;
+        container.innerHTML = `<div class="py-8 text-center text-sm text-gray-400">No pending received requests.</div>`;
         return;
       }
 
       container.innerHTML = data.map(req => `
-        <div class="flex items-center justify-between p-4 bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow">
-          <div class="flex items-center gap-4 flex-1 min-w-0">
+        <div class="conn-card">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
             <a href="/profile/${req.sender.id}" class="flex-shrink-0">
-              <img src="${req.sender.profile_picture}" class="w-12 h-12 rounded-full object-cover border border-border flex-shrink-0" alt="${req.sender.name}">
+              <img src="${req.sender.profile_picture}" class="conn-card-avatar" alt="${req.sender.name}">
             </a>
             <div class="min-w-0">
-              <a href="/profile/${req.sender.id}" class="font-semibold text-foreground hover:text-primary transition-colors truncate block">
-                ${req.sender.name}
-              </a>
-              <p class="text-sm text-muted-foreground truncate">${req.sender.email}</p>
+              <a href="/profile/${req.sender.id}" class="conn-card-name block truncate">${req.sender.name}</a>
+              <p class="conn-card-meta truncate">${req.sender.email}</p>
             </div>
           </div>
-          <div class="flex gap-2 ml-4">
-            <button onclick="startMessage(${req.sender.id}, this)" class="message-btn px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2" data-user-id="${req.sender.id}">
-              <i class="fas fa-paper-plane"></i>
+          <div class="flex gap-2 flex-shrink-0">
+            <button onclick="startMessage(${req.sender.id}, this)" class="message-btn btn-cc-secondary" data-user-id="${req.sender.id}">
+              <i class="fas fa-paper-plane" style="font-size:0.7rem;"></i>
             </button>
-            <button onclick="acceptConnectionRequest(${req.request_id})" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Accept</button>
-            <button onclick="rejectConnectionRequest(${req.request_id})" class="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">Reject</button>
+            <button onclick="acceptConnectionRequest(${req.request_id})" class="btn-cc-primary">Accept</button>
+            <button onclick="rejectConnectionRequest(${req.request_id})" class="btn-cc-secondary">Reject</button>
           </div>
         </div>
       `).join('');
@@ -200,29 +168,27 @@ async function renderConnections() {
       if (countEl) countEl.textContent = json.count !== undefined ? json.count : 0;
 
       if (data.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-8 text-muted-foreground">No pending sent requests.</div>`;
+        container.innerHTML = `<div class="py-8 text-center text-sm text-gray-400">No pending sent requests.</div>`;
         return;
       }
 
       container.innerHTML = data.map(req => `
-        <div class="flex items-center justify-between p-4 bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow">
-          <div class="flex items-center gap-4 flex-1 min-w-0">
+        <div class="conn-card">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
             <a href="/profile/${req.receiver.id}" class="flex-shrink-0">
-              <img src="${req.receiver.profile_picture}" class="w-12 h-12 rounded-full object-cover border border-border flex-shrink-0" alt="${req.receiver.name}">
+              <img src="${req.receiver.profile_picture}" class="conn-card-avatar" alt="${req.receiver.name}">
             </a>
             <div class="min-w-0">
-              <a href="/profile/${req.receiver.id}" class="font-semibold text-foreground hover:text-primary transition-colors truncate block">
-                ${req.receiver.name}
-              </a>
-              <p class="text-sm text-muted-foreground truncate">${req.receiver.email}</p>
+              <a href="/profile/${req.receiver.id}" class="conn-card-name block truncate">${req.receiver.name}</a>
+              <p class="conn-card-meta truncate">${req.receiver.email}</p>
             </div>
           </div>
-          <div class="flex gap-2 ml-4">
-            <button onclick="startMessage(${req.receiver.id}, this)" class="message-btn px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2" data-user-id="${req.receiver.id}">
-              <i class="fas fa-paper-plane"></i>
+          <div class="flex gap-2 flex-shrink-0">
+            <button onclick="startMessage(${req.receiver.id}, this)" class="message-btn btn-cc-secondary" data-user-id="${req.receiver.id}">
+              <i class="fas fa-paper-plane" style="font-size:0.7rem;"></i>
             </button>
-            <button class="px-4 py-2 border border-border rounded-lg text-sm font-medium text-muted-foreground cursor-default bg-muted/50">
-              Request Sent
+            <button class="btn-cc-secondary" style="opacity:0.55; cursor:not-allowed;">
+              <i class="fas fa-check" style="font-size:0.7rem;"></i> Sent
             </button>
           </div>
         </div>
@@ -234,29 +200,27 @@ async function renderConnections() {
       data = json.suggestions || [];
 
       if (data.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-8 text-muted-foreground">No suggestions available right now.</div>`;
+        container.innerHTML = `<div class="py-8 text-center text-sm text-gray-400">No suggestions available right now.</div>`;
         return;
       }
 
       container.innerHTML = data.map(user => `
-        <div class="flex items-center justify-between p-4 bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow">
-          <div class="flex items-center gap-4 flex-1 min-w-0">
+        <div class="conn-card">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
             <a href="/profile/${user.id}" class="flex-shrink-0">
-              <img src="${user.profile_picture}" class="w-12 h-12 rounded-full object-cover border border-border flex-shrink-0" alt="${user.name}">
+              <img src="${user.profile_picture}" class="conn-card-avatar" alt="${user.name}">
             </a>
             <div class="min-w-0">
-              <a href="/profile/${user.id}" class="font-semibold text-foreground hover:text-primary transition-colors truncate block">
-                ${user.name}
-              </a>
-              <p class="text-sm text-muted-foreground truncate">${user.email}</p>
+              <a href="/profile/${user.id}" class="conn-card-name block truncate">${user.name}</a>
+              <p class="conn-card-meta truncate">${user.email}</p>
             </div>
           </div>
-          <div class="flex gap-2 ml-4">
-            <button onclick="startMessage(${user.id}, this)" class="message-btn px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2" data-user-id="${user.id}">
-              <i class="fas fa-paper-plane"></i>
+          <div class="flex gap-2 flex-shrink-0">
+            <button onclick="startMessage(${user.id}, this)" class="message-btn btn-cc-secondary" data-user-id="${user.id}">
+              <i class="fas fa-paper-plane" style="font-size:0.7rem;"></i>
             </button>
-            <button onclick="sendConnectionRequest(${user.id})" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-              Connect
+            <button onclick="sendConnectionRequest(${user.id})" class="btn-cc-primary">
+              <i class="fas fa-user-plus" style="font-size:0.7rem;"></i> Connect
             </button>
           </div>
         </div>
@@ -265,21 +229,18 @@ async function renderConnections() {
 
   } catch (error) {
     console.error('Error rendering connections:', error);
-    container.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">Failed to load data.</div>';
+    container.innerHTML = '<div class="py-8 text-center text-sm text-red-400">Failed to load data.</div>';
   }
 }
 
 function switchConnectionTab(tabName) {
   state.activeConnectionTab = tabName;
 
-  // Update UI classes
   document.querySelectorAll('.conn-tab-btn').forEach(btn => {
     if (btn.dataset.connTab === tabName) {
-      btn.classList.add('bg-white', 'shadow-sm', 'text-foreground');
-      btn.classList.remove('text-muted-foreground', 'hover:bg-muted');
+      btn.classList.add('active');
     } else {
-      btn.classList.remove('bg-white', 'shadow-sm', 'text-foreground');
-      btn.classList.add('text-muted-foreground', 'hover:bg-muted');
+      btn.classList.remove('active');
     }
   });
 
@@ -1037,14 +998,16 @@ function renderSkills() {
   if (!container) return;
 
   if (skills.length === 0) {
-    container.innerHTML = '<p class="text-sm text-muted-foreground">No skills added yet.</p>';
+    container.innerHTML = `
+      <div class="pf-empty">
+        <div class="pf-empty-icon"><i class="fas fa-bolt"></i></div>
+        <span>No skills added yet.</span>
+      </div>`;
     return;
   }
 
   container.innerHTML = skills.map(skill => `
-    <span class="skill-badge px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full cursor-default">
-      ${skill.name}
-    </span>
+    <span class="badge badge-skill">${skill.name}</span>
   `).join('');
 }
 
@@ -1080,17 +1043,21 @@ async function loadProfileData(userId) {
 
 function updateProfileHeader(user) {
   document.getElementById('profileName').textContent = user.full_name;
-  document.getElementById('profileMajor').textContent = user.major;
-  document.getElementById('profileBatch').textContent = `Batch of ${user.batch}`;
+
+  // Apply badge classes properly
+  const majorEl = document.getElementById('profileMajor');
+  if (majorEl) { majorEl.className = 'badge badge-major'; majorEl.textContent = user.major; }
+
+  const batchEl = document.getElementById('profileBatch');
+  if (batchEl) { batchEl.className = 'badge badge-batch'; batchEl.textContent = `Batch of ${user.batch}`; }
+
   document.getElementById('profileLocation').textContent = user.university;
-  document.getElementById('aboutText').textContent = user.bio || 'No bio available.';
+  document.getElementById('aboutText').textContent = user.bio || 'No bio added yet.';
   document.getElementById('connectionsCount').textContent = profileData.stats.connections_count;
   document.getElementById('postsCount').textContent = profileData.stats.posts_count;
 
-  // Update connection tab counts if elements exist
   const myConnCount = document.getElementById('count-my-connections');
   if (myConnCount) myConnCount.textContent = profileData.stats.connections_count || 0;
-  // Received/Sent counts are updated when those tabs are clicked or via specific API calls, but we can init them if data is passed
   const receivedCount = document.getElementById('count-received');
   if (receivedCount && profileData.stats.received_count !== undefined) receivedCount.textContent = profileData.stats.received_count || 0;
   const sentCount = document.getElementById('count-sent');
@@ -1105,10 +1072,7 @@ function updateProfileHeader(user) {
     avatarContainer.textContent = initials;
   }
 
-  // Re-attach overlay for upload if it was wiped by innerHTML
   setupAvatarUpload(profileData.is_own_profile);
-
-  // Render profile actions based on ownership
   renderProfileActions();
 }
 
@@ -1117,64 +1081,58 @@ function renderProfileActions() {
   const isOwnProfile = profileData.is_own_profile;
   const connectionStatus = profileData.connection_status;
 
-  // Show/hide edit buttons for profile sections based on ownership
   const aboutEditButton = document.getElementById('aboutEditButton');
   const skillsEditButton = document.getElementById('skillsEditButton');
   const experienceEditButton = document.getElementById('experienceEditButton');
   const educationEditButton = document.getElementById('educationEditButton');
 
   if (isOwnProfile) {
-    // Show edit buttons for own profile
     if (aboutEditButton) aboutEditButton.classList.remove('hidden');
     if (skillsEditButton) skillsEditButton.classList.remove('hidden');
     if (experienceEditButton) experienceEditButton.classList.remove('hidden');
     if (educationEditButton) educationEditButton.classList.remove('hidden');
 
-    // Show edit profile button for own profile
     actionsContainer.innerHTML = `
-      <button onclick="openEditModal('password')"
-        class="w-full sm:w-auto px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2 text-sm">
-        <i class="fas fa-key"></i> Password
+      <button onclick="openEditModal('password')" class="btn-cc-secondary">
+        <i class="fas fa-key" style="font-size:0.7rem;"></i>
+        Password
       </button>
     `;
   } else {
-    // Hide edit buttons for other profiles
     if (aboutEditButton) aboutEditButton.classList.add('hidden');
     if (skillsEditButton) skillsEditButton.classList.add('hidden');
     if (experienceEditButton) experienceEditButton.classList.add('hidden');
     if (educationEditButton) educationEditButton.classList.add('hidden');
 
-    // Show connection/message buttons for other profiles
-    let connectButtonText = 'Connect';
-    let connectButtonClass = 'w-full sm:w-auto px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2';
+    let connectText = 'Connect';
+    let connectClass = 'btn-cc-primary';
+    let connectDisabled = '';
+    let connectClick = `sendConnectionRequest(${profileData.user.id})`;
 
     if (connectionStatus === 'pending_sent') {
-      connectButtonText = 'Request Sent';
-      connectButtonClass += ' opacity-50 cursor-not-allowed';
+      connectText = 'Request Sent';
+      connectClass = 'btn-cc-secondary';
+      connectDisabled = 'disabled style="opacity:0.55;cursor:not-allowed;"';
+      connectClick = '';
     } else if (connectionStatus === 'pending_received') {
-      connectButtonText = 'Accept Request';
-      connectButtonClass = 'w-full sm:w-auto px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2';
+      connectText = 'Accept Request';
+      connectClass = 'btn-cc-primary';
+      connectClick = `acceptConnectionRequest(${profileData.pending_request_id})`;
     } else if (connectionStatus === 'connected') {
-      connectButtonText = 'Connected';
-      connectButtonClass += ' opacity-50 cursor-not-allowed';
+      connectText = 'Connected';
+      connectClass = 'btn-cc-secondary';
+      connectDisabled = 'disabled style="opacity:0.55;cursor:not-allowed;"';
+      connectClick = '';
     }
 
     actionsContainer.innerHTML = `
-      <button onclick="${connectionStatus === 'pending_received' ? `acceptConnectionRequest(${profileData.pending_request_id})` : connectionStatus === 'not_connected' ? `sendConnectionRequest(${profileData.user.id})` : ''}"
-        class="${connectButtonClass}" ${connectionStatus === 'pending_sent' || connectionStatus === 'connected' ? 'disabled' : ''}>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-        </svg>
-        ${connectButtonText}
+      <button onclick="${connectClick}" class="${connectClass}" ${connectDisabled}>
+        <i class="fas fa-user-plus" style="font-size:0.7rem;"></i>
+        ${connectText}
       </button>
-      <button
-        onclick="startMessage(${profileData.user.id}, this)"
-        class="message-btn w-full sm:w-auto px-4 py-2 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2" data-user-id="${profileData.user.id}">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
+      <button onclick="startMessage(${profileData.user.id}, this)"
+        class="message-btn btn-cc-secondary" data-user-id="${profileData.user.id}">
+        <i class="fas fa-comment-alt" style="font-size:0.7rem;"></i>
         Message
       </button>
     `;
@@ -1189,7 +1147,7 @@ function setupAvatarUpload(isOwnProfile) {
   if (isOwnProfile && !overlay) {
     overlay = document.createElement('div');
     overlay.id = 'avatarOverlay';
-    overlay.className = 'absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity';
+    overlay.className = 'pf-avatar-overlay';
     overlay.innerHTML = '<i class="fas fa-camera text-white text-xl"></i>';
     overlay.onclick = () => {
       const fileInput = document.getElementById('profile-photo-input');

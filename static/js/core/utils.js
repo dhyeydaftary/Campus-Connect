@@ -49,7 +49,39 @@ function showToast(title, message, type = 'info', duration = 5000) {
         if (!container) {
             container = document.createElement('div');
             container.id = 'toast-container';
-            container.className = 'fixed top-4 right-4 z-[200] w-full max-w-md space-y-3';
+            container.id = 'toast-container';
+            // Mobile: full-width strip at top. Desktop: anchored top-right.
+            container.style.cssText = [
+                'position:fixed',
+                'top:0',
+                'left:0',
+                'right:0',
+                'z-index:9999',
+                'padding:12px 12px 0',
+                'pointer-events:none',
+                'display:flex',
+                'flex-direction:column',
+                'gap:8px'
+            ].join(';');
+            // On wider screens, anchor to top-right with max width
+            var mq = window.matchMedia('(min-width: 640px)');
+            function applyLayout(e) {
+                if (e.matches) {
+                    container.style.left = 'auto';
+                    container.style.right = '16px';
+                    container.style.top = '16px';
+                    container.style.padding = '0';
+                    container.style.width = '360px';
+                } else {
+                    container.style.left = '0';
+                    container.style.right = '0';
+                    container.style.top = '0';
+                    container.style.padding = '12px 12px 0';
+                    container.style.width = '';
+                }
+            }
+            applyLayout(mq);
+            mq.addEventListener('change', applyLayout);
             document.body.appendChild(container);
         }
 
@@ -65,10 +97,21 @@ function showToast(title, message, type = 'info', duration = 5000) {
         toast.id = toastId;
         toast.setAttribute('role', 'alert');
         toast.setAttribute('aria-live', 'assertive');
-        toast.className = 'w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transition-all duration-500 ease-out transform opacity-0 translate-x-full';
+        toast.style.cssText = [
+            'background:#fff',
+            'border-radius:12px',
+            'overflow:hidden',
+            'pointer-events:auto',
+            'box-shadow:0 4px 24px -4px rgba(0,0,0,0.15),0 1px 4px rgba(0,0,0,0.08)',
+            'border:1px solid #f3f4f6',
+            'opacity:0',
+            'transform:translateY(-10px) scale(0.97)',
+            'transition:opacity 0.3s ease,transform 0.3s cubic-bezier(0.34,1.3,0.64,1)',
+            'width:100%'
+        ].join(';');
 
         toast.innerHTML = `
-            <div class="p-4 relative">
+            <div style="padding:14px 16px 14px; position:relative;">
                 <div class="flex items-start">
                     <div class="flex-shrink-0">
                         ${icons[type] || icons.info}
@@ -100,8 +143,8 @@ function showToast(title, message, type = 'info', duration = 5000) {
         // Animate in using double requestAnimationFrame for reliable CSS transition trigger
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                toast.classList.remove('opacity-0', 'translate-x-full');
-                toast.classList.add('opacity-100', 'translate-x-0');
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0) scale(1)';
 
                 if (progressBar) {
                     progressBar.style.transition = `width ${duration}ms linear`;
@@ -111,8 +154,8 @@ function showToast(title, message, type = 'info', duration = 5000) {
         });
 
         const dismiss = () => {
-            toast.classList.remove('opacity-100', 'translate-x-0');
-            toast.classList.add('opacity-0', 'translate-x-full');
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-6px) scale(0.97)';
 
             // Remove toast safely after exit transition matches Tailwind's duration-500
             setTimeout(() => {
