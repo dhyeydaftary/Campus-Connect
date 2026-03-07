@@ -23,7 +23,7 @@
         rel="stylesheet" />
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/landing.css') }}" />
 </head>
 
@@ -793,33 +793,10 @@
                                 style="font-size:0.75rem;line-height:1.625;color:hsl(0 0% 100% / 0.8);margin-top:16px;font-style:italic;">
                                 Designs with empathy, codes with precision. Ensures every pixel of Campus Connect feels
                                 right for students.</p>
-                            <div style="display:flex;gap:12px;margin-top:24px;">
-                                <a href="https://linkedin.com" target="_blank" rel="noopener"
-                                    onclick="event.stopPropagation()"
-                                    style="display:flex;align-items:center;gap:8px;border-radius:8px;background:hsl(0 0% 100% / 0.15);padding:8px 14px;font-size:0.75rem;font-weight:600;color:white;text-decoration:none;"
-                                    onmouseover="this.style.background='hsl(0 0% 100% / 0.25)'"
-                                    onmouseout="this.style.background='hsl(0 0% 100% / 0.15)'">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2">
-                                        <path
-                                            d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-                                        <rect x="2" y="9" width="4" height="12" />
-                                        <circle cx="4" cy="4" r="2" />
-                                    </svg>
-                                    LinkedIn
-                                </a>
-                                <a href="https://github.com" target="_blank" rel="noopener"
-                                    onclick="event.stopPropagation()"
-                                    style="display:flex;align-items:center;gap:8px;border-radius:8px;background:hsl(0 0% 100% / 0.15);padding:8px 14px;font-size:0.75rem;font-weight:600;color:white;text-decoration:none;"
-                                    onmouseover="this.style.background='hsl(0 0% 100% / 0.25)'"
-                                    onmouseout="this.style.background='hsl(0 0% 100% / 0.15)'">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2">
-                                        <path
-                                            d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
-                                    </svg>
-                                    GitHub
-                                </a>
+                            <div style="display:flex;gap:12px;margin-top:24px;justify-content:center;">
+                                <span style="font-size:0.75rem;font-weight:600;color:hsl(0 0% 100% / 0.6);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;height:30px;">
+                                    Campus Connect Team
+                                </span>
                             </div>
                             <p
                                 style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:hsl(0 0% 100% / 0.4);margin-top:20px;">
@@ -930,16 +907,27 @@
             <div class="mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-fg"
                 style="border-top:1px solid var(--border);">
                 <p>&copy; 2026 Campus Connect. Verified Student Network.</p>
-                <div style="display:flex;gap:20px;">
-                    <a href="#" style="text-decoration:none;color:var(--muted-fg);transition:color 0.2s;"
+                <div style="display:flex;gap:20px;align-items:center;">
+                    <a href="https://github.com/dhyeydaftary/Campus-Connect/blob/dev/README.md" target="_blank" rel="noopener" style="color:var(--muted-fg);transition:color 0.2s;font-size:1.1rem;"
                         onmouseover="this.style.color='var(--foreground)'"
-                        onmouseout="this.style.color='var(--muted-fg)'">Twitter</a>
-                    <a href="#" style="text-decoration:none;color:var(--muted-fg);transition:color 0.2s;"
-                        onmouseover="this.style.color='var(--foreground)'"
-                        onmouseout="this.style.color='var(--muted-fg)'">Instagram</a>
-                    <a href="#" style="text-decoration:none;color:var(--muted-fg);transition:color 0.2s;"
-                        onmouseover="this.style.color='var(--foreground)'"
-                        onmouseout="this.style.color='var(--muted-fg)'">LinkedIn</a>
+                        onmouseout="this.style.color='var(--muted-fg)'" aria-label="GitHub Repository">
+                        <i class="fa-brands fa-github"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/dhyey-daftary/" target="_blank" rel="noopener" style="color:var(--muted-fg);transition:color 0.2s;font-size:1.1rem;"
+                        onmouseover="this.style.color='#0a66c2'"
+                        onmouseout="this.style.color='var(--muted-fg)'" aria-label="Dhyey Daftary LinkedIn">
+                        <i class="fa-brands fa-linkedin"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/urva-shah-2b289a30b/" target="_blank" rel="noopener" style="color:var(--muted-fg);transition:color 0.2s;font-size:1.1rem;"
+                        onmouseover="this.style.color='#0a66c2'"
+                        onmouseout="this.style.color='var(--muted-fg)'" aria-label="Urva Shah LinkedIn">
+                        <i class="fa-brands fa-linkedin"></i>
+                    </a>
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=campusconnect.lj@gmail.com" target="_blank" rel="noopener" style="color:var(--muted-fg);transition:color 0.2s;font-size:1.1rem;"
+                        onmouseover="this.style.color='#ea4335'"
+                        onmouseout="this.style.color='var(--muted-fg)'" aria-label="Email Us">
+                        <i class="fa-solid fa-envelope"></i>
+                    </a>
                 </div>
             </div>
         </div>
