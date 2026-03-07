@@ -60,7 +60,7 @@
 
 ---
 
-## Screenshots
+## 📸 Screenshots
 
 <p align="center">
   <img src="docs/screenshots/landing_hero.png" alt="Landing Page" width="80%">
@@ -78,39 +78,36 @@
   <p align="center">
     <img src="docs/screenshots/admin_users.png" alt="Admin User Management" width="80%">
   </p>
-</details>
-
 ---
 
-## Table of Contents
+## 📑 Table of Contents
 
-- [Screenshots](#screenshots)
-- [Quick Start](#quick-start)
-- [Project Overview](#project-overview)
-- [Core Features](#core-features)
-- [Architecture Overview](#architecture-overview)
-- [Tech Stack](#tech-stack)
-- [Repository Structure](#repository-structure)
-- [Installation Guide](#installation-guide)
-- [Environment Variables](#environment-variables)
-- [Running the Application](#running-the-application)
-- [Database Setup](#database-setup)
-- [Running Tests](#running-tests)
-- [API Overview](#api-overview)
-- [Real-Time Features](#real-time-features)
-- [Deployment](#deployment)
-- [Security Features](#security-features)
-- [Performance Considerations](#performance-considerations)
-- [Troubleshooting](#troubleshooting)
-- [Future Improvements](#future-improvements)
-- [Contributing](#contributing)
-- [Authors](#authors)
-- [Acknowledgments](#acknowledgments)
-- [License](#license)
-
+  - [Screenshots](#screenshots)
+  - [Quick Start](#quick-start)
+  - [Project Overview](#project-overview)
+  - [Core Features](#core-features)
+  - [Architecture Overview](#architecture-overview)
+  - [Tech Stack](#tech-stack)
+  - [Repository Structure](#repository-structure)
+  - [Installation Guide](#installation-guide)
+  - [Environment Variables](#environment-variables)
+  - [Running the Application](#running-the-application)
+  - [Database Setup](#database-setup)
+  - [Running Tests](#running-tests)
+  - [API Overview](#api-overview)
+  - [Real-Time Features](#real-time-features)
+  - [Deployment](#deployment)
+  - [Security Features](#security-features)
+  - [Performance Considerations](#performance-considerations)
+  - [Troubleshooting](#troubleshooting)
+  - [Future Improvements](#future-improvements)
+  - [Contributing](#contributing)
+  - [Authors](#authors)
+  - [Acknowledgments](#acknowledgments)
+  - [License](#license)
 ---
 
-## Quick Start
+## ⚡ Quick Start
 
 Get up and running in under 5 minutes:
 
@@ -138,7 +135,7 @@ python run.py          # → http://localhost:5000
 
 ---
 
-## Project Overview
+## 🔎 Project Overview
 
 ### What is Campus Connect?
 
@@ -175,7 +172,7 @@ Campus Connect uses a **monolithic MVC architecture** with Flask's blueprint sys
 
 ---
 
-## Core Features
+## ✨ Core Features
 
 ### 🔐 Authentication & Security
 
@@ -256,7 +253,7 @@ Campus Connect uses a **monolithic MVC architecture** with Flask's blueprint sys
 
 ---
 
-## Architecture Overview
+## 🏗️ Architecture Overview
 
 ### High-Level Architecture
 
@@ -358,7 +355,7 @@ admin_logs (standalone)
 
 ---
 
-## Tech Stack
+## 💻 Tech Stack
 
 ### Backend
 
@@ -406,7 +403,7 @@ admin_logs (standalone)
 
 ---
 
-## Repository Structure
+## 📂 Repository Structure
 
 ```
 Campus-Connect/
@@ -470,7 +467,7 @@ Campus-Connect/
 
 ---
 
-## Installation Guide
+## 🚀 Installation Guide
 
 ### Prerequisites
 
@@ -549,7 +546,7 @@ curl http://localhost:5000/health
 
 ---
 
-## Environment Variables
+## 🔑 Environment Variables
 
 Create a `.env` file from the provided template. All variables are documented in `.env.example`.
 
@@ -582,7 +579,7 @@ Create a `.env` file from the provided template. All variables are documented in
 
 ---
 
-## Running the Application
+## ▶️ Running the Application
 
 ### Development Mode
 
@@ -615,7 +612,7 @@ web: gunicorn -k eventlet -w 4 wsgi:app
 
 ---
 
-## Database Setup
+## 🗄️ Database Setup
 
 ### Creating the Database
 
@@ -668,7 +665,7 @@ psql $DATABASE_URL < backup.sql
 
 ---
 
-## Running Tests
+## 🧪 Running Tests
 
 ### Full Test Suite
 
@@ -716,7 +713,7 @@ pytest --cov=app --cov-report=html             # HTML report → htmlcov/index.h
 
 ---
 
-## API Overview
+## 🌐 API Overview
 
 Campus Connect exposes **90+ REST API endpoints** across 10 blueprints. Full documentation is available in [docs/API.md](docs/API.md).
 
@@ -754,7 +751,7 @@ Campus Connect exposes **90+ REST API endpoints** across 10 blueprints. Full doc
 
 ---
 
-## Real-Time Features
+## ⚡ Real-Time Features
 
 Campus Connect uses **Flask-SocketIO** with the **eventlet** async worker for WebSocket communication.
 
@@ -796,7 +793,7 @@ const socket = io('http://localhost:5000');
 
 ---
 
-## Deployment
+## ☁️ Deployment
 
 Campus Connect is production-ready with Gunicorn + eventlet workers.
 
@@ -838,7 +835,7 @@ In production mode (`FLASK_DEBUG=False`), Campus Connect automatically:
 
 ---
 
-## Security Features
+## 🛡️ Security Features
 
 | Layer | Implementation |
 |-------|---------------|
@@ -857,7 +854,7 @@ In production mode (`FLASK_DEBUG=False`), Campus Connect automatically:
 
 ---
 
-## Performance Considerations
+## 🏎️ Performance Considerations
 
 - **N+1 Prevention** — `joinedload()` used for eager loading on feed and event queries
 - **Pagination** — All list endpoints paginated to prevent large result sets
@@ -869,7 +866,7 @@ In production mode (`FLASK_DEBUG=False`), Campus Connect automatically:
 
 ---
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 | Problem | Quick Fix |
 |---------|-----------|
@@ -886,7 +883,7 @@ In production mode (`FLASK_DEBUG=False`), Campus Connect automatically:
 
 ---
 
-## Future Improvements
+## 🔮 Future Improvements
 
 ### Planned
 
@@ -908,7 +905,7 @@ In production mode (`FLASK_DEBUG=False`), Campus Connect automatically:
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please follow these guidelines:
 
@@ -952,7 +949,7 @@ def like(post_id):
 
 ---
 
-## Authors
+## ✍️ Authors
 
 **Dhyey Daftary** — Creator, Lead Developer & Project Architect
 
@@ -970,7 +967,7 @@ def like(post_id):
 
 ---
 
-## Acknowledgments
+## 👏 Acknowledgments
 
 ### Testing & Valuable Feedback
 
@@ -1014,7 +1011,7 @@ Special thanks to everyone who tested the application and helped shape it into w
 
 ---
 
-## License
+## 📜 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 

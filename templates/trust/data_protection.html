@@ -389,16 +389,16 @@
                         <div class="w-10 h-10 bg-red-100 text-red-500 rounded-lg flex items-center justify-center mb-3">
                             <i class="fa-solid fa-trash-can"></i></div>
                         <h4 class="font-bold text-slate-900 text-sm mb-1.5">Right to Erasure</h4>
-                        <p class="text-xs text-slate-500 leading-relaxed">Permanently delete your account and associated
-                            data. Deletions processed within 30 days.</p>
+                        <p class="text-xs text-slate-500 leading-relaxed">Request account and associated
+                            data deletion by contacting the site administrator. Deletions are processed within 30 days.</p>
                     </div>
                     <div class="rights-card">
                         <div
                             class="w-10 h-10 bg-blue-100 text-blue-500 rounded-lg flex items-center justify-center mb-3">
                             <i class="fa-solid fa-download"></i></div>
                         <h4 class="font-bold text-slate-900 text-sm mb-1.5">Right to Access</h4>
-                        <p class="text-xs text-slate-500 leading-relaxed">Request an export of all personal data tied to
-                            your account by contacting support.</p>
+                        <p class="text-xs text-slate-500 leading-relaxed">Request a summary of personal data tied to
+                            your account by contacting the site administrator.</p>
                     </div>
                 </div>
             </section>
@@ -406,9 +406,9 @@
             <!-- Footer Note -->
             <div class="reveal border-t border-slate-200 pt-6 mt-6">
                 <p class="text-sm text-slate-400 italic">
+                    <strong>Portfolio Disclaimer:</strong> Campus Connect is a demonstration project. Policies described here illustrate typical platform practices.<br><br>
                     Last Updated: March 2026<br>
-                    For data protection inquiries, please contact <a href="mailto:privacy@campusconnect.com"
-                        class="text-emerald-600 hover:underline">privacy@campusconnect.com</a>
+                    For data protection inquiries, please contact the project administrator.
                 </p>
             </div>
         </div>
@@ -419,13 +419,13 @@
         <div class="reveal cta-card rounded-2xl p-8 sm:p-10 text-center text-white relative z-10">
             <div class="relative z-10">
                 <h2 class="text-xl sm:text-2xl font-bold mb-3">Have questions about your data?</h2>
-                <p class="mb-7 max-w-md mx-auto text-sm" style="color:hsl(217, 19%, 72%);">Our support team can help
+                <p class="mb-7 max-w-md mx-auto text-sm" style="color:hsl(217, 19%, 72%);">The site administrators can help
                     with data access requests, account deletion, or privacy concerns.</p>
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
                     <a href="{{ url_for('support.contact_support') }}"
                         class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
                         style="background:white;color:hsl(221, 68%, 28%);text-decoration:none;box-shadow:0 4px 12px hsl(221 68% 28% / 0.3);">
-                        <i class="fa-solid fa-envelope text-xs"></i> Contact Support
+                        <i class="fa-solid fa-envelope text-xs"></i> Contact Us
                     </a>
                     <a href="{{ url_for('trust.security') }}"
                         class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"

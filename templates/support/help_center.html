@@ -424,21 +424,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="faq-item" data-category="help-account">
-                    <button class="faq-btn" aria-expanded="false"><span>How do I enable two-factor
-                            authentication?</span>
-                        <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
-                    </button>
-                    <div class="faq-content-wrapper">
-                        <div class="faq-content">
-                            <div class="faq-content-inner">
-                                <p>Go to Settings → Security and toggle on "Two-Factor Authentication." You can choose
-                                    email-based OTP verification. Once enabled, you'll need the code each time you log
-                                    in from a new device.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
                 <div class="faq-item" data-category="help-account">
                     <button class="faq-btn" aria-expanded="false"><span>Can I change my registered email address?</span>
                         <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
@@ -659,8 +645,8 @@
                         <div class="faq-content">
                             <div class="faq-content-inner">
                                 <p>Campus Connect follows industry-standard data protection practices. Your data is
-                                    encrypted at rest and in transit, never sold to third parties. You can download or
-                                    delete your data anytime from Settings → Privacy.</p>
+                                    encrypted at rest and in transit, never sold to third parties. You may request an export
+                                    or deletion of your data anytime by contacting the project administrator.</p>
                             </div>
                         </div>
                     </div>
@@ -682,12 +668,12 @@
             <div class="relative z-10">
                 <h2 class="text-xl sm:text-2xl font-bold mb-3">Still need help?</h2>
                 <p class="mb-7 max-w-md mx-auto text-sm" style="color:hsl(217, 19%, 72%);">Can't find what you're
-                    looking for? Our support team is ready to assist you.</p>
+                    looking for? The site administrators are ready to assist you.</p>
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
                     <a href="{{ url_for('support.contact_support') }}"
                         class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
                         style="background:white;color:hsl(221, 68%, 28%);text-decoration:none;box-shadow:0 4px 12px hsl(221 68% 28% / 0.3);">
-                        <i class="fa-solid fa-envelope text-xs"></i> Contact Support
+                        <i class="fa-solid fa-envelope text-xs"></i> Contact Us
                     </a>
                     <a href="{{ url_for('support.report_issue') }}"
                         class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
