@@ -1,8 +1,4 @@
-<!--
-  Campus Connect · User Profile Page
-  Flask + Jinja2 + Tailwind CSS + Vanilla JS
-  Mobile-first. All Jinja2/Flask references preserved exactly.
--->
+<!-- Campus Connect User Profile Page -->
 <html lang="en">
 
 <head>
@@ -11,7 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Campus Connect</title>
 
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/profile.css') }}">
@@ -33,68 +30,63 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
-        <!-- ═══════════════════════════════════
-         PROFILE HEADER CARD
-    ════════════════════════════════════ -->
+        <!-- ============================================================
+             PROFILE HEADER CARD
+        ============================================================= -->
         <div class="pf-header-card mb-6">
-            <div class="p-5 sm:p-6">
+            <!-- Action buttons — absolutely anchored top-right, never disrupts info flow -->
+            <div class="pf-header-actions" id="profileActions"></div>
 
-                <!-- Avatar row + info -->
-                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
+            <div class="p-5 sm:p-7 sm:pr-40">
+                <!-- Single left-to-right row: Avatar | Info stack -->
+                <div class="flex items-start gap-4 sm:gap-5">
 
                     <!-- Avatar -->
-                    <div id="profileAvatar" class="pf-avatar flex-shrink-0 mr-2 sm:mr-4">
-                    </div>
+                    <div id="profileAvatar" class="pf-avatar flex-shrink-0"></div>
                     <input type="file" id="profile-photo-input" hidden accept="image/*">
 
-                    <!-- All info -->
-                    <div class="flex-1 min-w-0 w-full flex flex-col sm:flex-row justify-between items-center sm:items-start gap-4">
-                        
-                        <!-- Left Info -->
-                        <div class="flex flex-col gap-2 items-center sm:items-start text-center sm:text-left">
-                            <!-- Name, Actions, and Badges Row -->
-                            <div class="flex flex-col sm:flex-row items-center sm:items-baseline gap-2 sm:gap-4">
-                                <!-- Name -->
-                                <h1 class="pf-name leading-none" id="profileName">Loading…</h1>
+                    <!-- Info — all left-aligned, no centering anywhere -->
+                    <div class="pf-header-info">
 
-                                <!-- Badges -->
-                                <div class="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
-                                    <span class="badge badge-major" id="profileMajor"></span>
-                                    <span class="badge badge-batch" id="profileBatch"></span>
-                                </div>
-                            </div>
+                        <!-- Name -->
+                        <h1 class="pf-name" id="profileName">
+                            <span class="pf-name-skeleton skeleton"
+                                style="width:180px;height:28px;display:inline-block;border-radius:6px;"></span>
+                        </h1>
 
-                            <!-- Location -->
-                            <p class="pf-location justify-center sm:justify-start">
-                                <i class="fas fa-map-marker-alt" style="color:#6366f1; font-size:0.65rem;"></i>
-                                <span id="profileLocation"></span>
-                            </p>
-
-                            <!-- Stats -->
-                            <div class="flex items-center gap-0 pt-1 justify-center sm:justify-start">
-                                <div class="pf-stat" style="padding-left:0;">
-                                    <span class="pf-stat-value" id="connectionsCount">—</span>
-                                    <span class="pf-stat-label">Connections</span>
-                                </div>
-                                <div class="w-px h-8 bg-gray-200 mx-3"></div>
-                                <div class="pf-stat" style="padding-left:0;">
-                                    <span class="pf-stat-value" id="postsCount">—</span>
-                                    <span class="pf-stat-label">Posts</span>
-                                </div>
-                            </div>
+                        <!-- Badges row: major + batch + (year tag) -->
+                        <div class="pf-badge-row" id="profileBadges">
+                            <span class="badge badge-major" id="profileMajor"></span>
+                            <span class="badge badge-batch" id="profileBatch"></span>
                         </div>
 
-                        <!-- Right Actions -->
-                        <div class="flex-shrink-0" id="profileActions"></div>
+                        <!-- Location -->
+                        <p class="pf-location" id="profileLocationRow" style="display:none;">
+                            <i class="fas fa-map-marker-alt pf-location-icon"></i>
+                            <span id="profileLocation"></span>
+                        </p>
+
+                        <!-- Stats row -->
+                        <div class="pf-stats-row">
+                            <div class="pf-stat-item">
+                                <span class="pf-stat-value" id="connectionsCount">—</span>
+                                <span class="pf-stat-label">Connections</span>
+                            </div>
+                            <div class="pf-stat-divider"></div>
+                            <div class="pf-stat-item" style="padding-left:20px;padding-right:0;">
+                                <span class="pf-stat-value" id="postsCount">—</span>
+                                <span class="pf-stat-label">Posts</span>
+                            </div>
+                        </div>
 
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ═══════════════════════════════════
-         TAB BAR
-    ════════════════════════════════════ -->
+        <!-- ============================================================
+             TAB NAVIGATION BAR
+        ============================================================= -->
         <div class="pf-tabs-bar mb-6">
             <div class="flex border-b border-gray-100 overflow-x-auto no-scrollbar">
                 <button onclick="switchTab('posts')" class="tab-btn active" data-tab="posts">
@@ -110,9 +102,9 @@
             </div>
         </div>
 
-        <!-- ═══════════════════════════════════
-         CONTENT GRID
-    ════════════════════════════════════ -->
+        <!-- ============================================================
+             MAIN CONTENT AREA
+        ============================================================= -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
             <!-- ── SIDEBAR ── -->
@@ -278,37 +270,42 @@
         </div>
     </main>
 
-    <!-- ═══════════════════════════════════
-       EDIT MODAL
-  ════════════════════════════════════ -->
-    <div id="editModal" class="fixed inset-0 z-50 hidden">
-        <div class="fixed inset-0" style="background:rgba(17,24,39,.55); backdrop-filter:blur(4px);"
-            onclick="closeEditModal()"></div>
-        <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
-            <div class="pf-modal-panel bg-white rounded-2xl shadow-2xl border border-gray-100
-                  w-full max-w-lg max-h-[90vh] overflow-y-auto pointer-events-auto">
+    <!-- ============================================================
+         EDIT PROFILE MODAL
+    ============================================================= -->
+    <div id="editModal" aria-modal="true" role="dialog" style="display:none; position:fixed; inset:0; z-index:100;">
+        <!-- Backdrop -->
+        <div id="editModalBackdrop" class="pf-modal-backdrop" onclick="closeEditModal()"></div>
+        <!-- Panel wrapper -->
+        <div class="pf-modal-wrap">
+            <div id="editModalPanel" class="pf-modal-panel">
                 <!-- Header -->
-                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h2 class="font-display text-base font-bold text-gray-900" id="modalTitle">Edit</h2>
-                    <button onclick="closeEditModal()" class="w-8 h-8 flex items-center justify-center rounded-lg
-                         text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-times text-sm"></i>
+                <div class="pf-modal-header">
+                    <h2 class="pf-modal-title" id="modalTitle">
+                        <span class="pf-modal-title-icon" id="modalTitleIcon"><i class="fas fa-pen"></i></span>
+                        Edit
+                    </h2>
+                    <button onclick="closeEditModal()" class="pf-modal-close" aria-label="Close">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <!-- Body -->
-                <div class="px-6 py-5" id="modalContent"></div>
+                <!-- Scrollable body -->
+                <div class="pf-modal-body" id="modalContent"></div>
                 <!-- Footer -->
-                <div class="flex justify-end gap-2.5 px-6 py-4 border-t border-gray-100" style="background:#fafafa;">
+                <div class="pf-modal-footer">
                     <button onclick="closeEditModal()" class="btn-cc-secondary text-sm">Cancel</button>
-                    <button onclick="saveModal()" class="btn-cc-primary text-sm">Save Changes</button>
+                    <button onclick="saveModal()" class="btn-cc-primary text-sm" id="modalSaveBtn">
+                        <i class="fas fa-check" style="font-size:0.65rem;"></i>
+                        Save Changes
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ═══════════════════════════════════
-       REMOVE CONNECTION MODAL
-  ════════════════════════════════════ -->
+    <!-- ============================================================
+         REMOVE CONNECTION CONFIRMATION MODAL
+    ============================================================= -->
     <div id="removeConnectionModal" class="fixed inset-0 z-50 hidden">
         <div class="fixed inset-0" style="background:rgba(17,24,39,.55); backdrop-filter:blur(4px);"
             onclick="closeRemoveConnectionModal()"></div>
@@ -330,9 +327,9 @@
         </div>
     </div>
 
-    <!-- ═══════════════════════════════════
-       SHARE POST MODAL
-  ════════════════════════════════════ -->
+    <!-- ============================================================
+         SHARE POST MODAL
+    ============================================================= -->
     <div id="share-modal" class="fixed inset-0 hidden items-center justify-center z-50"
         style="background:rgba(17,24,39,.55); backdrop-filter:blur(4px);"
         onclick="if(event.target===this) this.classList.add('hidden')">
@@ -357,9 +354,9 @@
         </div>
     </div>
 
-    <!-- ═══════════════════════════════════
-       COMMENT MODAL
-  ════════════════════════════════════ -->
+    <!-- ============================================================
+         COMMENTS MODAL
+    ============================================================= -->
     <div id="comment-modal" class="fixed inset-0 hidden items-center justify-center z-50"
         style="background:rgba(17,24,39,.55); backdrop-filter:blur(4px);">
         <div class="pf-modal-panel bg-white w-full max-w-lg rounded-2xl overflow-hidden

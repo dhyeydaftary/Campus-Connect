@@ -54,29 +54,20 @@ def get_suggestions():
     # 4. Query for suggestions with a priority system.
     suggestions = []
     
-    # Priority 1: Same university + same major
+    # Priority 1: Same university (any major)
     suggestions = User.query.filter(
         User.id.notin_(exclude_ids),
         User.account_type != 'admin',
-        User.university == current_user.university,
-        User.major == current_user.major
+        User.status == 'ACTIVE',
+        User.university == current_user.university
     ).order_by(func.random()).limit(5).all()
     
-    # Priority 2: If not enough, add same university (any major)
+    # Priority 2: If still not enough, add anyone else from any university
     if len(suggestions) < 5:
         additional = User.query.filter(
             User.id.notin_(exclude_ids),
             User.account_type != 'admin',
-            User.id.notin_([s.id for s in suggestions]),
-            User.university == current_user.university
-        ).order_by(func.random()).limit(5 - len(suggestions)).all()
-        suggestions.extend(additional)
-    
-    # Priority 3: If still not enough, add anyone else
-    if len(suggestions) < 5:
-        additional = User.query.filter(
-            User.id.notin_(exclude_ids),
-            User.account_type != 'admin',
+            User.status == 'ACTIVE',
             User.id.notin_([s.id for s in suggestions])
         ).order_by(func.random()).limit(5 - len(suggestions)).all()
         suggestions.extend(additional)

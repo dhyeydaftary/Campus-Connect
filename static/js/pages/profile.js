@@ -3,15 +3,15 @@
  * Vanilla JS implementation for Flask integration
  */
 
-// ============================================
-// PROFILE DATA - Fetched from API
-// ============================================
+// ============================================================
+// PROFILE DATA - FETCHED FROM API
+// ============================================================
 
 let profileData = {};
 
-// ============================================
+// ============================================================
 // STATE MANAGEMENT
-// ============================================
+// ============================================================
 
 let state = {
   activeTab: 'posts',
@@ -20,9 +20,9 @@ let state = {
   connectionToRemove: null,
 };
 
-// ============================================
+// ============================================================
 // UTILITY FUNCTIONS
-// ============================================
+// ============================================================
 
 function renderExperience() {
   const container = document.getElementById('experienceContainer');
@@ -255,9 +255,9 @@ function switchConnectionTab(tabName) {
   renderConnections();
 }
 
-// ============================================
-// TAB SWITCHING
-// ============================================
+// ============================================================
+// TAB SWITCHING LOGIC
+// ============================================================
 
 function switchTab(tabName) {
   state.activeTab = tabName;
@@ -281,153 +281,279 @@ function switchTab(tabName) {
   }
 }
 
-// ============================================
+// ============================================================
 // MODAL FUNCTIONS
-// ============================================
+// ============================================================
 
 async function openEditModal(type) {
   state.currentModal = type;
+
   const modal = document.getElementById('editModal');
-  const title = document.getElementById('modalTitle');
+  const backdrop = document.getElementById('editModalBackdrop');
+  const panel = document.getElementById('editModalPanel');
+  const titleEl = document.getElementById('modalTitle');
+  const iconEl = document.getElementById('modalTitleIcon');
   const content = document.getElementById('modalContent');
 
+  // ── CONFIG PER TYPE ──────────────────────────────────────
+  const config = {
+    about: { label: 'Edit About', icon: 'fas fa-user' },
+    password: { label: 'Change Password', icon: 'fas fa-lock' },
+    skills: { label: 'Edit Skills', icon: 'fas fa-bolt' },
+    experience: { label: 'Edit Experience', icon: 'fas fa-briefcase' },
+    education: { label: 'Edit Education', icon: 'fas fa-graduation-cap' },
+  };
+
+  const cfg = config[type] || { label: 'Edit', icon: 'fas fa-pen' };
+  titleEl.childNodes[1].textContent = ' ' + cfg.label;
+  iconEl.innerHTML = `<i class="${cfg.icon}"></i>`;
+
+  // ── CONTENT ───────────────────────────────────────────────
   switch (type) {
-    case 'about':
-      title.textContent = 'Edit About';
+
+    case 'about': {
+      const bio = profileData.user.bio || '';
+      const max = 500;
       content.innerHTML = `
-        <div>
-          <label class="block text-sm font-medium text-foreground mb-1">Bio</label>
-          <textarea id="editBio" rows="6" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background resize-none">${profileData.user.bio || ''}</textarea>
+        <div class="pf-field">
+          <label class="pf-label">Bio</label>
+          <textarea id="editBio" class="pf-textarea" maxlength="${max}"
+            placeholder="Write a short bio about yourself…"
+            oninput="pfCharCount(this,'bioCount',${max})"
+            rows="6">${bio}</textarea>
+          <div class="pf-char-count" id="bioCount">${bio.length} / ${max}</div>
         </div>
       `;
       break;
+    }
 
-    case 'password':
-      title.textContent = 'Change Password';
+    case 'password': {
       const hasPassword = profileData.user.has_password;
       content.innerHTML = `
-        <div class="space-y-4">
-          ${hasPassword ? `
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-1">Current Password</label>
-            <input type="password" id="currentPassword" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background focus:ring-2 focus:ring-primary/20 outline-none">
-          </div>
-          ` : `
-          <div class="bg-indigo-50 text-indigo-700 p-3 rounded-lg text-sm flex items-start gap-2">
-            <i class="fas fa-info-circle mt-0.5"></i>
-            <span>Set a password to enable password login instead of OTP.</span>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          ${hasPassword ? '' : `
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;
+               background:#eef2ff;border-radius:10px;border:1px solid #c7d2fe;">
+            <i class="fas fa-info-circle" style="color:#6366f1;margin-top:2px;font-size:0.8rem;flex-shrink:0;"></i>
+            <span style="font-size:0.82rem;color:#4338ca;line-height:1.5;">
+              You're currently using OTP login. Set a password to enable password-based login too.
+            </span>
           </div>
           `}
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-1">New Password</label>
-            <input type="password" id="newPassword" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Min 6 characters">
+          ${hasPassword ? `
+          <div class="pf-field">
+            <label class="pf-label">Current Password</label>
+            <input type="password" id="currentPassword" class="pf-input"
+                   placeholder="Enter your current password" autocomplete="current-password">
+          </div>` : ''}
+          <div class="pf-field">
+            <label class="pf-label">New Password</label>
+            <input type="password" id="newPassword" class="pf-input"
+                   placeholder="Min 6 characters"
+                   autocomplete="new-password"
+                   oninput="pfPasswordStrength(this.value)">
+            <div class="pf-pw-strength"><div class="pf-pw-strength-bar" id="pwStrengthBar"></div></div>
+            <span class="pf-input-hint" id="pwStrengthLabel">Enter a password</span>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-1">Confirm New Password</label>
-            <input type="password" id="confirmPassword" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background focus:ring-2 focus:ring-primary/20 outline-none">
+          <div class="pf-field">
+            <label class="pf-label">Confirm New Password</label>
+            <input type="password" id="confirmPassword" class="pf-input"
+                   placeholder="Re-enter new password"
+                   autocomplete="new-password"
+                   oninput="pfConfirmMatch()">
+            <span class="pf-input-hint" id="confirmHint"></span>
           </div>
         </div>
       `;
       break;
+    }
 
-    case 'skills':
-      title.textContent = 'Edit Skills';
+    case 'skills': {
       const skills = profileData.skills || [];
       content.innerHTML = `
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-2">Current Skills</label>
-            <div class="flex flex-wrap gap-2" id="editSkillsList">
-              ${skills.map(skill => `
-                <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full">
-                  ${skill.name}
-                  <button onclick="removeSkill('${skill.id}')" class="ml-1 hover:text-red-500">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="pf-field">
+            <label class="pf-label">Current Skills</label>
+            <div id="editSkillsList" style="display:flex;flex-wrap:wrap;gap:8px;padding:12px;
+                 background:#f9fafb;border-radius:12px;min-height:52px;
+                 border:1.5px solid #e9eaf0;">
+              ${skills.length === 0
+          ? '<span class="pf-skills-empty" style="width:100%">No skills yet — add some below</span>'
+          : skills.map(s => `
+                <span class="pf-skill-chip">
+                  ${s.name}
+                  <button type="button" class="pf-skill-remove" onclick="removeSkill('${s.id}')"
+                          title="Remove ${s.name}" aria-label="Remove ${s.name}">
+                    <i class="fas fa-times"></i>
                   </button>
-                </span>
-              `).join('')}
+                </span>`).join('')}
             </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-foreground mb-1">Add New Skill</label>
-            <div class="flex gap-2">
-              <input type="text" id="newSkillInput" placeholder="Enter skill name" class="flex-1 px-3 py-2 border border-border rounded-lg text-foreground bg-background">
-              <button onclick="addSkill()" class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity">
+          <div class="pf-field">
+            <label class="pf-label">Add New Skill</label>
+            <div style="display:flex;gap:8px;align-items:stretch;">
+              <input type="text" id="newSkillInput" class="pf-input" style="flex:1;"
+                     placeholder="e.g. React, Machine Learning, Public Speaking"
+                     onkeydown="if(event.key==='Enter'){event.preventDefault();addSkill();}">
+              <button type="button" onclick="addSkill()"
+                      class="btn-cc-primary" style="padding:10px 18px;white-space:nowrap;">
+                <i class="fas fa-plus" style="font-size:0.65rem;"></i>
                 Add
               </button>
             </div>
           </div>
         </div>
       `;
+      requestAnimationFrame(() => document.getElementById('newSkillInput')?.focus());
       break;
+    }
 
-    case 'experience':
-      title.textContent = 'Edit Experience';
+    case 'experience': {
       const experiences = profileData.experiences || [];
       content.innerHTML = `
-        <div class="space-y-4">
-          ${experiences.map((exp, index) => `
-            <div class="p-4 border border-border rounded-lg space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-muted-foreground">Experience ${index + 1}</span>
-                <button onclick="removeExperience('${exp.id}')" class="text-red-500 hover:text-red-600 text-sm">Remove</button>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          ${experiences.length === 0
+          ? `<p style="font-size:0.82rem;color:#9ca3af;text-align:center;padding:8px 0;">No experience entries yet. Add one below.</p>`
+          : experiences.map((exp, i) => `
+            <div class="pf-entry-card">
+              <div class="pf-entry-card-head">
+                <span class="pf-entry-label">
+                  <span class="pf-entry-num">${i + 1}</span>
+                  ${exp.title || 'Experience ' + (i + 1)}
+                </span>
+                <button type="button" class="pf-remove-btn" onclick="removeExperience('${exp.id}')">
+                  <i class="fas fa-trash-alt" style="font-size:0.6rem;"></i> Remove
+                </button>
               </div>
-              <input type="text" value="${exp.title}" placeholder="Title/Role" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background" data-exp-id="${exp.id}" data-field="title">
-              <input type="text" value="${exp.company}" placeholder="Company" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background" data-exp-id="${exp.id}" data-field="company">
-              <input type="text" value="${exp.location || ''}" placeholder="Location (optional)" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background" data-exp-id="${exp.id}" data-field="location">
-              <div class="grid grid-cols-2 gap-2">
-                <input type="text" value="${exp.start_date}" placeholder="Start Date" class="px-3 py-2 border border-border rounded-lg text-foreground bg-background" data-exp-id="${exp.id}" data-field="start_date">
-                <input type="text" value="${exp.end_date && exp.end_date !== 'Present' ? exp.end_date : ''}" placeholder="End Date (or leave blank)" class="px-3 py-2 border border-border rounded-lg text-foreground bg-background" data-exp-id="${exp.id}" data-field="end_date">
+              <div class="pf-entry-body">
+                <div class="pf-field">
+                  <label class="pf-label">Title / Role</label>
+                  <input type="text" class="pf-input" value="${exp.title || ''}"
+                         placeholder="e.g. Software Engineer Intern"
+                         data-exp-id="${exp.id}" data-field="title">
+                </div>
+                <div class="pf-field">
+                  <label class="pf-label">Company</label>
+                  <input type="text" class="pf-input" value="${exp.company || ''}"
+                         placeholder="e.g. Google"
+                         data-exp-id="${exp.id}" data-field="company">
+                </div>
+                <div class="pf-field">
+                  <label class="pf-label">Location <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#c4c9d4;">(optional)</span></label>
+                  <input type="text" class="pf-input" value="${exp.location || ''}"
+                         placeholder="e.g. Ahmedabad, India"
+                         data-exp-id="${exp.id}" data-field="location">
+                </div>
+                <div class="pf-input-row">
+                  <div class="pf-field">
+                    <label class="pf-label">Start Date</label>
+                    <input type="text" class="pf-input" value="${exp.start_date || ''}"
+                           placeholder="e.g. Jun 2023"
+                           data-exp-id="${exp.id}" data-field="start_date">
+                  </div>
+                  <div class="pf-field">
+                    <label class="pf-label">End Date</label>
+                    <input type="text" class="pf-input" value="${exp.end_date && exp.end_date !== 'Present' ? exp.end_date : ''}"
+                           placeholder="Leave blank if current"
+                           id="endDate_${exp.id}"
+                           data-exp-id="${exp.id}" data-field="end_date"
+                           ${exp.is_current ? 'disabled style="opacity:0.4;"' : ''}>
+                  </div>
+                </div>
+                <label class="pf-checkbox-row">
+                  <input type="checkbox" class="pf-checkbox"
+                         id="isCurrent_${exp.id}"
+                         ${exp.is_current ? 'checked' : ''}
+                         data-exp-id="${exp.id}" data-field="is_current"
+                         onchange="
+                           const ed = document.getElementById('endDate_${exp.id}');
+                           if(ed){ed.disabled=this.checked;ed.style.opacity=this.checked?'0.4':'1';}
+                         ">
+                  <span class="pf-checkbox-label">Currently working here</span>
+                </label>
+                <div class="pf-field">
+                  <label class="pf-label">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#c4c9d4;">(optional)</span></label>
+                  <textarea class="pf-textarea" rows="2" style="min-height:70px;"
+                            placeholder="Briefly describe your role and achievements…"
+                            data-exp-id="${exp.id}" data-field="description">${exp.description || ''}</textarea>
+                </div>
               </div>
-              <div class="flex items-center gap-2">
-                <input type="checkbox" id="isCurrent_${exp.id}" ${exp.is_current ? 'checked' : ''} class="rounded" data-exp-id="${exp.id}" data-field="is_current">
-                <label for="isCurrent_${exp.id}" class="text-sm text-muted-foreground">Currently working here</label>
-              </div>
-              <textarea placeholder="Description" rows="2" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background resize-none" data-exp-id="${exp.id}" data-field="description">${exp.description || ''}</textarea>
             </div>
           `).join('')}
-          <button onclick="addExperience()" class="w-full px-4 py-2 border border-dashed border-border rounded-lg text-muted-foreground hover:text-foreground hover:border-primary transition-colors flex items-center justify-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
+          <button type="button" class="pf-add-btn" onclick="addExperience()">
+            <i class="fas fa-plus" style="font-size:0.7rem;"></i>
             Add Experience
           </button>
         </div>
       `;
       break;
+    }
 
-    case 'education':
-      title.textContent = 'Edit Education';
+    case 'education': {
       const educations = profileData.educations || [];
       content.innerHTML = `
-        <div class="space-y-4">
-          ${educations.map((edu, index) => `
-            <div class="p-4 border border-border rounded-lg space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-muted-foreground">Education ${index + 1}</span>
-                <button onclick="removeEducation('${edu.id}')" class="text-red-500 hover:text-red-600 text-sm">Remove</button>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          ${educations.length === 0
+          ? `<p style="font-size:0.82rem;color:#9ca3af;text-align:center;padding:8px 0;">No education entries yet. Add one below.</p>`
+          : educations.map((edu, i) => `
+            <div class="pf-entry-card">
+              <div class="pf-entry-card-head">
+                <span class="pf-entry-label">
+                  <span class="pf-entry-num">${i + 1}</span>
+                  ${edu.institution || 'Education ' + (i + 1)}
+                </span>
+                <button type="button" class="pf-remove-btn" onclick="removeEducation('${edu.id}')">
+                  <i class="fas fa-trash-alt" style="font-size:0.6rem;"></i> Remove
+                </button>
               </div>
-              <input type="text" value="${edu.degree}" placeholder="Degree" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background" data-edu-id="${edu.id}" data-field="degree">
-              <input type="text" value="${edu.field}" placeholder="Field of Study" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background" data-edu-id="${edu.id}" data-field="field">
-              <input type="text" value="${edu.institution}" placeholder="Institution" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background" data-edu-id="${edu.id}" data-field="institution">
-              <input type="text" value="${edu.year}" placeholder="Year" class="w-full px-3 py-2 border border-border rounded-lg text-foreground bg-background" data-edu-id="${edu.id}" data-field="year">
+              <div class="pf-entry-body">
+                <div class="pf-field">
+                  <label class="pf-label">Degree</label>
+                  <input type="text" class="pf-input" value="${edu.degree || ''}"
+                         placeholder="e.g. Bachelor of Technology"
+                         data-edu-id="${edu.id}" data-field="degree">
+                </div>
+                <div class="pf-field">
+                  <label class="pf-label">Field of Study</label>
+                  <input type="text" class="pf-input" value="${edu.field || ''}"
+                         placeholder="e.g. Computer Science"
+                         data-edu-id="${edu.id}" data-field="field">
+                </div>
+                <div class="pf-field">
+                  <label class="pf-label">Institution</label>
+                  <input type="text" class="pf-input" value="${edu.institution || ''}"
+                         placeholder="e.g. L.J. University"
+                         data-edu-id="${edu.id}" data-field="institution">
+                </div>
+                <div class="pf-field">
+                  <label class="pf-label">Graduation Year</label>
+                  <input type="text" class="pf-input" value="${edu.year || ''}"
+                         placeholder="e.g. 2026"
+                         data-edu-id="${edu.id}" data-field="year">
+                </div>
+              </div>
             </div>
           `).join('')}
-          <button onclick="addEducation()" class="w-full px-4 py-2 border border-dashed border-border rounded-lg text-muted-foreground hover:text-foreground hover:border-primary transition-colors flex items-center justify-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
+          <button type="button" class="pf-add-btn" onclick="addEducation()">
+            <i class="fas fa-plus" style="font-size:0.7rem;"></i>
             Add Education
           </button>
         </div>
       `;
       break;
+    }
   }
 
-  modal.classList.remove('hidden');
+  // ── ANIMATE OPEN ──────────────────────────────────────────
+  modal.style.display = 'block';
   document.body.style.overflow = 'hidden';
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      backdrop.classList.add('visible');
+      panel.classList.add('visible');
+    });
+  });
 }
 function closeEditModal() {
   // Remove any temporary (unsaved) items before closing
@@ -440,9 +566,67 @@ function closeEditModal() {
   }
 
   const modal = document.getElementById('editModal');
-  modal.classList.add('hidden');
-  document.body.style.overflow = '';
-  state.currentModal = null;
+  const backdrop = document.getElementById('editModalBackdrop');
+  const panel = document.getElementById('editModalPanel');
+
+  // Animate out
+  if (backdrop) backdrop.classList.remove('visible');
+  if (panel) {
+    panel.classList.remove('visible');
+    panel.classList.add('closing');
+  }
+
+  setTimeout(() => {
+    modal.style.display = 'none';
+    if (panel) panel.classList.remove('closing');
+    document.body.style.overflow = '';
+    state.currentModal = null;
+  }, 220);
+}
+
+// ── Modal utility helpers ──
+function pfCharCount(el, counterId, max) {
+  const counter = document.getElementById(counterId);
+  if (!counter) return;
+  const len = el.value.length;
+  counter.textContent = len + ' / ' + max;
+  counter.className = 'pf-char-count' + (len > max * 0.9 ? (len >= max ? ' over' : ' warn') : '');
+}
+
+function pfPasswordStrength(val) {
+  const bar = document.getElementById('pwStrengthBar');
+  const label = document.getElementById('pwStrengthLabel');
+  if (!bar || !label) return;
+  let score = 0;
+  if (val.length >= 6) score++;
+  if (val.length >= 10) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const levels = [
+    { w: '0%', color: '#f3f4f6', text: 'Enter a password' },
+    { w: '25%', color: '#ef4444', text: 'Too weak' },
+    { w: '50%', color: '#f59e0b', text: 'Fair' },
+    { w: '75%', color: '#3b82f6', text: 'Good' },
+    { w: '90%', color: '#10b981', text: 'Strong' },
+    { w: '100%', color: '#059669', text: 'Very strong ✓' },
+  ];
+  const lvl = levels[Math.min(score, levels.length - 1)];
+  bar.style.width = lvl.w;
+  bar.style.background = lvl.color;
+  label.textContent = val.length ? lvl.text : 'Enter a password';
+  label.style.color = val.length ? lvl.color : '#9ca3af';
+}
+
+function pfConfirmMatch() {
+  const newPw = document.getElementById('newPassword');
+  const confPw = document.getElementById('confirmPassword');
+  const hint = document.getElementById('confirmHint');
+  if (!newPw || !confPw || !hint) return;
+  if (!confPw.value) { hint.textContent = ''; hint.style.color = ''; return; }
+  const match = newPw.value === confPw.value;
+  hint.textContent = match ? '✓ Passwords match' : '✗ Passwords do not match';
+  hint.style.color = match ? '#10b981' : '#ef4444';
 }
 async function saveModal() {
   try {
@@ -1016,11 +1200,15 @@ function renderSkills() {
 
 
 async function loadProfileData(userId) {
-  document.getElementById('profileName').textContent = 'Loading...';
-  document.getElementById('profileMajor').textContent = '';
-  document.getElementById('profileBatch').textContent = '';
-  document.getElementById('profileLocation').textContent = '';
-  document.getElementById('aboutText').textContent = 'Loading profile...';
+  const nameEl = document.getElementById('profileName');
+  if (nameEl) { nameEl.classList.remove('loaded'); nameEl.textContent = ''; }
+  const badgesRow = document.getElementById('profileBadges');
+  if (badgesRow) badgesRow.classList.remove('loaded');
+  const locRow = document.getElementById('profileLocationRow');
+  if (locRow) { locRow.style.display = 'none'; locRow.classList.remove('loaded'); }
+  const statsRow = document.querySelector('.pf-stats-row');
+  if (statsRow) statsRow.classList.remove('loaded');
+  document.getElementById('aboutText').textContent = '';
   try {
     const response = await fetch(`/api/profile/${userId}`);
     if (!response.ok) throw new Error('Failed to load profile data');
@@ -1042,19 +1230,88 @@ async function loadProfileData(userId) {
 }
 
 function updateProfileHeader(user) {
-  document.getElementById('profileName').textContent = user.full_name;
+  // ── NAME ────────────────────────────────────────────────
+  const nameEl = document.getElementById('profileName');
+  if (nameEl) {
+    nameEl.textContent = user.full_name;
+    // Clear skeleton, trigger entrance animation
+    requestAnimationFrame(() => nameEl.classList.add('loaded'));
+  }
 
-  // Apply badge classes properly
-  const majorEl = document.getElementById('profileMajor');
-  if (majorEl) { majorEl.className = 'badge badge-major'; majorEl.textContent = user.major; }
+  // ── BADGES ──────────────────────────────────────────────
+  const badgesRow = document.getElementById('profileBadges');
 
+  // Helper: create or reuse a badge element
+  function _badge(id, cls, html, show = true) {
+    let el = document.getElementById(id);
+    if (!el && badgesRow) {
+      el = document.createElement('span');
+      el.id = id;
+      badgesRow.appendChild(el);
+    }
+    if (!el) return;
+    el.className = `badge ${cls}`;
+    el.innerHTML = html;
+    el.style.display = show ? '' : 'none';
+  }
+
+  // Major/Branch badge — user.major is the branch/department e.g. "IT", "CS", "Mech"
+  // Show with a small icon so it reads as a field-of-study badge
+  const majorValue = user.major || user.branch || '';
+  _badge('profileMajor', 'badge-major',
+    majorValue
+      ? `<i class="fas fa-microchip" style="font-size:0.58rem;opacity:0.7;"></i> ${majorValue}`
+      : '',
+    !!majorValue
+  );
+
+  // Batch → compact year format: 2028 → '28
   const batchEl = document.getElementById('profileBatch');
-  if (batchEl) { batchEl.className = 'badge badge-batch'; batchEl.textContent = `Batch of ${user.batch}`; }
+  if (batchEl) {
+    if (user.batch) {
+      // Clean up string, remove any existing quotes or whitespace
+      let batchStr = String(user.batch).replace(/['"\s]/g, '');
+      // If it's a 4 digit year like "2028", grab last 2. Otherwise use as-is.
+      const shortYear = batchStr.length >= 4 ? `'${batchStr.slice(-2)}` : `'${batchStr}`;
 
-  document.getElementById('profileLocation').textContent = user.university;
+      batchEl.className = 'badge badge-batch';
+      batchEl.innerHTML = `<i class="fas fa-graduation-cap" style="font-size:0.58rem;opacity:0.7;"></i> ${shortYear}`;
+      batchEl.style.display = '';
+    } else {
+      batchEl.style.display = 'none';
+    }
+  }
+
+  // If API has a separate branch field that differs from major, show it too
+  if (user.branch && user.major && user.branch !== user.major) {
+    _badge('profileBranch', 'badge-branch',
+      `<i class="fas fa-code-branch" style="font-size:0.56rem;opacity:0.7;"></i> ${user.branch}`
+    );
+  } else {
+    const existing = document.getElementById('profileBranch');
+    if (existing) existing.style.display = 'none';
+  }
+
+  // Animate badge row in
+  if (badgesRow) requestAnimationFrame(() => badgesRow.classList.add('loaded'));
+
+  // ── LOCATION ────────────────────────────────────────────
+  const locSpan = document.getElementById('profileLocation');
+  const locRow = document.getElementById('profileLocationRow');
+  if (locSpan && user.university) {
+    locSpan.textContent = user.university;
+    if (locRow) { locRow.style.display = 'flex'; requestAnimationFrame(() => locRow.classList.add('loaded')); }
+  }
+
+  // ── ABOUT ───────────────────────────────────────────────
   document.getElementById('aboutText').textContent = user.bio || 'No bio added yet.';
+
+  // ── STATS ───────────────────────────────────────────────
   document.getElementById('connectionsCount').textContent = profileData.stats.connections_count;
   document.getElementById('postsCount').textContent = profileData.stats.posts_count;
+
+  const statsRow = document.querySelector('.pf-stats-row');
+  if (statsRow) requestAnimationFrame(() => statsRow.classList.add('loaded'));
 
   const myConnCount = document.getElementById('count-my-connections');
   if (myConnCount) myConnCount.textContent = profileData.stats.connections_count || 0;
@@ -1063,14 +1320,16 @@ function updateProfileHeader(user) {
   const sentCount = document.getElementById('count-sent');
   if (sentCount && profileData.stats.sent_count !== undefined) sentCount.textContent = profileData.stats.sent_count || 0;
 
-  // Update Avatar
-  const initials = user.full_name.split(' ').map(n => n[0]).join('');
+  // ── AVATAR ──────────────────────────────────────────────
+  const initials = user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2);
   const avatarContainer = document.getElementById('profileAvatar');
   if (user.profile_picture && !user.profile_picture.includes('ui-avatars.com')) {
-    avatarContainer.innerHTML = `<img src="${user.profile_picture}" class="w-full h-full object-cover profile-avatar-img">`;
+    avatarContainer.innerHTML = `<img src="${user.profile_picture}" class="w-full h-full object-cover profile-avatar-img" alt="${user.full_name}">`;
   } else {
     avatarContainer.textContent = initials;
   }
+
+  if (profileData.is_own_profile) avatarContainer.classList.add('own-profile');
 
   setupAvatarUpload(profileData.is_own_profile);
   renderProfileActions();

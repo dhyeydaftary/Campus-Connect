@@ -56,7 +56,7 @@ def messages_page():
     if "user_id" not in session:
         return redirect(url_for("auth.login_page"))
     user = db.session.get(User, session["user_id"])
-    return render_template("main/messages.html", user=user)
+    return render_template("main/messages.html", user=user, user_name=user.full_name)
 
 @main_bp.route("/post/<int:post_id>")
 def post_page(post_id):
@@ -64,7 +64,7 @@ def post_page(post_id):
     if "user_id" not in session:
         return redirect(url_for("auth.login_page"))
     user = db.session.get(User, session["user_id"])
-    return render_template("main/post.html", user=user, post_id=post_id)
+    return render_template("main/post.html", user=user, user_name=user.full_name, post_id=post_id)
 
 @main_bp.route("/profile/<int:user_id>")
 def profile_page(user_id):
