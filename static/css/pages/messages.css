@@ -1,0 +1,1385 @@
+/* ==============================================================================
+   messages.css
+   Styles for the real-time messaging page.
+   Covers layout, sidebar, conversation list, chat bubbles,
+   input area, compose modal, animations, and responsive rules.
+   Depends on: main_tailwind.css, Font Awesome, Google Fonts
+   ============================================================================== */
+
+/* ==============================================================================
+   DESIGN TOKENS
+   Shared colour, shadow, and dimension values used
+   throughout this stylesheet. Edit here to retheme.
+   ============================================================================== */
+:root {
+    --cc-ink: #111827;
+    --cc-muted: #6b7280;
+    --cc-border: #e5e7eb;
+    --cc-surface: #ffffff;
+    --cc-bg: #f8fafc;
+    --cc-indigo: #4f46e5;
+    --cc-indigo-dk: #3730a3;
+    --cc-indigo-lt: #eef2ff;
+    --cc-shadow-sm: 0 1px 3px rgb(0 0 0/.08), 0 1px 2px rgb(0 0 0/.04);
+    --cc-shadow-md: 0 4px 12px rgb(0 0 0/.10), 0 2px 4px rgb(0 0 0/.05);
+    --cc-shadow-lg: 0 20px 40px rgb(0 0 0/.12), 0 8px 16px rgb(0 0 0/.06);
+
+    /* Sidebar panel widths at each breakpoint */
+    --sidebar-w-md: 320px;
+    --sidebar-w-lg: 380px;
+
+    /* Bubble backgrounds — sent uses gradient, received is white */
+    --bubble-sent-bg: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    --bubble-recv-bg: #ffffff;
+    --bubble-recv-border: #e5e7eb;
+}
+
+/* ==============================================================================
+   BASE RESET
+   Ensure consistent box-sizing across all elements.
+   ============================================================================== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* ==============================================================================
+   CUSTOM SCROLLBAR
+   Thin 4px scrollbar used on the conversation list,
+   message area, and compose modal results.
+   ============================================================================== */
+.msg-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.msg-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.msg-scrollbar::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 99px;
+}
+
+.msg-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* ==============================================================================
+   PAGE LAYOUT
+   Full-height flex container that sits below the 64px navbar.
+   Sidebar and chat panel share this row.
+   ============================================================================== */
+.msgs-layout {
+    display: flex;
+    height: calc(100vh - 64px);
+    background: var(--cc-bg);
+    overflow: hidden;
+}
+
+/* ==============================================================================
+   SIDEBAR
+   Left panel housing the conversation list.
+   Full-width on mobile; fixed width on md/lg breakpoints.
+   ============================================================================== */
+.msgs-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background: var(--cc-surface);
+    border-right: 1px solid var(--cc-border);
+    flex-shrink: 0;
+    z-index: 10;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+    .msgs-sidebar {
+        width: var(--sidebar-w-md);
+    }
+}
+
+@media (min-width: 1024px) {
+    .msgs-sidebar {
+        width: var(--sidebar-w-lg);
+    }
+}
+
+/* Hides sidebar on mobile when a chat is open */
+.msgs-sidebar.mobile-hidden {
+    display: none;
+}
+
+/* ==============================================================================
+   SIDEBAR HEADER
+   Title row with the compose (new message) button.
+   ============================================================================== */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 16px;
+    border-bottom: 1px solid var(--cc-border);
+    background: var(--cc-surface);
+}
+
+.sidebar-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--cc-ink);
+    letter-spacing: -0.025em;
+}
+
+.sidebar-compose-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--cc-border);
+    background: var(--cc-surface);
+    color: var(--cc-muted);
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.sidebar-compose-btn:hover {
+    background: var(--cc-indigo-lt);
+    border-color: #c7d2fe;
+    color: var(--cc-indigo);
+    transform: rotate(8deg);
+}
+
+/* ==============================================================================
+   CONVERSATION SEARCH
+   Input for filtering the conversation list by name.
+   The search icon shifts to indigo on focus.
+   ============================================================================== */
+.sidebar-search-wrap {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sidebar-search {
+    position: relative;
+}
+
+.sidebar-search i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 0.8rem;
+    pointer-events: none;
+    transition: color 0.18s ease;
+}
+
+.sidebar-search input {
+    width: 100%;
+    padding: 9px 14px 9px 36px;
+    background: #f3f4f6;
+    border: 1.5px solid transparent;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    color: var(--cc-ink);
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.sidebar-search input::placeholder {
+    color: #9ca3af;
+}
+
+.sidebar-search input:focus {
+    background: var(--cc-surface);
+    border-color: #a5b4fc;
+    box-shadow: 0 0 0 3px rgb(99 102 241 / .1);
+}
+
+.sidebar-search input:focus~i,
+.sidebar-search:focus-within i {
+    color: var(--cc-indigo);
+}
+
+/* ==============================================================================
+   CONVERSATION LIST
+   Scrollable container for all conversation items.
+   ============================================================================== */
+.conv-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0;
+}
+
+/* ==============================================================================
+   CONVERSATION ITEM
+   Individual row in the sidebar list. Active state shows
+   a 3px indigo left border and tinted background.
+   Items animate in with a staggered slide from the left.
+   ============================================================================== */
+.conv-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    position: relative;
+    /* Staggered slide-in — delay set inline via animation-delay */
+    animation: convItemIn 0.3s ease both;
+}
+
+@keyframes convItemIn {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.conv-item:hover {
+    background: #f9fafb;
+}
+
+.conv-item.active {
+    background: var(--cc-indigo-lt);
+    border-left-color: var(--cc-indigo);
+}
+
+.conv-item.active .conv-name {
+    color: var(--cc-indigo-dk);
+}
+
+/* Avatar with optional online-dot overlay */
+.conv-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.conv-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--cc-border);
+    transition: border-color 0.15s ease;
+}
+
+.conv-item.active .conv-avatar {
+    border-color: #a5b4fc;
+}
+
+/* Green online indicator — pulses to draw attention */
+.conv-online-dot {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 11px;
+    height: 11px;
+    background: #22c55e;
+    border: 2px solid white;
+    border-radius: 50%;
+    /* Glow pulse to indicate active/unread status */
+    animation: onlinePulse 2.5s ease-in-out infinite;
+}
+
+@keyframes onlinePulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgb(34 197 94 / .4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 4px rgb(34 197 94 / 0);
+    }
+}
+
+/* Unread message count pill — springs in when count > 0 */
+.conv-unread-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    background: var(--cc-indigo);
+    color: white;
+    font-size: 0.68rem;
+    font-weight: 700;
+    border-radius: 99px;
+    flex-shrink: 0;
+    animation: badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes badgePop {
+    from {
+        transform: scale(0);
+    }
+
+    to {
+        transform: scale(1);
+    }
+}
+
+.conv-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.conv-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.conv-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--cc-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+    letter-spacing: -0.01em;
+}
+
+.conv-time {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #9ca3af;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.conv-item.active .conv-time {
+    color: #818cf8;
+}
+
+.conv-preview-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.conv-preview {
+    font-size: 0.8rem;
+    color: var(--cc-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.conv-preview.unread {
+    color: var(--cc-ink);
+    font-weight: 600;
+}
+
+.conv-status {
+    font-size: 0.68rem;
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
+.conv-status.seen {
+    color: #60a5fa;
+}
+
+/* ==============================================================================
+   EMPTY CONVERSATION STATE
+   Shown when there are no conversations or a search
+   returns no results.
+   ============================================================================== */
+.conv-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    gap: 10px;
+    color: var(--cc-muted);
+    padding: 20px;
+    text-align: center;
+}
+
+.conv-empty-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: var(--cc-indigo-lt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #818cf8;
+}
+
+.conv-empty p {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* ==============================================================================
+   CHAT PANEL
+   Right-side area containing the header, message thread,
+   typing indicator, and input bar.
+   ============================================================================== */
+.msgs-chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--cc-bg);
+    position: relative;
+}
+
+/* On mobile the panel slides over the full viewport */
+.msgs-chat-panel.mobile-visible {
+    position: fixed;
+    inset: 64px 0 0;
+    z-index: 20;
+}
+
+/* ==============================================================================
+   CHAT EMPTY STATE
+   Shown when no conversation is selected.
+   Icon floats on a loop to suggest interactivity.
+   ============================================================================== */
+.chat-empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    gap: 16px;
+    background: var(--cc-bg);
+    text-align: center;
+}
+
+.chat-empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, var(--cc-indigo-lt) 0%, #e0e7ff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--cc-indigo);
+    box-shadow: 0 8px 24px rgb(99 102 241 / .15);
+    animation: emptyFloat 3s ease-in-out infinite;
+}
+
+@keyframes emptyFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+.chat-empty-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--cc-ink);
+    letter-spacing: -0.025em;
+    margin: 0 0 6px;
+}
+
+.chat-empty-sub {
+    font-size: 0.9rem;
+    color: var(--cc-muted);
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.chat-empty-btn {
+    margin-top: 8px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, var(--cc-indigo), #6366f1);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgb(79 70 229 / .3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-empty-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgb(79 70 229 / .4);
+    filter: brightness(1.05);
+}
+
+.chat-empty-btn:active {
+    transform: translateY(0);
+}
+
+/* ==============================================================================
+   CHAT HEADER
+   Sticky top bar inside an open chat. Displays the
+   partner's avatar, name, and action buttons.
+   Back button only visible on mobile.
+   ============================================================================== */
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: var(--cc-surface);
+    border-bottom: 1px solid var(--cc-border);
+    box-shadow: var(--cc-shadow-sm);
+    z-index: 5;
+    flex-shrink: 0;
+}
+
+.chat-header-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.chat-header-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e0e7ff;
+}
+
+.chat-header-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-header-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--cc-ink);
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-header-sub {
+    font-size: 0.72rem;
+    color: var(--cc-muted);
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.chat-header-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.9rem;
+}
+
+.chat-header-btn:hover {
+    background: #f3f4f6;
+    color: var(--cc-indigo);
+}
+
+.chat-back-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: var(--cc-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.chat-back-btn:hover {
+    background: #f3f4f6;
+    color: var(--cc-ink);
+}
+
+@media (min-width: 768px) {
+    .chat-back-btn {
+        display: none;
+    }
+}
+
+/* ==============================================================================
+   MESSAGES AREA
+   Scrollable thread of message bubbles.
+   Uses the chat background image with a light overlay
+   to keep text legible without removing the texture.
+   ============================================================================== */
+.chat-messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background-image: url("/static/images/chat-bg.jpg");
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+/* Semi-transparent overlay ensures readability over the background image */
+.chat-messages-area::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgb(248 250 252 / .75);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.chat-messages-area>* {
+    position: relative;
+    z-index: 1;
+}
+
+/* ==============================================================================
+   DATE DIVIDER
+   Centred chip separating messages from different days,
+   e.g. 'Today', 'Yesterday', or a formatted date.
+   ============================================================================== */
+.msg-date-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 12px 0 6px;
+}
+
+.msg-date-chip {
+    padding: 4px 14px;
+    background: white;
+    border: 1px solid var(--cc-border);
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--cc-muted);
+    box-shadow: var(--cc-shadow-sm);
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.01em;
+}
+
+/* ==============================================================================
+   MESSAGE BUBBLES
+   Sent messages align right with an indigo gradient.
+   Received messages align left with a white card style.
+   Both animate in on insertion.
+   ============================================================================== */
+.msg-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    /* Bubble entrance — slight upward float and scale */
+    animation: msgIn 0.25s cubic-bezier(0.34, 1.1, 0.64, 1) both;
+}
+
+@keyframes msgIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.msg-row.sent {
+    flex-direction: row-reverse;
+}
+
+.msg-row.recv {
+    flex-direction: row;
+}
+
+.msg-bubble {
+    max-width: 72%;
+    padding: 9px 14px;
+    border-radius: 18px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    word-break: break-word;
+    position: relative;
+}
+
+/* Sent — indigo gradient, coloured drop shadow */
+.msg-row.sent .msg-bubble {
+    background: var(--bubble-sent-bg);
+    color: white;
+    border-bottom-right-radius: 5px;
+    box-shadow: 0 2px 8px rgb(79 70 229 / .3);
+}
+
+/* Received — white card with subtle border */
+.msg-row.recv .msg-bubble {
+    background: var(--bubble-recv-bg);
+    color: var(--cc-ink);
+    border: 1px solid var(--bubble-recv-border);
+    border-bottom-left-radius: 5px;
+    box-shadow: var(--cc-shadow-sm);
+}
+
+.msg-time {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 500;
+    margin-top: 4px;
+    text-align: right;
+}
+
+.msg-row.sent .msg-time {
+    color: rgb(255 255 255 / .65);
+}
+
+.msg-row.recv .msg-time {
+    color: #9ca3af;
+}
+
+/* Optimistic UI — message dimmed until server confirms */
+.msg-row.temp {
+    opacity: 0.65;
+}
+
+/* ==============================================================================
+   MESSAGE STATUS
+   'Sent' / 'Seen' label shown below the last sent bubble.
+   'Seen' text is blue; 'Sent' is gray.
+   ============================================================================== */
+.msg-status {
+    font-size: 0.68rem;
+    color: #9ca3af;
+    text-align: right;
+    margin-top: 2px;
+    margin-right: 4px;
+    font-family: 'Inter', sans-serif;
+}
+
+.msg-status.seen {
+    color: #60a5fa;
+}
+
+/* ==============================================================================
+   IMAGE ATTACHMENT
+   Inline image thumbnail inside a bubble.
+   Clicking opens the full image in a new tab.
+   ============================================================================== */
+.msg-attachment-img {
+    max-width: 220px;
+    max-height: 200px;
+    border-radius: 12px;
+    object-fit: cover;
+    cursor: pointer;
+    display: block;
+    margin-bottom: 6px;
+    transition: opacity 0.2s ease;
+}
+
+.msg-attachment-img:hover {
+    opacity: 0.9;
+}
+
+/* ==============================================================================
+   FILE ATTACHMENT
+   Non-image attachment row (PDF, etc.) inside a bubble.
+   ============================================================================== */
+.msg-attachment-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    margin-bottom: 6px;
+    border: 1px solid rgb(255 255 255 / .2);
+    background: rgb(255 255 255 / .1);
+}
+
+.msg-row.recv .msg-attachment-file {
+    border-color: var(--cc-border);
+    background: #f9fafb;
+}
+
+/* ==============================================================================
+   POST SHARE CARD
+   Card rendered when a feed post is shared via chat.
+   Links to the original post on click.
+   ============================================================================== */
+.msg-post-card {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 6px;
+    border-left: 3px solid var(--cc-indigo);
+    cursor: pointer;
+    min-width: 200px;
+    transition: background 0.15s ease;
+    box-shadow: var(--cc-shadow-sm);
+}
+
+.msg-post-card:hover {
+    background: #f9fafb;
+}
+
+.msg-row.sent .msg-post-card {
+    background: rgb(255 255 255 / .15);
+    border-left-color: rgba(255, 255, 255, 0.8);
+}
+
+.msg-row.sent .msg-post-card:hover {
+    background: rgb(255 255 255 / .22);
+}
+
+/* ==============================================================================
+   TYPING INDICATOR
+   Three bouncing dots shown when the other person
+   is actively typing. Hides after 3 s of inactivity.
+   ============================================================================== */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 0.78rem;
+    color: var(--cc-muted);
+    background: rgb(255 255 255 / .9);
+    border-top: 1px solid #f3f4f6;
+    font-family: 'Inter', sans-serif;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.typing-dots {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+
+.typing-dot {
+    width: 5px;
+    height: 5px;
+    background: var(--cc-indigo);
+    border-radius: 50%;
+    animation: typingBounce 1.2s ease infinite;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.typing-dot:nth-child(3) {
+    animation-delay: 0.30s;
+}
+
+@keyframes typingBounce {
+
+    0%,
+    80%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+
+    40% {
+        transform: translateY(-5px);
+        opacity: 1;
+    }
+}
+
+/* ==============================================================================
+   ATTACHMENT PREVIEW
+   Preview strip above the input bar showing a selected
+   file or image before it is sent.
+   ============================================================================== */
+.attachment-preview-wrap {
+    padding: 10px 18px;
+    background: #f9fafb;
+    border-top: 1px solid var(--cc-border);
+    animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(8px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ==============================================================================
+   INPUT AREA
+   Bottom bar with file attach, auto-resizing textarea,
+   and send button. Max-width centres content on wide screens.
+   ============================================================================== */
+.chat-input-area {
+    padding: 12px 16px;
+    background: var(--cc-surface);
+    border-top: 1px solid var(--cc-border);
+    flex-shrink: 0;
+}
+
+.chat-input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.chat-attach-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1.5px solid var(--cc-border);
+    background: var(--cc-surface);
+    color: var(--cc-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.chat-attach-btn:hover {
+    background: var(--cc-indigo-lt);
+    border-color: #a5b4fc;
+    color: var(--cc-indigo);
+}
+
+.chat-input-wrap {
+    flex: 1;
+    background: #f3f4f6;
+    border: 1.5px solid transparent;
+    border-radius: 20px;
+    padding: 10px 16px;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.chat-input-wrap:focus-within {
+    background: var(--cc-surface);
+    border-color: #a5b4fc;
+    box-shadow: 0 0 0 3px rgb(99 102 241 / .1);
+}
+
+.chat-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 0.875rem;
+    font-family: 'Inter', sans-serif;
+    color: var(--cc-ink);
+    resize: none;
+    max-height: 120px;
+    line-height: 1.5;
+}
+
+.chat-textarea::placeholder {
+    color: #9ca3af;
+}
+
+.chat-send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    transition: all 0.18s ease;
+    box-shadow: 0 4px 12px rgb(79 70 229 / .35);
+}
+
+.chat-send-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgb(79 70 229 / .45);
+}
+
+.chat-send-btn:active {
+    transform: scale(0.95);
+}
+
+.chat-send-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ==============================================================================
+   COMPOSE MODAL
+   Overlay for starting a new conversation.
+   Backdrop blurs the page; modal springs in on open
+   and reverses on close.
+   ============================================================================== */
+.compose-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgb(0 0 0 / .4);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.compose-backdrop.visible {
+    opacity: 1;
+}
+
+.compose-modal {
+    background: var(--cc-surface);
+    width: 100%;
+    max-width: 440px;
+    border-radius: 20px;
+    box-shadow: var(--cc-shadow-lg);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    transform: scale(0.94) translateY(8px);
+    transition: transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+    overflow: hidden;
+}
+
+.compose-backdrop.visible .compose-modal {
+    transform: scale(1) translateY(0);
+}
+
+.compose-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.compose-modal-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--cc-ink);
+    letter-spacing: -0.02em;
+}
+
+.compose-close-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: #f3f4f6;
+    color: var(--cc-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 0.8rem;
+}
+
+.compose-close-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.compose-search-wrap {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.compose-search-input {
+    position: relative;
+}
+
+.compose-search-input i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 0.8rem;
+    pointer-events: none;
+}
+
+.compose-search-input input {
+    width: 100%;
+    padding: 10px 14px 10px 36px;
+    background: #f3f4f6;
+    border: 1.5px solid transparent;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    color: var(--cc-ink);
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.compose-search-input input:focus {
+    background: var(--cc-surface);
+    border-color: #a5b4fc;
+    box-shadow: 0 0 0 3px rgb(99 102 241 / .1);
+}
+
+.compose-results {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    min-height: 200px;
+}
+
+.compose-user-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.compose-user-item:hover {
+    background: #f9fafb;
+}
+
+.compose-user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid var(--cc-border);
+    flex-shrink: 0;
+}
+
+.compose-user-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--cc-ink);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compose-start-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    border: 1.5px solid #e0e7ff;
+    background: var(--cc-indigo-lt);
+    color: var(--cc-indigo);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    transition: all 0.15s ease;
+}
+
+.compose-start-btn:hover {
+    background: var(--cc-indigo);
+    border-color: var(--cc-indigo);
+    color: white;
+}
+
+/* ==============================================================================
+   LOADING SPINNER
+   Centred spinner used while messages or search results
+   are being fetched.
+   ============================================================================== */
+.msg-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+}
+
+.msg-spinner i {
+    color: var(--cc-indigo);
+    font-size: 1.25rem;
+}
+
+/* ==============================================================================
+   EMPTY MESSAGE THREAD
+   Shown inside the chat area when a conversation
+   has no messages yet.
+   ============================================================================== */
+.msg-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 40px 20px;
+    color: var(--cc-muted);
+    text-align: center;
+}
+
+.msg-empty-icon {
+    font-size: 2rem;
+    opacity: 0.4;
+}
+
+.msg-empty p {
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ==============================================================================
+   RESPONSIVE OVERRIDES
+   Mobile-specific layout adjustments below 768px.
+   Chat panel slides over the full viewport; sidebar hides.
+   ============================================================================== */
+@media (max-width: 767px) {
+    .msgs-sidebar {
+        width: 100%;
+    }
+
+    .msgs-chat-panel {
+        position: fixed;
+        inset: 64px 0 0;
+        z-index: 30;
+        background: var(--cc-bg);
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .msgs-chat-panel.mobile-open {
+        transform: translateX(0);
+    }
+
+    .msg-bubble {
+        max-width: 85%;
+    }
+
+    .compose-modal {
+        max-height: 90vh;
+    }
+}
+
+/* ==============================================================================
+   LOADING SKELETONS
+   Shimmer placeholder rows shown in the sidebar while
+   the conversation list loads from the API.
+   ============================================================================== */
+@keyframes shimmer {
+    from {
+        background-position: -200% 0;
+    }
+
+    to {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f3f4f6 25%, #e9eaec 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease infinite;
+    border-radius: 6px;
+}
+
+.conv-skeleton {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.skel-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.skel-lines {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skel-line {
+    height: 10px;
+    border-radius: 5px;
+}

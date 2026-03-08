@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from sqlalchemy import or_, and_, func, case, desc
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timezone
+from app.extensions import limiter
 
 chat_bp = Blueprint('chat', __name__)
 
@@ -221,6 +222,7 @@ def get_messages(conversation_id):
     return jsonify(results), 200
 
 @chat_bp.route('/api/chats/unread-count', methods=['GET'])
+@limiter.exempt
 def get_total_unread_count():
     user_id = session.get("user_id")
     if not user_id:

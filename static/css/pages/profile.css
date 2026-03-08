@@ -1,14 +1,15 @@
-/* ============================================================
-   Campus Connect — Profile Page
-   Pure CSS layer on top of Tailwind's utility build.
-   Uses only: indigo-*, gray-*, white, standard Tailwind classes.
-   All bespoke components are defined here.
-   ============================================================ */
+/* Profile Page Custom Styles
+ * Built on top of Tailwind CSS utilities
+ */
 
-/* ── FONTS ── */
+/* ============================================================
+   FONTS
+   ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
 
-/* ── TOKENS ── */
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
 :root {
     --cc-blue: #1e40af;
     /* indigo-800  */
@@ -40,7 +41,9 @@
     --cc-radius-sm: 0.5rem;
 }
 
-/* ── BASE ── */
+/* ============================================================
+   BASE TYPOGRAPHY AND COLORS
+   ============================================================ */
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--cc-bg);
@@ -49,7 +52,9 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── HEADINGS FONT ── */
+/* ============================================================
+   HEADINGS
+   ============================================================ */
 h1,
 h2,
 h3,
@@ -81,11 +86,47 @@ h4,
             #818cf8 100%);
 }
 
+/* ── HEADER CARD POSITION CONTEXT ── */
+.pf-header-card {
+    position: relative;
+    /* for absolutely positioned actions */
+}
+
+/* Actions button group — always top-right, never in flow */
+.pf-header-actions {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 2;
+}
+
+@media (max-width: 480px) {
+    .pf-header-actions {
+        top: 12px;
+        right: 12px;
+    }
+}
+
+/* ── INFO STACK — always left, no centering ── */
+.pf-header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* more breathing room between each row */
+    min-width: 0;
+    flex: 1;
+    padding-top: 2px;
+    /* optical alignment with avatar top */
+}
+
 /* ── AVATAR ── */
 .pf-avatar {
     position: relative;
-    width: 96px;
-    height: 96px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     flex-shrink: 0;
     overflow: hidden;
@@ -95,29 +136,42 @@ h4,
     justify-content: center;
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-weight: 800;
-    font-size: 2rem;
+    font-size: 1.75rem;
     color: #fff;
     letter-spacing: -0.02em;
-    /* Double ring */
     box-shadow:
         0 0 0 3px #fff,
         0 0 0 5px #c7d2fe,
         var(--cc-shadow-md);
-    transition: box-shadow 0.25s ease;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+    cursor: default;
 }
 
-.pf-avatar:hover {
+.pf-avatar.own-profile {
+    cursor: pointer;
+}
+
+.pf-avatar.own-profile:hover {
     box-shadow:
         0 0 0 3px #fff,
         0 0 0 5px #818cf8,
-        var(--cc-shadow-md);
+        0 8px 20px -4px rgb(79 70 229 / .35);
+    transform: scale(1.03);
+}
+
+@media (min-width: 640px) {
+    .pf-avatar {
+        width: 88px;
+        height: 88px;
+        font-size: 2rem;
+    }
 }
 
 /* Camera overlay */
 .pf-avatar-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(17, 24, 39, 0.55);
+    background: rgba(17, 24, 39, 0.52);
     backdrop-filter: blur(2px);
     display: flex;
     align-items: center;
@@ -128,30 +182,53 @@ h4,
     border-radius: 50%;
 }
 
-.pf-avatar:hover .pf-avatar-overlay {
+.pf-avatar.own-profile:hover .pf-avatar-overlay {
     opacity: 1;
 }
 
 /* ── NAME ── */
 .pf-name {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 1.625rem;
+    font-size: 1.45rem;
     font-weight: 800;
     color: var(--cc-ink);
     letter-spacing: -0.028em;
     line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Animate in when data loads */
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
-@media (max-width: 640px) {
-    .pf-name {
-        font-size: 1.35rem;
-    }
+.pf-name.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
 
-    .pf-avatar {
-        width: 80px;
-        height: 80px;
-        font-size: 1.6rem;
+@media (min-width: 640px) {
+    .pf-name {
+        font-size: 1.65rem;
     }
+}
+
+/* ── BADGE ROW ── */
+.pf-badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    /* Animate in */
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.35s ease 0.06s, transform 0.35s ease 0.06s;
+}
+
+.pf-badge-row.loaded {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* ── BADGES ── */
@@ -170,23 +247,35 @@ h4,
 
 .badge-major {
     background: #eef2ff;
-    /* indigo-50  */
     color: #3730a3;
-    /* indigo-700 */
     border: 1px solid #c7d2fe;
-    /* indigo-200 */
 }
 
 .badge-batch {
     background: #f0fdf4;
     color: #166534;
     border: 1px solid #bbf7d0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Branch badge — shown when branch field exists */
+.badge-branch {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+/* Year badge — compact graduation year e.g. '28 */
+.badge-year {
+    background: #f5f3ff;
+    color: #6d28d9;
+    border: 1px solid #ddd6fe;
+    font-variant-numeric: tabular-nums;
 }
 
 .badge-skill {
     background: #eef2ff;
     color: #4338ca;
-    /* indigo-700 */
     border: 1px solid #c7d2fe;
     transition: background 0.18s ease, transform 0.18s ease;
     cursor: default;
@@ -199,33 +288,79 @@ h4,
 
 /* ── LOCATION ── */
 .pf-location {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--cc-muted);
     display: flex;
     align-items: center;
     gap: 5px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--cc-muted);
+    /* Animate in */
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity 0.35s ease 0.10s, transform 0.35s ease 0.10s;
 }
 
-/* ── STATS ── */
-.pf-stat {
+.pf-location.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pf-location-icon {
+    color: #6366f1;
+    font-size: 0.62rem;
+    flex-shrink: 0;
+}
+
+/* ── STATS ROW ── */
+.pf-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 2px;
+    /* Animate in */
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity 0.35s ease 0.14s, transform 0.35s ease 0.14s;
+}
+
+.pf-stats-row.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pf-stat-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 10px 20px;
-    border-radius: 10px;
-    transition: background 0.18s ease;
+    /* number + label both centered under each other */
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 20px 4px 0;
     cursor: default;
+    min-width: 72px;
+    /* consistent width so divider sits truly between */
 }
 
-.pf-stat:hover {
-    background: #f5f7ff;
+.pf-stat-item:first-child {
+    padding-left: 0;
+}
+
+.pf-stat-item:last-child {
+    padding-left: 20px;
+    padding-right: 0;
+}
+
+.pf-stat-divider {
+    width: 1px;
+    height: 30px;
+    background: #e5e7eb;
+    flex-shrink: 0;
+    /* No margin — the padding on stat items provides symmetric spacing */
 }
 
 .pf-stat-value {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 800;
     color: var(--cc-ink);
     letter-spacing: -0.04em;
@@ -233,11 +368,12 @@ h4,
 }
 
 .pf-stat-label {
-    font-size: 0.65rem;
+    font-size: 0.58rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.09em;
+    letter-spacing: 0.1em;
     color: var(--cc-muted);
+    white-space: nowrap;
 }
 
 /* ── ACTION BUTTONS ── */
@@ -306,7 +442,7 @@ h4,
 }
 
 /* ============================================================
-   SECTION CARDS (About, Skills, Experience, Education)
+   SECTION CARDS (ABOUT, SKILLS, EXPERIENCE, EDUCATION)
    ============================================================ */
 .pf-card {
     background: var(--cc-surface);
@@ -413,7 +549,7 @@ h4,
 }
 
 /* ============================================================
-   EXPERIENCE TIMELINE
+   EXPERIENCE TIMELINE CONTAINER
    ============================================================ */
 .pf-timeline {
     display: flex;
@@ -489,7 +625,7 @@ h4,
 }
 
 /* ============================================================
-   EDUCATION
+   EDUCATION LIST ITEMS
    ============================================================ */
 .pf-edu-item {
     display: flex;
@@ -540,7 +676,7 @@ h4,
 }
 
 /* ============================================================
-   TABS
+   NAVIGATION TABS
    ============================================================ */
 .pf-tabs-bar {
     background: var(--cc-surface);
@@ -833,4 +969,468 @@ textarea:focus {
 .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+
+/* ============================================================
+   MODAL — ENHANCED SYSTEM
+   ============================================================ */
+
+/* Backdrop */
+.pf-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 20, 40, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 49;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.pf-modal-backdrop.visible {
+    opacity: 1;
+}
+
+/* Panel wrapper */
+.pf-modal-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    pointer-events: none;
+}
+
+/* The panel itself */
+.pf-modal-panel {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #f0f0f6;
+    box-shadow:
+        0 24px 48px -12px rgb(30 40 100 / .22),
+        0 4px 16px -4px rgb(0 0 0 / .08);
+    width: 100%;
+    max-width: 520px;
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+    transition:
+        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.32s cubic-bezier(0.34, 1.18, 0.64, 1);
+    overflow: hidden;
+}
+
+.pf-modal-panel.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.pf-modal-panel.closing {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+/* Header */
+.pf-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    flex-shrink: 0;
+}
+
+.pf-modal-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pf-modal-title-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: #eef2ff;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+}
+
+.pf-modal-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.pf-modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* Scrollable body */
+.pf-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 22px;
+    overscroll-behavior: contain;
+}
+
+/* Footer */
+.pf-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 22px;
+    border-top: 1px solid #f3f4f6;
+    background: #fafbff;
+    flex-shrink: 0;
+}
+
+/* ── FORM FIELD SYSTEM ── */
+.pf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.pf-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #6b7280;
+}
+
+.pf-input {
+    width: 100%;
+    padding: 10px 13px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    color: #111827;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    line-height: 1.5;
+}
+
+.pf-input::placeholder {
+    color: #c4c9d4;
+}
+
+.pf-input:focus {
+    background: #fff;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3.5px rgb(99 102 241 / .13);
+}
+
+.pf-input:hover:not(:focus) {
+    border-color: #c7d2fe;
+    background: #fff;
+}
+
+.pf-textarea {
+    width: 100%;
+    padding: 11px 13px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    color: #111827;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    outline: none;
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.6;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.pf-textarea:focus {
+    background: #fff;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3.5px rgb(99 102 241 / .13);
+}
+
+.pf-input-hint {
+    font-size: 0.71rem;
+    color: #9ca3af;
+    margin-top: 1px;
+}
+
+/* Input row (two columns) */
+.pf-input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+@media (max-width: 400px) {
+    .pf-input-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Checkbox */
+.pf-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+}
+
+.pf-checkbox {
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    accent-color: #4f46e5;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.pf-checkbox-label {
+    font-size: 0.82rem;
+    color: #4b5563;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* ── ENTRY CARD (experience / education) ── */
+.pf-entry-card {
+    background: #f9fafb;
+    border: 1.5px solid #e9eaf0;
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.pf-entry-card:focus-within {
+    border-color: #c7d2fe;
+}
+
+.pf-entry-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 14px;
+    background: #fff;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.pf-entry-label {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    letter-spacing: -0.01em;
+}
+
+.pf-entry-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: #eef2ff;
+    color: #4f46e5;
+    font-size: 0.65rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pf-remove-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 7px;
+    border: 1px solid #fecaca;
+    background: #fff5f5;
+    color: #ef4444;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pf-remove-btn:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
+.pf-entry-body {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ── ADD BUTTON ── */
+.pf-add-btn {
+    width: 100%;
+    padding: 11px;
+    border-radius: 12px;
+    border: 2px dashed #c7d2fe;
+    background: transparent;
+    color: #6366f1;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.pf-add-btn:hover {
+    background: #eef2ff;
+    border-color: #818cf8;
+    color: #4f46e5;
+}
+
+/* ── SKILLS in modal ── */
+.pf-skill-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px 5px 12px;
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    transition: background 0.15s;
+}
+
+.pf-skill-remove {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: none;
+    background: #c7d2fe;
+    color: #4338ca;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.6rem;
+    transition: background 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.pf-skill-remove:hover {
+    background: #fecaca;
+    color: #ef4444;
+}
+
+.pf-skills-empty {
+    padding: 12px 14px;
+    background: #f9fafb;
+    border-radius: 10px;
+    border: 1px dashed #e5e7eb;
+    font-size: 0.78rem;
+    color: #9ca3af;
+    text-align: center;
+}
+
+/* Char counter */
+.pf-char-count {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    text-align: right;
+    margin-top: -2px;
+}
+
+.pf-char-count.warn {
+    color: #f59e0b;
+}
+
+.pf-char-count.over {
+    color: #ef4444;
+}
+
+/* Password strength */
+.pf-pw-strength {
+    height: 3px;
+    border-radius: 2px;
+    background: #f3f4f6;
+    overflow: hidden;
+    margin-top: -2px;
+}
+
+.pf-pw-strength-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.35s ease, background 0.35s ease;
+    width: 0%;
+}
+
+/* Section divider label */
+.pf-section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f3f4f6;
+    margin-bottom: 2px;
+}
+
+/* Mobile: full-screen modal on very small screens */
+@media (max-width: 480px) {
+    .pf-modal-wrap {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .pf-modal-panel {
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        max-height: 92vh;
+        transform: translateY(100%);
+    }
+
+    .pf-modal-panel.visible {
+        transform: translateY(0);
+    }
+
+    .pf-modal-panel.closing {
+        transform: translateY(100%);
+    }
 }
