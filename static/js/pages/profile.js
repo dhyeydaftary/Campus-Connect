@@ -262,22 +262,54 @@ function switchConnectionTab(tabName) {
 function switchTab(tabName) {
   state.activeTab = tabName;
 
-  // Update tab buttons
+  // Update tab buttons and accessibility state
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tabName);
+    const isActive = btn.dataset.tab === tabName;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
 
-  // Update tab content
-  document.querySelectorAll('.tab-content').forEach(content => {
-    content.classList.add('hidden');
-    content.classList.remove('animate-fade-in');
-  });
+  const isDesktop = window.innerWidth >= 1024;
 
-  const tab = document.getElementById(`${tabName}Tab`);
-  if (tab) {
-    tab.classList.remove('hidden');
-    void tab.offsetWidth; // Trigger reflow
-    tab.classList.add('animate-fade-in');
+  if (isDesktop) {
+    // ── DESKTOP ─────────────────────────────────────────────────
+    // Sidebar (aboutTab) is always visible on desktop.
+    // The main content area toggles between postsTab and connectionsTab.
+    // column with postsTab, so we toggle between them.
+    const postsTab = document.getElementById('postsTab');
+    const connectionsTab = document.getElementById('connectionsTab');
+
+    if (tabName === 'connections') {
+      if (postsTab) postsTab.classList.add('hidden');
+      if (connectionsTab) {
+        connectionsTab.classList.remove('hidden');
+        void connectionsTab.offsetWidth;
+        connectionsTab.classList.add('animate-fade-in');
+      }
+    } else {
+      // 'posts' or 'about' (about btn hidden on desktop but guard anyway)
+      if (connectionsTab) connectionsTab.classList.add('hidden');
+      if (postsTab) {
+        postsTab.classList.remove('hidden');
+        void postsTab.offsetWidth;
+        postsTab.classList.add('animate-fade-in');
+      }
+    }
+  } else {
+    // ── MOBILE ──────────────────────────────────────────────────
+    // All three tabs (postsTab, aboutTab, connectionsTab) are mutually
+    // exclusive. Hide all, then show the selected one.
+    document.querySelectorAll('.tab-content').forEach(content => {
+      content.classList.add('hidden');
+      content.classList.remove('animate-fade-in');
+    });
+
+    const tab = document.getElementById(`${tabName}Tab`);
+    if (tab) {
+      tab.classList.remove('hidden');
+      void tab.offsetWidth; // trigger reflow for animation
+      tab.classList.add('animate-fade-in');
+    }
   }
 }
 
@@ -1502,8 +1534,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load profile data (which will render skills, experience, education)
     loadProfileData(userId);
 
-    // 1. Force 'posts' tab to be visible immediately
-    switchTab('posts');
+    // 1. Initialise tabs — default to 'about' on mobile, 'posts' on desktop
+    const defaultTab = window.innerWidth < 1024 ? 'about' : 'posts';
+    switchTab(defaultTab);
 
     // Initialize connection tab styling
     switchConnectionTab('my-connections');

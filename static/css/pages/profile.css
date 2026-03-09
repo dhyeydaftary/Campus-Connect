@@ -844,6 +844,266 @@ h4,
 }
 
 /* ============================================================
+   PROFILE UI/UX REFINEMENT
+   - Centered Card Layout
+   - Premium Spacing System
+   - Refined Header & Stats
+============================================================ */
+
+.pf-centered-layout {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.pf-header-card {
+    position: relative;
+    background: #fff;
+    border-radius: 20px;
+    /* Slightly smoother corners */
+    border: 1px solid #eef2ff;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pf-cover-bar {
+    height: 100px;
+    /* Increased height for better balance */
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse 100% 140% at 10% 50%, hsl(225, 70%, 35%) 0%, transparent 65%),
+        radial-gradient(ellipse 80% 120% at 90% 10%, hsl(255, 65%, 45%) 0%, transparent 60%),
+        linear-gradient(135deg, hsl(225, 70%, 35%) 0%, hsl(240, 65%, 45%) 50%, hsl(255, 60%, 45%) 100%);
+}
+
+.pf-cover-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+}
+
+/* Shimmer effect for banner */
+.pf-cover-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, 0.08) 50%, transparent 60%);
+    animation: banner-shimmer 6s infinite ease-in-out;
+}
+
+@keyframes banner-shimmer {
+    0% {
+        transform: translateX(-150%);
+    }
+
+    50% {
+        transform: translateX(150%);
+    }
+
+    100% {
+        transform: translateX(150%);
+    }
+}
+
+/* Avatar overlap adjustment */
+#profileAvatar {
+    margin-top: -50px;
+    /* Deeper overlap */
+    border: 5px solid #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.pf-header-info {
+    padding-top: 4px;
+    /* Align better with avatar */
+}
+
+.pf-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #1a1e2e;
+    margin-bottom: 2px;
+}
+
+.pf-badge-row {
+    margin: 8px 0 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.pf-location {
+    font-size: 0.8125rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+/* Stats Row Refinement */
+.pf-stats-row {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin: 24px 0 8px;
+    border: 1px solid #f1f5f9;
+}
+
+.pf-stat-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.pf-stat-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #4f46e5;
+    line-height: 1;
+}
+
+.pf-stat-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+}
+
+.pf-stat-divider {
+    width: 1px;
+    height: 32px;
+    background: #e2e8f0;
+    margin: 0 16px;
+}
+
+/* Desktop Actions alignment */
+@media (min-width: 640px) {
+    .pf-header-actions {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        padding-top: 8px;
+    }
+}
+
+/* Tabs Bar Optimization */
+.pf-tabs-bar {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    overflow: hidden;
+}
+
+.tab-btn {
+    padding: 14px 24px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-btn i {
+    font-size: 0.825rem;
+    opacity: 0.7;
+}
+
+.tab-btn:hover {
+    color: #4f46e5;
+    background: #f5f7ff;
+}
+
+.tab-btn.active {
+    color: #4f46e5;
+    background: #f5f7ff;
+}
+
+.tab-indicator {
+    height: 3px;
+    background: #4f46e5;
+    border-radius: 3px 3px 0 0;
+}
+
+/* Responsive Overrides */
+@media (max-width: 639px) {
+    .pf-centered-layout {
+        padding: 0 4px;
+    }
+
+    .pf-cover-bar {
+        height: 110px;
+    }
+
+    .pf-header-card .p-5 {
+        padding: 0 20px 28px !important;
+        text-align: center;
+    }
+
+    .pf-avatar-info-container {
+        flex-direction: column !important;
+        align-items: center !important;
+        width: 100%;
+        gap: 0 !important;
+    }
+
+    #profileAvatar {
+        margin-top: -50px;
+        margin-bottom: 12px;
+        width: 100px;
+        height: 100px;
+        flex-shrink: 0;
+    }
+
+    .pf-header-info {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .pf-stats-row {
+        margin: 24px auto 0;
+        border-radius: 12px;
+        border: 1px solid #f1f5f9;
+        padding: 12px 20px;
+        background: #f8fafc;
+        width: 100%;
+        max-width: 340px;
+        /* Centered plate instead of full width stripe */
+        display: flex;
+        justify-content: center;
+    }
+
+    .pf-header-actions {
+        margin-top: 20px;
+        gap: 10px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .tab-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 12px 10px;
+        font-size: 0.8125rem;
+    }
+}
+
+/* ============================================================
    MODAL
    ============================================================ */
 .pf-modal-panel {
@@ -1420,5 +1680,39 @@ textarea:focus {
 
     .pf-modal-panel.closing {
         transform: translateY(100%);
+    }
+}
+
+/* ============================================================
+   MOBILE ABOUT TAB
+   Desktop (lg+): sidebar always visible as grid column 1.
+   Mobile (<lg):  hidden by default via tab-content,
+                  revealed when switchTab('about') is called.
+============================================================ */
+
+/* Hide the About tab button on desktop — it's not needed there */
+@media (min-width: 1024px) {
+    .pf-about-tab-btn {
+        display: none !important;
+    }
+
+    /* Force the sidebar always visible on desktop,
+       regardless of what tab state JS sets */
+    #aboutTab {
+        display: block !important;
+        opacity: 1 !important;
+        animation: none !important;
+    }
+}
+
+/* Mobile: aboutTab is a standard tab-content panel.
+   It starts hidden (via .hidden class added by switchTab).
+   When active, JS removes .hidden and adds .animate-fade-in. */
+@media (max-width: 1023px) {
+
+    /* postsTab and connectionsTab span full width on mobile */
+    #postsTab,
+    #connectionsTab {
+        grid-column: 1 / -1;
     }
 }
