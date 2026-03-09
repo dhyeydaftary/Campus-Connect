@@ -26,39 +26,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const resendBtn = document.getElementById("resend-btn");
     const otpTimer = document.getElementById("otp-timer");
 
-    let currentStep = "credentials"; // 'credentials', 'password', 'otp'
+    let currentStep = "credentials";
     let studentHasPassword = false;
     let debounceTimer;
 
-    // ========== TOAST SYSTEM ==========
-    function showToast(title, message, type = "info") {
-        const container = document.getElementById("toast-container");
-        if (!container) return;
-
-        const toast = document.createElement("div");
-        toast.className = `toast ${type}`;
-        toast.innerHTML = `
-            <div class="flex items-start gap-3">
-                <i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation text-red-500' :
-                type === 'success' ? 'fa-circle-check text-green-500' :
-                    type === 'warning' ? 'fa-triangle-exclamation text-yellow-500' :
-                        'fa-circle-info text-blue-500'} mt-0.5"></i>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-slate-900">${title}</p>
-                    <p class="text-sm text-slate-600 mt-0.5">${message}</p>
-                </div>
-                <button onclick="this.closest('.toast').remove()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <i class="fas fa-times text-xs"></i>
-                </button>
-            </div>
-        `;
-        container.appendChild(toast);
-        requestAnimationFrame(() => toast.classList.add("show"));
-        setTimeout(() => {
-            toast.classList.remove("show");
-            setTimeout(() => toast.remove(), 350);
-        }, 4000);
-    }
 
     // ========== 1. BRANCH SELECTION ==========
     majorSelect.addEventListener("change", () => {
@@ -238,7 +209,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnText.textContent = "Verify & Login";
                 showToast("OTP Sent", `Check your email at ${result.email}`, "info");
                 startOtpTimer(result.expiry_time);
-                // Focus OTP input
                 setTimeout(() => document.getElementById("otp")?.focus(), 200);
             } else {
                 showToast("Error", result.error || "Failed to send OTP", "error");
@@ -283,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (response.ok) {
                     showToast("Success", "Login successful, redirecting...", "success");
                     window.location.replace(result.redirect_url);
-                    return; // Don't reset button
+                    return;
                 } else {
                     showToast("Login Failed", result.error, "error");
                     studentPassInput.parentElement.classList.add("animate-shake");
@@ -353,7 +323,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const openModal = () => {
         forgotModal.classList.remove("hidden");
         forgotModal.classList.add("flex");
-        // Trigger animation
         requestAnimationFrame(() => forgotModal.classList.add("active"));
         fpIdentifier.value = "";
         fpStatus.textContent = "A link to reset your password will be sent to your email.";
@@ -375,11 +344,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     forgotLink?.addEventListener("click", (e) => { e.preventDefault(); openModal(); });
     closeForgotModal?.addEventListener("click", closeModal);
-    // Close on overlay click
     forgotModal?.addEventListener("click", (e) => {
         if (e.target === forgotModal) closeModal();
     });
-    // Close on Escape
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && !forgotModal.classList.contains("hidden")) closeModal();
     });

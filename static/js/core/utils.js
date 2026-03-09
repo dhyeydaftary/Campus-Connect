@@ -21,67 +21,48 @@ function getCSRFToken() {
  * Intercept all fetch requests to automatically inject the CSRF token
  * into the headers for state-changing requests (POST, PUT, PATCH, DELETE).
  */
-const originalFetch = window.fetch;
-window.fetch = async function (resource, options = {}) {
-    const method = (options.method || 'GET').toUpperCase();
+// Guard against double-load: _navbar.html includes utils.js, and some pages
+// previously also loaded it directly. If the fetch interceptor is already
+// installed, skip it to avoid "Identifier 'originalFetch' has already been
+// declared" SyntaxError that crashes the entire script queue.
+if (!window.__fetchInterceptorInstalled) {
+    window.__fetchInterceptorInstalled = true;
 
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-        options.headers = options.headers || {};
-        const token = getCSRFToken();
+    const originalFetch = window.fetch;
+    window.fetch = async function (resource, options = {}) {
+        const method = (options.method || 'GET').toUpperCase();
 
-        if (token) {
-            if (options.headers instanceof Headers) {
-                if (!options.headers.has('X-CSRFToken')) {
-                    options.headers.append('X-CSRFToken', token);
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+            options.headers = options.headers || {};
+            const token = getCSRFToken();
+
+            if (token) {
+                if (options.headers instanceof Headers) {
+                    if (!options.headers.has('X-CSRFToken')) {
+                        options.headers.append('X-CSRFToken', token);
+                    }
+                } else {
+                    options.headers['X-CSRFToken'] = token;
                 }
-            } else {
-                options.headers['X-CSRFToken'] = token;
             }
         }
-    }
 
-    return originalFetch(resource, options);
-};
+        return originalFetch(resource, options);
+    };
+
+} // end if (!window.__fetchInterceptorInstalled)
 
 function showToast(title, message, type = 'info', duration = 5000) {
+    // If only two arguments are passed, treat them as message and type
+    if (arguments.length === 2 && (type === 'success' || type === 'error' || type === 'warning' || type === 'info')) {
+        message = title;
+        title = type.charAt(0).toUpperCase() + type.slice(1);
+    }
     try {
         let container = document.getElementById('toast-container');
         if (!container) {
             container = document.createElement('div');
             container.id = 'toast-container';
-            container.id = 'toast-container';
-            // Mobile: full-width strip at top. Desktop: anchored top-right.
-            container.style.cssText = [
-                'position:fixed',
-                'top:0',
-                'left:0',
-                'right:0',
-                'z-index:9999',
-                'padding:12px 12px 0',
-                'pointer-events:none',
-                'display:flex',
-                'flex-direction:column',
-                'gap:8px'
-            ].join(';');
-            // On wider screens, anchor to top-right with max width
-            var mq = window.matchMedia('(min-width: 640px)');
-            function applyLayout(e) {
-                if (e.matches) {
-                    container.style.left = 'auto';
-                    container.style.right = '16px';
-                    container.style.top = '16px';
-                    container.style.padding = '0';
-                    container.style.width = '360px';
-                } else {
-                    container.style.left = '0';
-                    container.style.right = '0';
-                    container.style.top = '0';
-                    container.style.padding = '12px 12px 0';
-                    container.style.width = '';
-                }
-            }
-            applyLayout(mq);
-            mq.addEventListener('change', applyLayout);
             document.body.appendChild(container);
         }
 
@@ -95,20 +76,9 @@ function showToast(title, message, type = 'info', duration = 5000) {
         const toastId = `toast-${Date.now()}`;
         const toast = document.createElement('div');
         toast.id = toastId;
+        toast.className = 'toast-item';
         toast.setAttribute('role', 'alert');
         toast.setAttribute('aria-live', 'assertive');
-        toast.style.cssText = [
-            'background:#fff',
-            'border-radius:12px',
-            'overflow:hidden',
-            'pointer-events:auto',
-            'box-shadow:0 4px 24px -4px rgba(0,0,0,0.15),0 1px 4px rgba(0,0,0,0.08)',
-            'border:1px solid #f3f4f6',
-            'opacity:0',
-            'transform:translateY(-10px) scale(0.97)',
-            'transition:opacity 0.3s ease,transform 0.3s cubic-bezier(0.34,1.3,0.64,1)',
-            'width:100%'
-        ].join(';');
 
         toast.innerHTML = `
             <div style="padding:14px 16px 14px; position:relative;">

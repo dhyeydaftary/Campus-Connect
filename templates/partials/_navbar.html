@@ -1,6 +1,7 @@
 <!-- templates/_navbar.html -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
 
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
 <nav class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300"
     id="main-navbar">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
@@ -191,10 +192,7 @@
 <!-- Spacer for fixed navbar -->
 <div class="h-16"></div>
 <!-- Global Toast Container -->
-<!-- Toast container: utils.js sets responsive positioning via JS -->
-<div id="toast-container"
-    style="position:fixed;top:0;left:0;right:0;z-index:9999;padding:12px 12px 0;pointer-events:none;display:flex;flex-direction:column;gap:8px;">
-</div>
+<div id="toast-container"></div>
 
 <script defer src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
 <script defer src="{{ url_for('static', filename='js/core/navbar-utils.js') }}"></script>

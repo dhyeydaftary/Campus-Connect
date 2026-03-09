@@ -12,22 +12,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var currentView = 'tickets';
 
-    // ─── TOAST NOTIFICATIONS ───
-    function showToast(message, type) {
-        type = type || 'success';
-        var toast = document.createElement('div');
-        toast.className = 'toast toast-' + type;
-        var icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark';
-        toast.innerHTML = '<i class="fa-solid ' + icon + '"></i> ' + message;
-        toastContainer.appendChild(toast);
-
-        setTimeout(function () {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(-8px)';
-            toast.style.transition = 'opacity 0.3s, transform 0.3s';
-            setTimeout(function () { toast.remove(); }, 300);
-        }, 3500);
-    }
 
     // ─── BADGE HELPERS ───
     function getStatusBadge(status) {
@@ -196,16 +180,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 AdminAPI.post('/tickets/' + id + '/status', { status: newStatus })
                     .then(function (res) {
                         if (res && res.success) {
-                            showToast('Ticket #' + id + ' updated to ' + newStatus.replace('_', ' '), 'success');
+                            showToast('Success', 'Ticket #' + id + ' updated to ' + newStatus.replace('_', ' '), 'success');
                             loadTickets();
                         } else {
                             e.target.value = originalValue;
-                            showToast('Failed to update ticket status', 'error');
+                            showToast('Error', 'Failed to update ticket status', 'error');
                         }
                     })
                     .catch(function () {
                         e.target.value = originalValue;
-                        showToast('Network error. Please try again.', 'error');
+                        showToast('Error', 'Network error. Please try again.', 'error');
                     })
                     .finally(function () {
                         e.target.disabled = false;
