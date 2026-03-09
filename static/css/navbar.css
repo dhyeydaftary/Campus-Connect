@@ -1,7 +1,37 @@
-/* Navbar Custom Styles */
+/* Notification Dropdown — Responsive Positioning
+   Mobile: full-width panel pinned just below the navbar
+   Desktop (sm+): standard absolute dropdown anchored to bell button
+--------------------------------------------------------- */
+#notification-dropdown {
+    /* Mobile default: full-width, fixed below navbar */
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: 68px;
+    /* navbar height (64px) + 4px gap */
+    width: auto;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+    #notification-dropdown {
+        /* Desktop: anchor to bell, fixed width */
+        position: absolute;
+        left: auto;
+        right: 0;
+        top: 100%;
+        margin-top: 16px;
+        width: 24rem;
+        /* w-96 */
+        max-height: 480px;
+    }
+}
+
 .nav-avatar {
     transition: transform 0.2s ease;
 }
+
 .nav-avatar:hover {
     transform: scale(1.05);
 }
@@ -10,15 +40,38 @@
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
     background: #f9fafb;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #d1d5db;
     border-radius: 10px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
+}
+
+/* ── Notification dropdown: mobile full-width stretch ───────────
+   The navbar is position:fixed, creating a stacking context that
+   traps child position:fixed elements. We stay on position:absolute
+   but override left/right/width on small screens so the panel spans
+   nearly the full viewport width regardless of where the bell sits.
+   right: 0  → flush with right side of the bell wrapper
+   width: calc(100vw - 16px) → almost full viewport, 8px margin each side
+   The bell wrapper sits ~8px from the right viewport edge (px-4 on
+   the navbar container), so we need to shift the panel leftward by
+   roughly (viewport - panel - 8px). We achieve this with a large
+   enough width + right:0 on the relative parent that is itself near
+   the right edge.
+──────────────────────────────────────────────────────────────── */
+@media (max-width: 639px) {
+    #notification-dropdown {
+        /* Positioning is handled by toggleNotifications() in navbar-utils.js
+           to work around the position:fixed containing-block trap on the navbar */
+    }
 }
 
 /* Animation for Mobile Search */
@@ -27,11 +80,13 @@
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
+
 .animate-fade-in-down {
     animation: fadeInDown 0.2s ease-out forwards;
 }
@@ -42,11 +97,13 @@
         opacity: 0;
         transform: translateY(10px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
 }
+
 .animate-fade-in-up {
     animation: fadeInUp 0.15s ease-out forwards;
 }

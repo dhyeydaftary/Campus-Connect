@@ -2,6 +2,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+
 <nav class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300"
     id="main-navbar">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
@@ -75,7 +76,7 @@
 
                 <!-- Notification Bell -->
                 <div class="relative" id="notification-bell">
-                    <button onclick="NavbarUtils.toggleNotifications()"
+                    <button onclick="NavbarUtils.toggleNotifications(event)"
                         class="p-2.5 text-gray-500 hover:bg-gray-100 hover:text-indigo-600 rounded-xl transition-all relative focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                         aria-label="Notifications">
                         <i class="fas fa-bell text-xl"></i>
@@ -83,27 +84,6 @@
                             class="absolute top-2 right-2.5 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white hidden shadow-sm"></span>
                     </button>
 
-                    <!-- Notification Dropdown (hidden by default) -->
-                    <div id="notification-dropdown"
-                        class="hidden absolute right-0 mt-4 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 origin-top-right ring-1 ring-black ring-opacity-5 animate-fade-in-up">
-                        <div
-                            class="px-4 py-3 border-b border-gray-50 flex justify-between items-center bg-gray-50/80 backdrop-blur-sm">
-                            <h3 class="font-semibold text-gray-900">Notifications</h3>
-                            <button onclick="NavbarUtils.markAllAsRead()"
-                                class="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline">Mark
-                                all read</button>
-                        </div>
-                        <div id="notifications-list" class="max-h-[400px] overflow-y-auto custom-scrollbar bg-white">
-                            <div class="p-8 text-center text-gray-500">
-                                <i class="fas fa-spinner fa-spin mb-2 text-indigo-500"></i>
-                                <p class="text-sm">Loading...</p>
-                            </div>
-                        </div>
-                        <div class="p-3 border-t border-gray-50 bg-gray-50/80 backdrop-blur-sm text-center">
-                            <button onclick="NavbarUtils.clearAllNotifications()"
-                                class="text-sm font-medium text-red-600 hover:text-red-700">Clear all</button>
-                        </div>
-                    </div>
                 </div>
                 {% endif %}
 
@@ -172,6 +152,28 @@
         </div>
     </div>
 
+    <!-- Notification Dropdown — direct child of <nav> so left:0/right:0 works on mobile -->
+    <div id="notification-dropdown"
+        class="hidden absolute right-0 mt-0 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 ring-1 ring-black ring-opacity-5 animate-fade-in-up">
+        <div
+            class="px-4 py-3 border-b border-gray-50 flex justify-between items-center gap-3 bg-gray-50/80 backdrop-blur-sm">
+            <h3 class="font-semibold text-gray-900 whitespace-nowrap">Notifications</h3>
+            <button onclick="NavbarUtils.markAllAsRead()"
+                class="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline whitespace-nowrap flex-shrink-0">Mark
+                all read</button>
+        </div>
+        <div id="notifications-list" class="max-h-[60vh] sm:max-h-[400px] overflow-y-auto custom-scrollbar bg-white">
+            <div class="p-8 text-center text-gray-500">
+                <i class="fas fa-spinner fa-spin mb-2 text-indigo-500"></i>
+                <p class="text-sm">Loading...</p>
+            </div>
+        </div>
+        <div class="p-3 border-t border-gray-50 bg-gray-50/80 backdrop-blur-sm text-center">
+            <button onclick="NavbarUtils.clearAllNotifications()"
+                class="text-sm font-medium text-red-600 hover:text-red-700">Clear all</button>
+        </div>
+    </div>
+
     <!-- Mobile Search Bar (Collapsible) -->
     <div id="mobile-search-bar"
         class="hidden md:hidden absolute top-16 left-0 w-full bg-white border-b border-gray-200 px-4 py-3 shadow-lg z-40 animate-fade-in-down">
@@ -194,5 +196,5 @@
 <!-- Global Toast Container -->
 <div id="toast-container"></div>
 
-<script defer src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
-<script defer src="{{ url_for('static', filename='js/core/navbar-utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/core/navbar-utils.js') }}"></script>

@@ -41,15 +41,36 @@ document.addEventListener('click', function (event) {
 // NOTIFICATIONS
 // ═══════════════════════════════════════════════════════════════
 
-function toggleNotifications() {
+function toggleNotifications(event) {
+    if (event) event.stopPropagation();
     const dropdown = document.getElementById('notification-dropdown');
     if (!dropdown) return;
 
-    const isHidden = dropdown.classList.contains('hidden');
+    const isOpening = dropdown.classList.contains('hidden');
     dropdown.classList.toggle('hidden');
 
-    // Always load notifications when opening to ensure freshness
-    if (isHidden) {
+    if (isOpening) {
+        if (window.innerWidth < 640) {
+            // Mobile: dropdown is a direct child of <nav> (position:fixed).
+            // Creating a "floating card" look with 12px gaps from edges
+            dropdown.style.left = '12px';
+            dropdown.style.right = '12px';
+            dropdown.style.width = 'auto';
+            dropdown.style.borderRadius = '16px';
+        } else {
+            // Desktop: anchor to the bell button position
+            const bell = document.getElementById('notification-bell');
+            const navbar = document.getElementById('main-navbar');
+            if (bell && navbar) {
+                const bellRect = bell.getBoundingClientRect();
+                const navRect = navbar.getBoundingClientRect();
+                const rightOffset = navRect.right - bellRect.right;
+                dropdown.style.left = 'auto';
+                dropdown.style.right = rightOffset + 'px';
+                dropdown.style.width = '';
+                dropdown.style.borderRadius = '';
+            }
+        }
         loadNotifications();
     }
 }
