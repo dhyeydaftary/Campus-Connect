@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/profile.css') }}">
 
+    <script src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/features/post-utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/core/upload-utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/features/feed-loader.js') }}"></script>
@@ -34,52 +35,54 @@
              PROFILE HEADER CARD
         ============================================================= -->
         <div class="pf-header-card mb-6">
-            <!-- Action buttons — absolutely anchored top-right, never disrupts info flow -->
-            <div class="pf-header-actions" id="profileActions"></div>
+            <div class="p-5 sm:p-7">
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+                    <!-- Left side: Avatar + Info stack -->
+                    <div class="flex items-start gap-4 sm:gap-5 min-w-0">
 
-            <div class="p-5 sm:p-7 sm:pr-40">
-                <!-- Single left-to-right row: Avatar | Info stack -->
-                <div class="flex items-start gap-4 sm:gap-5">
+                        <!-- Avatar -->
+                        <div id="profileAvatar" class="pf-avatar flex-shrink-0"></div>
+                        <input type="file" id="profile-photo-input" hidden accept="image/*">
 
-                    <!-- Avatar -->
-                    <div id="profileAvatar" class="pf-avatar flex-shrink-0"></div>
-                    <input type="file" id="profile-photo-input" hidden accept="image/*">
+                        <!-- Info — all left-aligned, supports truncation -->
+                        <div class="pf-header-info min-w-0">
 
-                    <!-- Info — all left-aligned, no centering anywhere -->
-                    <div class="pf-header-info">
+                            <!-- Name -->
+                            <h1 class="pf-name truncate" id="profileName">
+                                <span class="pf-name-skeleton skeleton"
+                                    style="width:180px;height:28px;display:inline-block;border-radius:6px;"></span>
+                            </h1>
 
-                        <!-- Name -->
-                        <h1 class="pf-name" id="profileName">
-                            <span class="pf-name-skeleton skeleton"
-                                style="width:180px;height:28px;display:inline-block;border-radius:6px;"></span>
-                        </h1>
-
-                        <!-- Badges row: major + batch + (year tag) -->
-                        <div class="pf-badge-row" id="profileBadges">
-                            <span class="badge badge-major" id="profileMajor"></span>
-                            <span class="badge badge-batch" id="profileBatch"></span>
-                        </div>
-
-                        <!-- Location -->
-                        <p class="pf-location" id="profileLocationRow" style="display:none;">
-                            <i class="fas fa-map-marker-alt pf-location-icon"></i>
-                            <span id="profileLocation"></span>
-                        </p>
-
-                        <!-- Stats row -->
-                        <div class="pf-stats-row">
-                            <div class="pf-stat-item">
-                                <span class="pf-stat-value" id="connectionsCount">—</span>
-                                <span class="pf-stat-label">Connections</span>
+                            <!-- Badges row: major + batch + (year tag) -->
+                            <div class="pf-badge-row" id="profileBadges">
+                                <span class="badge badge-major" id="profileMajor"></span>
+                                <span class="badge badge-batch" id="profileBatch"></span>
                             </div>
-                            <div class="pf-stat-divider"></div>
-                            <div class="pf-stat-item" style="padding-left:20px;padding-right:0;">
-                                <span class="pf-stat-value" id="postsCount">—</span>
-                                <span class="pf-stat-label">Posts</span>
-                            </div>
-                        </div>
 
+                            <!-- Location -->
+                            <p class="pf-location" id="profileLocationRow" style="display:none;">
+                                <i class="fas fa-map-marker-alt pf-location-icon"></i>
+                                <span id="profileLocation"></span>
+                            </p>
+
+                            <!-- Stats row -->
+                            <div class="pf-stats-row">
+                                <div class="pf-stat-item">
+                                    <span class="pf-stat-value" id="connectionsCount">—</span>
+                                    <span class="pf-stat-label">Connections</span>
+                                </div>
+                                <div class="pf-stat-divider"></div>
+                                <div class="pf-stat-item" style="padding-left:20px;padding-right:0;">
+                                    <span class="pf-stat-value" id="postsCount">—</span>
+                                    <span class="pf-stat-label">Posts</span>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
+
+                    <!-- Right side: Action buttons (Password, Connect, etc.) -->
+                    <div class="pf-header-actions flex-shrink-0" id="profileActions"></div>
                 </div>
             </div>
         </div>

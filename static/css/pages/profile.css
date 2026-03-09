@@ -89,25 +89,13 @@ h4,
 /* ── HEADER CARD POSITION CONTEXT ── */
 .pf-header-card {
     position: relative;
-    /* for absolutely positioned actions */
 }
 
-/* Actions button group — always top-right, never in flow */
+/* Actions button group — flows naturally in flex header */
 .pf-header-actions {
-    position: absolute;
-    top: 18px;
-    right: 18px;
     display: flex;
     align-items: center;
     gap: 8px;
-    z-index: 2;
-}
-
-@media (max-width: 480px) {
-    .pf-header-actions {
-        top: 12px;
-        right: 12px;
-    }
 }
 
 /* ── INFO STACK — always left, no centering ── */

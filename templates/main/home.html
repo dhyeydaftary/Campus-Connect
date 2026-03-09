@@ -5,487 +5,544 @@
     <meta charset="UTF-8" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home - Campus Connect</title>
+    <title>Home — Campus Connect</title>
+    <meta name="description" content="Campus Connect — Your campus feed, connections, and events." />
 
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+
+    <!-- Google Fonts: Plus Jakarta Sans (headings/names) + Inter (body text) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <!-- Stylesheets: Tailwind base, Font Awesome icons, page-specific styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/home.css') }}">
 
-    <!-- Shared utilities (load before page-specific scripts) -->
+    <!-- NOTE: utils.js is NOT loaded here. _navbar.html already loads it.
+         Loading it twice causes "Identifier 'originalFetch' has already been declared" SyntaxError,
+         which crashes the script queue and prevents home.js from running at all. -->
     <script defer src="{{ url_for('static', filename='js/features/post-utils.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/core/upload-utils.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/features/feed-loader.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/pages/home.js') }}"></script>
-    <style>
-        /* Ensure user names in post headers don't wrap */
-        #post-feed .font-semibold,
-        #post-feed .font-bold {
-            white-space: nowrap;
-        }
-    </style>
 </head>
 
-<body class="bg-gray-50 text-slate-900">
+<body>
 
-    <!-- NAVIGATION BAR - Shared Component -->
+    <!-- ===== NAVBAR =====
+       Shared partial: search, notifications, profile dropdown. -->
     {% include 'partials/_navbar.html' %}
 
-    <!-- MAIN CONTENT AREA - 3 Column Layout -->
-    <div class="max-w-screen-2xl mx-auto px-4 py-6">
-        <div class="grid grid-cols-12 gap-6">
+    <!-- ===== MAIN LAYOUT ===== -->
+    <div class="home-container">
+        <div class="home-grid">
 
-            <!-- LEFT SIDEBAR (25%) -->
-            <aside class="hidden lg:block lg:col-span-3">
+            <!-- ===== LEFT SIDEBAR ===== -->
+            <aside class="home-sidebar-left">
+                <div class="sidebar-sticky">
 
-                <!-- PROFILE CARD -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
-                    <!-- Cover Image -->
-                    <div class="h-16 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
+                    <!-- ===== PROFILE MINI CARD ===== -->
+                    <div class="home-card home-animate-in">
 
-                    <!-- Profile Info -->
-                    <div class="px-4 pb-4">
-                        <!-- Avatar (overlapping cover) -->
-                        <div class="relative flex justify-center -mt-8 mb-2 group">
-                            <!-- Profile Image -->
-                            <img id="home-profile-img"
-                                src="{{ user.profile_picture if user.profile_picture else 'https://ui-avatars.com/api/?name=' + user_name + '&background=6366f1&color=fff&size=80' }}"
-                                alt="Profile"
-                                class="w-16 h-16 rounded-full border-4 border-white shadow-md object-cover bg-white cursor-pointer"
-                                onclick="document.getElementById('home-profile-upload').click()">
+                        <!-- Gradient mesh cover bar with shimmer + dot texture -->
+                        <div class="profile-cover-bar"></div>
 
-                            <!-- Upload Trigger (Visible on Hover) -->
-                            <button onclick="document.getElementById('home-profile-upload').click()"
-                                class="absolute bottom-0 right-[calc(50%-32px)] bg-gray-800 text-white rounded-full p-1.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border-2 border-white"
-                                title="Change Photo">
-                                <i class="fas fa-camera"></i>
+                        <div class="home-card-body" style="padding-top:0;">
+
+                            <!-- Floating avatar with camera overlay -->
+                            <div class="profile-avatar-wrap">
+                                <img id="home-profile-img"
+                                    src="{{ user.profile_picture if user.profile_picture else 'https://ui-avatars.com/api/?name=' + user_name + '&background=3b4fd8&color=fff&size=80' }}"
+                                    alt="{{ user_name }}" class="profile-avatar-home"
+                                    onclick="document.getElementById('home-profile-upload').click()">
+                                <button onclick="document.getElementById('home-profile-upload').click()"
+                                    class="profile-camera-btn" title="Change photo" aria-label="Change profile photo">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                                <input type="file" id="home-profile-upload" hidden accept="image/*">
+                            </div>
+
+                            <!-- Name and major -->
+                            <p class="profile-name-home">{{ user_name }}</p>
+                            <p class="profile-major-home">
+                                {{ user.major if user.major else 'Campus Connect Member' }}
+                            </p>
+
+                            <!-- Stats: connections + posts -->
+                            <div class="profile-stats-row">
+                                <div class="profile-stat">
+                                    <div id="profile-connections-count" class="profile-stat-number">—</div>
+                                    <div class="profile-stat-label">Connections</div>
+                                </div>
+                                <div class="profile-stat">
+                                    <div id="profile-posts-count" class="profile-stat-number">—</div>
+                                    <div class="profile-stat-label">Posts</div>
+                                </div>
+                            </div>
+
+                            <!-- Action buttons -->
+                            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                                <a href="/profile/{{ session.user_id }}" class="btn-home-secondary">
+                                    <i class="fas fa-user" style="font-size:0.75rem;"></i> View Profile
+                                </a>
+                                <button onclick="openConnectionsModal()" class="btn-home-primary">
+                                    <i class="fas fa-users" style="font-size:0.75rem;"></i> My Connections
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- End Profile Card -->
+
+                    <!-- ===== ANNOUNCEMENTS CARD ===== -->
+                    <div class="home-card home-animate-in home-animate-d1">
+                        <div class="home-card-body">
+
+                            <!-- Card header: amber icon + title + badge -->
+                            <div
+                                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.875rem;">
+                                <div style="display:flex;align-items:center;gap:0.5rem;">
+                                    <div class="ann-icon-wrap"><i class="fas fa-bullhorn"></i></div>
+                                    <h3 class="sidebar-section-title" style="margin:0;">Announcements</h3>
+                                </div>
+                                <span class="ann-badge">Latest</span>
+                            </div>
+
+                            <!-- Items injected by student_announcements.js -->
+                            <div id="mini-announcements-list" style="display:flex;flex-direction:column;gap:2px;">
+                                <!-- Shimmer skeleton while loading -->
+                                <div style="padding:0.5rem;display:flex;flex-direction:column;gap:8px;">
+                                    <div class="skeleton-line" style="height:11px;width:72%;border-radius:4px;"></div>
+                                    <div class="skeleton-line" style="height:11px;width:48%;border-radius:4px;"></div>
+                                    <div class="skeleton-line"
+                                        style="height:11px;width:60%;border-radius:4px;margin-top:4px;"></div>
+                                    <div class="skeleton-line" style="height:11px;width:40%;border-radius:4px;"></div>
+                                </div>
+                            </div>
+
+                            <button onclick="openAllAnnouncements()" class="view-all-link">
+                                View all announcements →
                             </button>
-
-                            <!-- Hidden Input -->
-                            <input type="file" id="home-profile-upload" hidden accept="image/*">
                         </div>
-
-                        <!-- Name & Major -->
-                        <div class="text-center">
-                            <h3 class="font-bold text-gray-900">{{ user_name }}</h3>
-                            <p class="text-sm text-gray-500">{{ user.major if user.major else 'Not specified' }}</p>
-                        </div>
-
-                        <!-- Stats -->
-                        <div class="flex justify-around mt-4 pt-4 border-t border-gray-100">
-                            <div class="text-center">
-                                <div id="profile-connections-count" class="text-3xl font-bold">0</div>
-                                <div class="text-xs text-gray-500">Connections</div>
-                            </div>
-                            <div class="text-center">
-                                <div id="profile-posts-count" class="text-3xl font-bold">0</div>
-                                <div class="text-xs text-gray-500">Posts</div>
-                            </div>
-                        </div>
-
-                        <!-- View Profile Button -->
-                        <a href="/profile/{{session.user_id}}"
-                            class="block mt-4 w-full text-center py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm rounded-lg transition">
-                            View Profile
-                        </a>
-
-                        <button onclick="openConnectionsModal()"
-                            class="w-full mt-3 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
-                            View My Connections
-                        </button>
-
                     </div>
+                    <!-- End Announcements Card -->
+
+                    <!-- ===== PROFILE COMPLETION =====
+               Rendered by loadProfileCompletion() in home.js. -->
+                    <div id="profile-completion-card" class="home-animate-in home-animate-d2"></div>
+
                 </div>
-
-                <!-- Mini Announcements Card -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg">
-                                <i class="fas fa-bullhorn text-sm"></i>
-                            </span>
-                            <h3 class="font-bold text-gray-900">Announcements</h3>
-                        </div>
-                        <span
-                            class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">Latest</span>
-                    </div>
-
-                    <div id="mini-announcements-list" class="space-y-1">
-                        <!-- Loading State -->
-                        <div class="animate-pulse space-y-3 p-2">
-                            <div class="h-4 bg-gray-100 rounded w-3/4"></div>
-                            <div class="h-4 bg-gray-100 rounded w-1/2"></div>
-                        </div>
-                    </div>
-                    <button onclick="openAllAnnouncements()"
-                        class="w-full mt-3 text-center text-xs font-medium text-indigo-600 hover:text-indigo-800 transition pt-2 border-t border-gray-100">
-                        View All
-                    </button>
-                </div>
-
-                <!-- PROFILE COMPLETION CARD (Dynamic) -->
-                <div id="profile-completion-card"></div>
-
             </aside>
+            <!-- End Left Sidebar -->
 
-            <!-- CENTER FEED (50%) -->
-            <main class="col-span-12 lg:col-span-6">
 
-                <!-- CREATE POST CARD -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-                    <!-- Top Section: Avatar + Input -->
-                    <div class="flex items-center gap-3 mb-4">
-                        <!-- User Avatar -->
-                        <img src="https://ui-avatars.com/api/?name={{ user_name }}&background=6366f1&color=fff&size=48"
-                            alt="Profile" class="w-12 h-12 rounded-full">
+            <!-- ===== CENTER FEED ===== -->
+            <main>
 
-                        <!-- Input Field (Click to open modal) -->
-                        <button onclick="openCreatePost()"
-                            class="flex-1 text-left px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition">
-                            What's on your mind, {{ user_name }}?
-                        </button>
-                    </div>
+                <!-- ===== CREATE POST CARD ===== -->
+                <div class="home-card home-animate-in" style="margin-bottom:1.25rem;">
+                    <div class="home-card-body">
 
-                    <!-- Divider -->
-                    <div class="border-t border-gray-200 mb-3"></div>
+                        <!-- Avatar + pill input -->
+                        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+                            <img src="{{ user.profile_picture if user.profile_picture else 'https://ui-avatars.com/api/?name=' + user_name + '&background=3b4fd8&color=fff&size=48' }}"
+                                alt="{{ user_name }}" class="create-post-avatar">
+                            <button onclick="openCreatePost()" class="create-post-input">
+                                What's on your mind, {{ user_name.split()[0] }}?
+                            </button>
+                        </div>
 
-                    <!-- Bottom Section: Media Buttons -->
-                    <div class="flex items-center justify-around">
-                        <!-- Photo Button -->
-                        <button onclick="openCreatePostWithType('photo')"
-                            class="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition group">
-                            <i class="fas fa-image text-green-500 text-xl"></i>
-                            <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">Photo</span>
-                        </button>
+                        <!-- Divider -->
+                        <div style="border-top:1px solid var(--border-soft);margin-bottom:0.875rem;"></div>
 
-                        <!-- Text Button (REPLACES VIDEO) -->
-                        <button onclick="openCreatePostWithType('text')"
-                            class="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition group">
-                            <i class="fas fa-align-left text-purple-500 text-xl"></i>
-                            <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">Text</span>
-                        </button>
-
-                        <!-- Document Button -->
-                        <button onclick="openCreatePostWithType('document')"
-                            class="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition group">
-                            <i class="fas fa-file-alt text-blue-500 text-xl"></i>
-                            <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">Document</span>
-                        </button>
+                        <!-- Quick post type shortcuts -->
+                        <div style="display:flex;align-items:center;justify-content:space-around;">
+                            <button onclick="openCreatePostWithType('photo')" class="media-btn media-btn-green">
+                                <i class="fas fa-image"></i><span>Photo</span>
+                            </button>
+                            <button onclick="openCreatePostWithType('text')" class="media-btn media-btn-purple">
+                                <i class="fas fa-align-left"></i><span>Text</span>
+                            </button>
+                            <button onclick="openCreatePostWithType('document')" class="media-btn media-btn-blue">
+                                <i class="fas fa-file-alt"></i><span>Document</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
+                <!-- End Create Post Card -->
 
-                <!-- POSTS FEED -->
+                <!-- ===== POST FEED =====
+             Loading / error / empty / posts states managed by feed-loader.js.
+             Posts rendered into #post-feed by post-utils.js. -->
                 {% include "partials/_post_feed.html" %}
 
-                <!-- Skeleton Loader -->
-                <div id="skeleton-container" class="space-y-4 hidden">
-                    <div class="skeleton-post bg-white rounded-xl p-4 shadow-sm">
-                        <div class="skeleton-header flex gap-3 mb-4">
-                            <div class="skeleton-avatar w-12 h-12 bg-gray-200 rounded-full"></div>
-                            <div class="skeleton-lines flex-1 space-y-2">
-                                <div class="skeleton-line h-4 bg-gray-200 rounded w-1/3"></div>
-                                <div class="skeleton-line h-3 bg-gray-200 rounded w-1/2"></div>
+                <!-- Infinite scroll indicator — hidden until feed-loader.js triggers it -->
+                <div id="feed-loader" class="hidden" style="justify-content:center;padding:2rem 0;">
+                    <div class="home-spinner"></div>
+                </div>
+
+            </main>
+            <!-- End Center Feed -->
+
+
+            <!-- ===== RIGHT SIDEBAR ===== -->
+            <aside class="home-sidebar-right">
+                <div class="sidebar-sticky">
+
+                    <!-- ===== CONNECTION REQUESTS CARD ===== -->
+                    <div class="home-card home-animate-in home-animate-d1">
+                        <div class="home-card-body">
+                            <div
+                                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
+                                <h3 class="sidebar-section-title">
+                                    <i class="fas fa-user-plus"></i> Requests
+                                </h3>
+                                <!-- Red count badge; shown by loadPendingRequests() -->
+                                <span id="pending-requests-badge" class="pending-badge hidden">0</span>
+                            </div>
+                            <!-- Populated by loadPendingRequests() in home.js -->
+                            <div id="pending-requests-container"></div>
+                        </div>
+                    </div>
+
+                    <!-- ===== SUGGESTED CONNECTIONS =====
+               Entirely managed by loadSuggestions() in home.js. -->
+                    <div id="suggestions-container" class="home-animate-in home-animate-d2"></div>
+
+                    <!-- ===== UPCOMING EVENTS CARD ===== -->
+                    <div class="home-card home-animate-in home-animate-d3">
+                        <div class="home-card-body">
+                            <div
+                                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
+                                <h3 class="sidebar-section-title">
+                                    <i class="fas fa-calendar-alt"></i> Events
+                                </h3>
+                                <a href="#" class="sidebar-see-all">See all</a>
+                            </div>
+
+                            <!-- Populated by loadEvents() in home.js -->
+                            <div id="events-container" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+
+                            <!-- Loading state — shown/hidden by loadEvents() in home.js -->
+                            <div id="events-loading" class="hidden" style="justify-content:center;padding:0.875rem 0;">
+                                <div class="home-spinner" style="width:22px;height:22px;border-width:2px;"></div>
+                            </div>
+
+                            <!-- Empty state -->
+                            <div id="events-empty" class="hidden"
+                                style="text-align:center;padding:1.25rem 0;color:var(--muted);font-size:0.8125rem;">
+                                <i class="fas fa-calendar-times"
+                                    style="font-size:1.5rem;margin-bottom:0.5rem;display:block;opacity:0.4;"></i>
+                                <p style="font-weight:500;">No upcoming events</p>
                             </div>
                         </div>
-                        <div class="skeleton-image h-64 bg-gray-200 rounded-lg mb-4"></div>
-                        <div class="skeleton-footer space-y-2">
-                            <div class="skeleton-line h-3 bg-gray-200 rounded w-full"></div>
-                            <div class="skeleton-line h-3 bg-gray-200 rounded w-2/3"></div>
-                        </div>
                     </div>
+
                 </div>
-
-                <!-- Infinite Scroll Loader -->
-                <div id="feed-loader" class="hidden flex justify-center py-6">
-                    <div class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin">
-                    </div>
-                </div>
-            </main>
-
-            <!-- RIGHT SIDEBAR (25%) -->
-            <aside class="hidden lg:block lg:col-span-3">
-
-                <div class="bg-white rounded-lg shadow p-4 mb-4">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-gray-900">Connection Requests</h3>
-                        <span id="pending-requests-badge"
-                            class="hidden bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                            0
-                        </span>
-                    </div>
-                    <div id="pending-requests-container">
-                        <!-- Pending requests will load here -->
-                    </div>
-                </div>
-
-                <!-- SUGGESTED CONNECTIONS CARD -->
-                <div id="suggestions-container">
-                    <!-- JavaScript will fill this dynamically -->
-                </div>
-
-                <!-- UPCOMING EVENTS CARD -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <h3 class="font-bold text-gray-900 mb-4 flex items-center justify-between">
-                        <span class="flex items-center">
-                            <i class="fas fa-calendar-alt text-purple-600 mr-2"></i>
-                            Upcoming Events
-                        </span>
-                        <a href="#" class="text-xs text-indigo-600 hover:text-indigo-700">See All</a>
-                    </h3>
-
-                    <!-- Events Container (Dynamically Loaded) -->
-                    <div id="events-container" class="space-y-4">
-                        <!-- Events will be loaded here by JavaScript -->
-                    </div>
-
-                    <!-- Loading State -->
-                    <div id="events-loading" class="flex justify-center py-4">
-                        <div class="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin">
-                        </div>
-                    </div>
-
-                    <!-- Empty State -->
-                    <div id="events-empty" class="hidden text-center py-6 text-gray-500 text-sm">
-                        <i class="fas fa-calendar-times text-3xl mb-2"></i>
-                        <p>No upcoming events</p>
-                    </div>
-                </div>
-
             </aside>
+            <!-- End Right Sidebar -->
 
         </div>
     </div>
+    <!-- End Main Layout -->
 
-    <!-- COMMENT MODAL -->
-    <div id="comment-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
-        <div class="bg-white w-full max-w-lg rounded-lg overflow-hidden max-h-[80vh] flex flex-col shadow-xl"
-            onclick="event.stopPropagation()">
-            <!-- Modal Header -->
-            <header class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="font-bold text-gray-900 text-lg">Comments</h3>
-                <button onclick="closeComments()" class="text-gray-400 hover:text-gray-600 transition">
-                    <i class="fas fa-times text-xl"></i>
+
+    <!-- ===== COMMENT MODAL ===== -->
+    <div id="comment-modal" onclick="closeComments(event)" aria-modal="true" role="dialog" aria-label="Comments">
+        <div class="home-modal" onclick="event.stopPropagation()"
+            style="max-height:84vh;display:flex;flex-direction:column;">
+
+            <div class="modal-header">
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <div
+                        style="width:28px;height:28px;border-radius:0.375rem;background:var(--p-light);color:var(--p);display:flex;align-items:center;justify-content:center;font-size:0.75rem;">
+                        <i class="fas fa-comment"></i>
+                    </div>
+                    <h3>Comments</h3>
+                </div>
+                <button onclick="closeComments()" class="modal-close-btn" aria-label="Close comments">
+                    <i class="fas fa-times"></i>
                 </button>
-            </header>
-
-            <!-- Comments List -->
-            <div id="modal-comments-list" class="flex-1 overflow-y-auto p-4 space-y-4">
-                <!-- Comments will be loaded here -->
             </div>
 
-            <!-- Comment Input -->
-            <div class="p-4 border-t border-gray-200 flex gap-3">
-                <img src="https://ui-avatars.com/api/?name={{ user_name }}&background=6366f1&color=fff&size=32"
-                    alt="Your avatar" class="w-8 h-8 rounded-full">
-                <input id="comment-input" type="text" placeholder="Write a comment..."
-                    class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                    onkeydown="if(event.key==='Enter') submitComment()">
-                <button onclick="submitComment()"
-                    class="text-indigo-600 hover:text-indigo-700 font-semibold text-sm px-3 transition">
+            <!-- Comment list -->
+            <div id="modal-comments-list"
+                style="flex:1;overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:1rem;">
+            </div>
+
+            <!-- Input row -->
+            <div
+                style="padding:0.875rem 1.25rem;border-top:1px solid var(--border-soft);display:flex;gap:0.625rem;align-items:center;background:hsl(220 22% 98.5%);">
+                <img src="{{ user.profile_picture if user.profile_picture else 'https://ui-avatars.com/api/?name=' + user_name + '&background=3b4fd8&color=fff&size=32' }}"
+                    alt="{{ user_name }}"
+                    style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--border);">
+                <input id="comment-input" type="text" placeholder="Write a comment…" class="comment-input-field"
+                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitComment();}">
+                <button onclick="submitComment()" class="comment-send-btn" aria-label="Post comment">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
         </div>
     </div>
+    <!-- End Comment Modal -->
 
-    <!-- CREATE POST MODAL -->
-    <div id="create-post-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
-        <div class="bg-white w-full max-w-md rounded-lg shadow-xl" onclick="event.stopPropagation()">
-            <!-- Modal Header -->
-            <header class="flex justify-between items-center p-4 border-b border-gray-200">
-                <h3 class="font-bold text-lg text-gray-900">Create Post</h3>
-                <button onclick="closeCreatePost()" class="text-gray-400 hover:text-gray-600 transition">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </header>
 
-            <!-- Modal Body -->
-            <div class="p-4">
-                <!-- User Info -->
-                <div class="flex items-center gap-3 mb-4">
-                    <img src="https://ui-avatars.com/api/?name={{ user_name }}&background=6366f1&color=fff&size=40"
-                        alt="Your avatar" class="w-10 h-10 rounded-full">
+    <!-- ===== CREATE POST MODAL ===== -->
+    <div id="create-post-modal" aria-modal="true" role="dialog" aria-label="Create a post"
+        onclick="if(event.target===this)closeCreatePost()">
+
+        <div class="cp-modal-shell" onclick="event.stopPropagation()">
+
+            <!-- ── HEADER ── -->
+            <div class="cp-header">
+                <div class="cp-header-identity">
+                    <div class="cp-avatar-ring">
+                        <img src="{{ user.profile_picture if user.profile_picture else 'https://ui-avatars.com/api/?name=' + user_name + '&background=3b4fd8&color=fff&size=80' }}"
+                            alt="{{ user_name }}" class="cp-avatar-img">
+                    </div>
                     <div>
-                        <p class="font-semibold text-sm text-gray-900 whitespace-nowrap">{{ user_name }}</p>
-                        <div class="flex items-center gap-1 text-xs text-gray-500">
-                            <i class="fas fa-globe-americas"></i>
-                            <span>Public</span>
-                        </div>
+                        <p class="cp-author-name">{{ user_name }}</p>
+                        <span class="cp-audience">
+                            <i class="fas fa-globe-americas"></i> Public
+                        </span>
                     </div>
                 </div>
-
-                <!-- Post Type Selector -->
-                <div class="flex gap-2 mb-4">
-                    <button onclick="selectPostType('photo')" id="btn-photo"
-                        class="post-type-btn flex-1 py-2 px-3 rounded-lg border-2 border-gray-200 hover:border-indigo-500 transition text-sm">
-                        <i class="fas fa-image text-green-500"></i>
-                        <span class="ml-2 font-medium">Photo</span>
-                    </button>
-                    <button onclick="selectPostType('document')" id="btn-document"
-                        class="post-type-btn flex-1 py-2 px-3 rounded-lg border-2 border-gray-200 hover:border-indigo-500 transition text-sm">
-                        <i class="fas fa-file-alt text-blue-500"></i>
-                        <span class="ml-2 font-medium">Document</span>
-                    </button>
-                    <button onclick="selectPostType('text')" id="btn-text"
-                        class="post-type-btn flex-1 py-2 px-3 rounded-lg border-2 border-gray-200 hover:border-indigo-500 transition text-sm">
-                        <i class="fas fa-align-left text-purple-500"></i>
-                        <span class="ml-2 font-medium">Text</span>
-                    </button>
-                </div>
-
-                <!-- Caption Textarea -->
-                <textarea id="post-caption" placeholder="What's on your mind, {{ user_name }}?"
-                    class="w-full h-32 px-3 py-2 text-gray-800 text-sm resize-none border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-3"></textarea>
-
-                <!-- File Input Container (Hidden for text posts) -->
-                <div id="file-input-container" class="mb-3">
-                    <input type="file" id="post-file" accept="image/*"
-                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                    <p id="file-help-text" class="text-xs text-gray-500 mt-2">Accepts: JPG, PNG, GIF, WEBP (Max 10MB)
-                    </p>
-                </div>
-
-                <!-- Preview Container -->
-                <div id="file-preview" class="hidden mb-3">
-                    <img id="image-preview" class="w-full rounded-lg hidden" />
-                    <div id="document-preview" class="hidden p-3 bg-gray-50 rounded-lg flex items-center gap-3">
-                        <i class="fas fa-file-pdf text-red-500 text-2xl"></i>
-                        <span id="doc-name" class="text-sm text-gray-700"></span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="p-4 border-t border-gray-200">
-                <button onclick="submitPost()" id="submit-post-btn"
-                    class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    Post
+                <button onclick="closeCreatePost()" class="cp-close-btn" aria-label="Close modal">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
+
+            <!-- ── POST TYPE TABS ── -->
+            <div class="cp-type-tabs">
+                <button onclick="selectPostType('text')" id="btn-text" class="cp-tab cp-tab-text">
+                    <i class="fas fa-align-left"></i><span>Text</span>
+                </button>
+                <button onclick="selectPostType('photo')" id="btn-photo" class="cp-tab cp-tab-photo">
+                    <i class="fas fa-image"></i><span>Photo</span>
+                </button>
+                <button onclick="selectPostType('document')" id="btn-document" class="cp-tab cp-tab-doc">
+                    <i class="fas fa-file-alt"></i><span>Document</span>
+                </button>
+            </div>
+
+            <!-- ── BODY ── -->
+            <div class="cp-body">
+
+                <!-- Textarea -->
+                <textarea id="post-caption" class="cp-textarea"
+                    placeholder="What's on your mind, {{ user_name.split()[0] }}?" rows="4"></textarea>
+
+                <!-- File drop zone (hidden for text posts) -->
+                <div id="file-input-container" class="cp-dropzone" id="cp-dropzone">
+                    <label for="post-file" class="cp-dropzone-inner">
+                        <div class="cp-dropzone-icon" id="cp-drop-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <p class="cp-dropzone-label" id="cp-drop-label">
+                            Click to upload or drag &amp; drop
+                        </p>
+                        <p class="cp-dropzone-hint" id="file-help-text">
+                            JPG, PNG, GIF, WEBP — max 10 MB
+                        </p>
+                        <input type="file" id="post-file" accept="image/*" class="cp-file-input" />
+                    </label>
+                </div>
+
+                <!-- Preview -->
+                <div id="file-preview" class="hidden cp-preview-wrap">
+                    <!-- Image preview -->
+                    <div id="image-preview-wrap" class="hidden cp-img-preview-wrap">
+                        <img id="image-preview" src="" alt="Preview" class="cp-img-preview" />
+                        <button type="button" class="cp-preview-remove" onclick="clearFilePreview()"
+                            aria-label="Remove file">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <!-- Document preview -->
+                    <div id="document-preview" class="hidden cp-doc-preview">
+                        <div class="cp-doc-icon">
+                            <i class="fas fa-file-pdf" id="cp-doc-fa-icon"></i>
+                        </div>
+                        <div class="cp-doc-info">
+                            <span id="doc-name" class="cp-doc-name"></span>
+                            <span class="cp-doc-type" id="cp-doc-type-label">Document</span>
+                        </div>
+                        <button type="button" class="cp-preview-remove cp-doc-remove" onclick="clearFilePreview()"
+                            aria-label="Remove file">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── FOOTER ── -->
+            <div class="cp-footer">
+                <span class="cp-char-count" id="cp-char-count">0 / 1000</span>
+                <button onclick="submitPost()" id="submit-post-btn" class="cp-submit-btn">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Post</span>
+                </button>
+            </div>
+            
         </div>
     </div>
+    <!-- End Create Post Modal -->
 
-    <div id="connections-modal"
-        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
 
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+    <!-- ===== CONNECTIONS MODAL ===== -->
+    <div id="connections-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center"
+        style="background:hsl(221 39% 8% / 0.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:1rem;"
+        onclick="if(event.target===this)closeConnectionsModal()" aria-modal="true" role="dialog"
+        aria-label="My Connections">
+        <div class="home-modal home-modal-lg" style="max-height:84vh;display:flex;flex-direction:column;">
+            <div class="modal-header">
                 <div>
-                    <h2 class="text-xl font-bold text-gray-900">My Connections</h2>
-                    <p id="connections-count-text" class="text-sm text-gray-500">0 connections</p>
+                    <h3 style="margin-bottom:2px;">My Connections</h3>
+                    <p id="connections-count-text" style="font-size:0.8125rem;color:var(--muted);font-weight:500;">0
+                        connections</p>
                 </div>
-                <button onclick="closeConnectionsModal()" class="text-gray-400 hover:text-gray-600 transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                <button onclick="closeConnectionsModal()" class="modal-close-btn" aria-label="Close">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
-
-            <!-- Modal Body (scrollable) -->
-            <div id="connections-modal-body" class="flex-1 overflow-y-auto p-6">
-                <div class="text-center text-gray-500">
-                    Loading connections...
+            <!-- Populated by loadConnectionsList() in home.js -->
+            <div id="connections-modal-body" style="flex:1;overflow-y:auto;padding:1.25rem;">
+                <div style="text-align:center;color:var(--muted);padding:2rem 0;font-size:0.875rem;">
+                    Loading connections…
                 </div>
             </div>
-
         </div>
     </div>
+    <!-- End Connections Modal -->
 
-    <!-- All Announcements Modal -->
-    <div id="all-announcements-modal" class="fixed inset-0 z-40 hidden" aria-labelledby="modal-title" role="dialog"
-        aria-modal="true">
-        <!-- Backdrop -->
-        <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity backdrop-blur-sm"
+
+    <!-- ===== ALL ANNOUNCEMENTS MODAL ===== -->
+    <div id="all-announcements-modal" class="fixed inset-0 z-40 hidden" aria-modal="true" role="dialog"
+        aria-labelledby="all-ann-title">
+        <div class="fixed inset-0"
+            style="background:hsl(221 39% 8% / 0.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);"
             onclick="closeAllAnnouncements()"></div>
-
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <div
-                class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl flex flex-col max-h-[80vh]">
-                <div class="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                    <h3 class="text-lg font-semibold text-gray-900">All Announcements</h3>
-                    <button onclick="closeAllAnnouncements()"
-                        class="text-gray-400 hover:text-gray-500 focus:outline-none">
-                        <i class="fas fa-times text-lg"></i>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="home-modal home-modal-lg" style="max-height:84vh;display:flex;flex-direction:column;">
+                <div class="modal-header">
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <div class="ann-icon-wrap"><i class="fas fa-bullhorn"></i></div>
+                        <h3 id="all-ann-title">All Announcements</h3>
+                    </div>
+                    <button onclick="closeAllAnnouncements()" class="modal-close-btn" aria-label="Close">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div id="all-announcements-list" class="overflow-y-auto p-4 space-y-2">
-                    <!-- List will be loaded here -->
+                <!-- Populated by openAllAnnouncements() in student_announcements.js -->
+                <div id="all-announcements-list"
+                    style="overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:0.5rem;">
                 </div>
             </div>
         </div>
     </div>
+    <!-- End All Announcements Modal -->
 
-    <!-- Student Announcement Modal -->
-    <div id="student-announcement-modal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
-        aria-modal="true">
-        <!-- Backdrop -->
-        <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity backdrop-blur-sm"
+
+    <!-- ===== SINGLE ANNOUNCEMENT DETAIL MODAL ===== -->
+    <div id="student-announcement-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog"
+        aria-labelledby="modal-ann-title">
+        <div class="fixed inset-0"
+            style="background:hsl(221 39% 8% / 0.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);"
             onclick="closeAnnouncementModal()"></div>
-
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <div
-                class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl">
-
-                <!-- Modal Header -->
-                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div
-                            class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
-                            <i class="fas fa-bullhorn text-indigo-600"></i>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="home-modal">
+                <div style="padding:1.5rem;">
+                    <div style="display:flex;align-items:flex-start;gap:1rem;">
+                        <div class="ann-icon-wrap" style="width:40px;height:40px;flex-shrink:0;">
+                            <i class="fas fa-bullhorn"></i>
                         </div>
-                        <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                            <h3 class="text-xl font-semibold leading-6 text-gray-900" id="modal-ann-title">Announcement
-                                Title</h3>
-                            <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                                <span id="modal-ann-date">Date</span>
-                                <span>•</span>
-                                <span id="modal-ann-author" class="font-medium text-gray-700">Author</span>
+                        <div style="flex:1;min-width:0;">
+                            <h3 id="modal-ann-title"
+                                style="font-size:1.0625rem;margin-bottom:6px;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-0.025em;">
+                                Announcement
+                            </h3>
+                            <div
+                                style="display:inline-flex;align-items:center;gap:0.5rem;font-size:0.6875rem;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:3px 10px;margin-bottom:1rem;">
+                                <i class="fas fa-calendar-alt" style="font-size:0.625rem;"></i>
+                                <span id="modal-ann-date">—</span>
+                                <span style="opacity:0.4;">·</span>
+                                <i class="fas fa-user" style="font-size:0.625rem;"></i>
+                                <span id="modal-ann-author" style="font-weight:600;color:var(--ink-soft);">—</span>
                             </div>
-                            <div class="mt-4 max-h-[60vh] overflow-y-auto">
-                                <p class="text-base text-gray-600 whitespace-pre-wrap" id="modal-ann-content">Content
-                                    goes here...</p>
+                            <div style="max-height:52vh;overflow-y:auto;">
+                                <p id="modal-ann-content"
+                                    style="font-size:0.9375rem;color:var(--muted);line-height:1.7;white-space:pre-wrap;">
+                                </p>
                             </div>
-                            <div class="mt-4 pt-4 border-t border-gray-100 hidden">
-                                <p class="text-xs text-gray-400 italic" id="modal-ann-updated">Last updated: -</p>
+                            <div id="modal-ann-updated-wrap" class="hidden"
+                                style="margin-top:1rem;padding-top:0.875rem;border-top:1px solid var(--border-soft);">
+                                <p id="modal-ann-updated"
+                                    style="font-size:0.6875rem;color:var(--faint);font-style:italic;"></p>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Modal Footer -->
-                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                    <button type="button"
-                        class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                        onclick="closeAnnouncementModal()">Close</button>
+                <div
+                    style="padding:0.875rem 1.25rem;border-top:1px solid var(--border-soft);background:hsl(220 22% 98.5%);display:flex;justify-content:flex-end;">
+                    <button onclick="closeAnnouncementModal()" class="btn-home-secondary"
+                        style="width:auto;padding:0.4375rem 1.25rem;">
+                        Close
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+    <!-- End Announcement Detail Modal -->
 
-    <!-- Share Post Modal -->
-    <div id="share-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50"
-        onclick="if(event.target===this) this.classList.add('hidden')">
-        <div class="bg-white w-full max-w-md rounded-xl shadow-xl flex flex-col max-h-[80vh] mx-4">
-            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="font-bold text-lg text-gray-900">Share Post</h3>
-                <button onclick="document.getElementById('share-modal').classList.add('hidden')"
-                    class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+
+    <!-- ===== SHARE POST MODAL ===== -->
+    <div id="share-modal" class="fixed inset-0 hidden items-center justify-center z-50"
+        style="background:hsl(221 39% 8% / 0.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);"
+        onclick="if(event.target===this)this.classList.add('hidden')" aria-modal="true" role="dialog"
+        aria-label="Share post">
+        <div class="home-modal" onclick="event.stopPropagation()"
+            style="max-height:84vh;display:flex;flex-direction:column;">
+
+            <div class="modal-header">
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <div
+                        style="width:28px;height:28px;border-radius:0.375rem;background:var(--p-light);color:var(--p);display:flex;align-items:center;justify-content:center;font-size:0.75rem;">
+                        <i class="fas fa-share"></i>
+                    </div>
+                    <h3>Share with a Connection</h3>
+                </div>
+                <button onclick="document.getElementById('share-modal').classList.add('hidden')" class="modal-close-btn"
+                    aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div class="p-4 border-b border-gray-100">
-                <input type="text" id="share-search" placeholder="Search connections..."
-                    class="w-full px-4 py-2 bg-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+
+            <!-- Search -->
+            <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--border-soft);">
+                <div style="position:relative;">
+                    <i class="fas fa-search"
+                        style="position:absolute;left:0.875rem;top:50%;transform:translateY(-50%);color:var(--faint);font-size:0.8125rem;pointer-events:none;"></i>
+                    <input type="text" id="share-search" placeholder="Search connections…" class="share-search-input"
+                        style="padding-left:2.25rem;">
+                </div>
             </div>
-            <div id="share-connections-list" class="flex-1 overflow-y-auto p-2 space-y-1 min-h-[200px]">
-                <!-- Connections loaded via JS -->
+
+            <!-- Connection list -->
+            <div id="share-connections-list"
+                style="flex:1;overflow-y:auto;padding:0.5rem;display:flex;flex-direction:column;gap:4px;min-height:200px;">
             </div>
         </div>
     </div>
+    <!-- End Share Modal -->
 
+    <!-- Page-level announcement logic -->
     <script src="{{ url_for('static', filename='js/features/student_announcements.js') }}"></script>
+
 </body>
 
 </html>

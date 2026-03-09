@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
     loadPendingRequests();
     loadEvents();
     setupProfileUpload();
+    initCharCounter();
+    initDropZone();
 
     // Setup comment modal
     const modal = document.getElementById('comment-modal');
@@ -98,21 +100,20 @@ function setupProfileUpload() {
 }
 
 // Logic: Open Create Post Modal
+// NOTE: We use style.display directly, NOT classList.add('flex').
+// The CSS rule #create-post-modal { display: none } is an ID selector
+// (specificity 0,1,0,0) which beats the .flex class (specificity 0,0,1,0).
+// So classList toggling silently fails — style.display always wins.
 function openCreatePost() {
     const modal = document.getElementById('create-post-modal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    modal.style.display = 'flex';
 
     // Reset form
     document.getElementById('post-caption').value = '';
     const fileInput = document.getElementById('post-file');
-    if (fileInput) {
-        fileInput.value = '';
-    }
+    if (fileInput) fileInput.value = '';
     const preview = document.getElementById('file-preview');
-    if (preview) {
-        preview.classList.add('hidden');
-    }
+    if (preview) preview.classList.add('hidden');
 
     // Default to text type
     selectPostType('text');
@@ -126,61 +127,105 @@ function openCreatePostWithType(type) {
 }
 
 
-// Logic: Close Comments Modal
+// Logic: Close Create Post Modal
 function closeCreatePost() {
     const modal = document.getElementById('create-post-modal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    modal.style.display = 'none';
 }
 
 
+// ── Upgraded selectPostType ──────────────────────────────────────
 function selectPostType(type) {
     currentPostType = type;
 
-    // Update button styles
-    document.querySelectorAll('.post-type-btn').forEach(btn => {
-        btn.classList.remove('border-indigo-500', 'bg-indigo-50');
-        btn.classList.add('border-gray-200');
+    // Tab active states
+    ['text', 'photo', 'document'].forEach(t => {
+        const btn = document.getElementById(`btn-${t}`);
+        if (btn) btn.classList.remove('cp-tab-active');
     });
+    const active = document.getElementById(`btn-${type}`);
+    if (active) active.classList.add('cp-tab-active');
 
-    const selectedBtn = document.getElementById(`btn-${type}`);
-    if (selectedBtn) {
-        selectedBtn.classList.add('border-indigo-500', 'bg-indigo-50');
-        selectedBtn.classList.remove('border-gray-200');
-    }
-
-    // Update file input
+    // File zone visibility
+    const zone = document.getElementById('file-input-container');
     const fileInput = document.getElementById('post-file');
-    const fileContainer = document.getElementById('file-input-container');
     const helpText = document.getElementById('file-help-text');
+    const dropLabel = document.getElementById('cp-drop-label');
+    const dropIcon = document.getElementById('cp-drop-icon');
 
-    if (fileContainer) {
+    if (zone) {
         if (type === 'text') {
-            fileContainer.classList.add('hidden');
+            zone.classList.add('hidden');
         } else {
-            fileContainer.classList.remove('hidden');
-
-            if (fileInput) {
-                if (type === 'photo') {
-                    fileInput.accept = 'image/*';
-                    if (helpText) {
-                        helpText.textContent = 'Accepts: JPG, PNG, GIF, WEBP (Max 10MB)';
-                    }
-                } else if (type === 'document') {
-                    fileInput.accept = '.pdf,.doc,.docx';
-                    if (helpText) {
-                        helpText.textContent = 'Accepts: PDF, DOC, DOCX (Max 10MB)';
-                    }
-                }
+            zone.classList.remove('hidden');
+            clearFilePreview();
+            if (type === 'photo') {
+                if (fileInput) fileInput.accept = 'image/*';
+                if (helpText) helpText.textContent = 'JPG, PNG, GIF, WEBP — max 10 MB';
+                if (dropLabel) dropLabel.textContent = 'Click to upload or drag & drop';
+                if (dropIcon) dropIcon.innerHTML = '<i class="fas fa-image"></i>';
+            } else {
+                if (fileInput) fileInput.accept = '.pdf,.doc,.docx';
+                if (helpText) helpText.textContent = 'PDF, DOC, DOCX — max 10 MB';
+                if (dropLabel) dropLabel.textContent = 'Click to upload or drag & drop';
+                if (dropIcon) dropIcon.innerHTML = '<i class="fas fa-file-alt"></i>';
             }
         }
     }
 
     // Reset preview
+    clearFilePreview();
+}
+
+// Clear file preview 
+function clearFilePreview() {
     const preview = document.getElementById('file-preview');
-    if (preview) {
-        preview.classList.add('hidden');
-    }
+    const imgWrap = document.getElementById('image-preview-wrap');
+    const img = document.getElementById('image-preview');
+    const docPreview = document.getElementById('document-preview');
+    const fileInput = document.getElementById('post-file');
+    if (preview) preview.classList.add('hidden');
+    if (imgWrap) imgWrap.classList.add('hidden');
+    if (img) img.src = '';
+    if (docPreview) docPreview.classList.add('hidden');
+    if (fileInput) fileInput.value = '';
+}
+
+// Char counter 
+function initCharCounter() {
+    const ta = document.getElementById('post-caption');
+    const counter = document.getElementById('cp-char-count');
+    const MAX = 1000;
+    if (!ta || !counter) return;
+    ta.addEventListener('input', () => {
+        const len = ta.value.length;
+        counter.textContent = `${len} / ${MAX}`;
+        counter.classList.toggle('cp-warn', len >= MAX * 0.85 && len < MAX);
+        counter.classList.toggle('cp-limit', len >= MAX);
+    });
+}
+
+// Drag & drop 
+function initDropZone() {
+    const zone = document.getElementById('file-input-container');
+    const input = document.getElementById('post-file');
+    if (!zone || !input) return;
+
+    ['dragenter', 'dragover'].forEach(ev => {
+        zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    });
+    ['dragleave', 'drop'].forEach(ev => {
+        zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('drag-over'); });
+    });
+    zone.addEventListener('drop', e => {
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+        // Inject into the file input and fire change
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change'));
+    });
 }
 
 
@@ -248,7 +293,11 @@ async function loadEvents() {
 
     if (!container) return;
 
-    if (loading) loading.classList.remove('hidden');
+    // Show spinner using style.display (inline styles beat class rules)
+    if (loading) {
+        loading.style.display = 'flex';
+        loading.classList.remove('hidden');
+    }
 
     try {
         const res = await fetch('/api/events');
@@ -256,7 +305,11 @@ async function loadEvents() {
 
         const events = await res.json();
 
-        if (loading) loading.classList.add('hidden');
+        // Hide spinner
+        if (loading) {
+            loading.style.display = 'none';
+            loading.classList.add('hidden');
+        }
 
         if (events.length === 0) {
             if (empty) empty.classList.remove('hidden');
@@ -314,7 +367,10 @@ async function loadEvents() {
 
     } catch (error) {
         console.error('Failed to load events:', error);
-        if (loading) loading.classList.add('hidden');
+        if (loading) {
+            loading.style.display = 'none';
+            loading.classList.add('hidden');
+        }
         if (container) {
             container.innerHTML = '<p class="text-red-500 text-sm text-center py-4">Failed to load events</p>';
         }

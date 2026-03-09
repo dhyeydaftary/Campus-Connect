@@ -28,7 +28,7 @@ function setDateTimeInputMin() {
 // Helper to ensure date is treated as UTC
 function parseAsUTC(dateStr) {
     if (!dateStr) return new Date();
-    
+
     // Robust parsing: Extract components and force UTC construction
     // This handles "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS"
     // and ignores any attached timezone offsets that might be incorrect/naive
@@ -73,13 +73,76 @@ function switchTab(status) {
     loadEvents();
 }
 
-function loadEvents() {
-    const container = document.getElementById('events-list');
-    container.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+async function loadEvents() {
+    const container = document.getElementById('events-container');
+    const loading = document.getElementById('events-loading');
+    const empty = document.getElementById('events-empty');
 
-    fetch(`/admin/api/events/list?status=${currentStatus}`)
-        .then(res => res.json())
-        .then(data => renderEvents(data));
+    if (!container) return;
+    if (loading) loading.classList.remove('hidden');
+
+    try {
+        const res = await fetch('/api/events');
+        if (!res.ok) throw new Error('Failed to load events');
+
+        const events = await res.json();
+        if (loading) loading.classList.add('hidden');
+
+        if (events.length === 0) {
+            if (empty) empty.classList.remove('hidden');
+            return;
+        }
+
+        container.innerHTML = events.map((event, index) => `
+            <div class="event-card" style="padding-bottom:0.75rem;${index < events.length - 1 ? 'border-bottom:1px solid var(--border-soft);' : ''}">
+                <div style="display:flex;gap:0.75rem;">
+                    <div class="event-date-box">
+                        <div class="month">${event.month}</div>
+                        <div class="day">${event.day}</div>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <h4 style="font-family:'Plus Jakarta Sans',sans-serif;font-size:0.8125rem;font-weight:700;color:var(--ink);margin-bottom:0.25rem;letter-spacing:-0.02em;">${event.title}</h4>
+                        <div style="display:flex;align-items:center;font-size:0.6875rem;color:var(--muted);margin-bottom:0.125rem;gap:0.25rem;">
+                            <i class="far fa-clock" style="font-size:0.625rem;"></i>
+                            <span>${event.time}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;font-size:0.6875rem;color:var(--muted);margin-bottom:0.375rem;gap:0.25rem;">
+                            <i class="fas fa-map-marker-alt" style="font-size:0.625rem;"></i>
+                            <span>${event.location}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.625rem;font-size:0.6875rem;margin-bottom:0.25rem;">
+                            <span style="color:var(--muted);"><i class="fas fa-users" style="margin-right:0.25rem;font-size:0.625rem;"></i>${event.goingCount} going</span>
+                            <span style="color:var(--muted);"><i class="fas fa-star" style="margin-right:0.25rem;font-size:0.625rem;"></i>${event.interestedCount} interested</span>
+                        </div>
+                        <div style="font-size:0.6875rem;color:${event.availableSeats > 0 ? 'var(--green)' : 'hsl(0,84%,55%)'};margin-bottom:0.5rem;font-weight:500;">
+                            <i class="fas fa-chair" style="margin-right:0.25rem;font-size:0.625rem;"></i>
+                            ${event.availableSeats} of ${event.totalSeats} seats available
+                        </div>
+                        <div style="display:flex;gap:0.375rem;">
+                            <button onclick="toggleEventStatus(${event.id}, 'interested')"
+                                class="event-btn event-btn-interested ${event.userStatus === 'interested' ? 'active' : ''}">
+                                <i class="fas fa-heart" style="font-size:0.6875rem;"></i>
+                                <span>Interested</span>
+                            </button>
+                            <button onclick="toggleEventStatus(${event.id}, 'going')"
+                                ${event.availableSeats <= 0 && event.userStatus !== 'going' ? 'disabled' : ''}
+                                class="event-btn event-btn-going ${event.userStatus === 'going' ? 'active' : ''}">
+                                <i class="fas ${event.userStatus === 'going' ? 'fa-check' : event.availableSeats <= 0 ? 'fa-times' : 'fa-plus'}" style="font-size:0.6875rem;"></i>
+                                <span>${event.userStatus === 'going' ? 'Going' : event.availableSeats <= 0 ? 'Full' : 'Join'}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (error) {
+        console.error('Failed to load events:', error);
+        if (loading) loading.classList.add('hidden');
+        if (container) {
+            container.innerHTML = `<p style="color:hsl(0,84%,55%);font-size:0.8125rem;text-align:center;padding:1rem 0;">Failed to load events</p>`;
+        }
+    }
 }
 
 function renderEvents(events) {
@@ -94,13 +157,13 @@ function renderEvents(events) {
     }
 
     events.forEach(event => {
-        const date = parseAsUTC(event.date).toLocaleString('en-US', { 
-            month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' 
+        const date = parseAsUTC(event.date).toLocaleString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
         });
 
         const strip = document.createElement('div');
         strip.className = 'flex items-center justify-between bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
-        
+
         strip.innerHTML = `
             <div class="flex-1">
                 <h4 class="font-bold text-lg text-gray-800">${event.title}</h4>
@@ -164,7 +227,7 @@ function setupFormHandlers() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
+
             if (res.ok) {
                 document.getElementById('success-message').style.display = 'flex';
                 document.getElementById('event-form').reset();
@@ -205,7 +268,7 @@ function setupFormHandlers() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
+
             if (res.ok) {
                 closeModal('edit-modal');
                 loadEvents();
@@ -242,7 +305,7 @@ async function openEditModal(id) {
     document.getElementById('edit-description').value = event.description;
     document.getElementById('edit-location').value = event.location;
     document.getElementById('edit-seats').value = event.total_seats;
-    
+
     // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
     // event.date is UTC ISO (e.g., "2023-10-27T14:00:00Z")
     // We need to display it in local time for the input
@@ -262,11 +325,11 @@ async function openViewModal(id) {
 
     document.getElementById('view-modal-title').textContent = event.title;
     document.getElementById('view-description').textContent = event.description;
-    
+
     const dateObj = parseAsUTC(event.date);
     document.getElementById('view-date').textContent = dateObj.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
     document.getElementById('view-time').textContent = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    
+
     document.getElementById('view-location').textContent = event.location;
     document.getElementById('view-seats-ratio').textContent = `${event.going_count} / ${event.total_seats}`;
 
@@ -276,7 +339,7 @@ async function openViewModal(id) {
 
     const tbody = document.getElementById('participants-tbody');
     tbody.innerHTML = '';
-    
+
     participants.forEach(p => {
         tbody.innerHTML += `
             <tr class="border-b hover:bg-gray-50">
