@@ -1,122 +1,96 @@
 let allUsers = [];
-// Get status badge class
+
 function getStatusBadge(status) {
-    const classes = {
-        active: 'badge-success',
-        blocked: 'badge-danger',
-        inactive: 'badge-secondary'
-    };
-    return classes[status] || 'badge-secondary';
+    const map = { active: 'us-badge-active', blocked: 'us-badge-blocked', pending: 'us-badge-pending', inactive: 'us-badge-inactive' };
+    return `<span class="us-badge ${map[status] || 'us-badge-inactive'}">${status}</span>`;
 }
-// Render users table
+
+function getRoleBadge(role) {
+    const map = { student: 'us-badge-student', official: 'us-badge-official', admin: 'us-badge-admin', club: 'us-badge-club' };
+    return `<span class="us-badge ${map[role] || 'us-badge-student'}">${role}</span>`;
+}
+
 function renderUsers(users) {
     const tbody = document.getElementById('users-tbody');
-    tbody.innerHTML = users.map(user => `
-        <tr>
-            <td class="px-4 py-3 text-left">
-                <div class="flex items-center justify-start gap-4">
-                    <div class="admin-avatar" style="width: 40px; height: 40px; font-size: 0.875rem;">
-                        ${user.username.charAt(0).toUpperCase()}
-                    </div>
-                    <div class="text-left">
-                        <div style="font-weight: 600; color: var(--text-primary);">${user.username}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-secondary);">${user.email}</div>
-                    </div>
-                </div>
-            </td>
-            <td class="px-4 py-3 text-left">
-                <span class="badge badge-info">${user.role}</span>
-            </td>
-            <td class="px-4 py-3 text-left">
-                <span class="badge ${getStatusBadge(user.status)}">${user.status}</span>
-            </td>
-            <td class="px-4 py-3 text-left" style="color: var(--text-secondary);">${user.joinDate}</td>
-            <td class="px-4 py-3 text-left">
-                <div class="flex items-left justify-start">
-                    <div class="toggle-switch ${user.status === 'active' ? 'active' : ''}" 
-                        data-user-id="${user.id}"
-                        onclick="toggleUser(${user.id})"
-                        title="Toggle Status">
+    if (!users || users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6">
+            <div class="us-empty">
+                <div class="us-empty-icon"><i class="fa-solid fa-users"></i></div>
+                <strong>No users found</strong>
+                <span>Try adjusting the filters above.</span>
+            </div></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = users.map((user, idx) => `
+        <tr style="animation-delay:${idx * 0.03}s;">
+            <td>
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div class="us-avatar">${user.username.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <div style="font-weight:600;color:hsl(221,39%,11%);font-size:0.875rem;">${user.username}</div>
+                        <div style="font-size:0.75rem;color:hsl(220,14%,50%);">${user.email}</div>
                     </div>
                 </div>
             </td>
-            <td class="px-4 py-3 text-left">
-                <div class="flex items-left justify-start">
-                    <button onclick="viewUserDetails(${user.id})" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-2 rounded-lg transition-colors" title="View Details">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </div>
+            <td>${getRoleBadge(user.role)}</td>
+            <td>${getStatusBadge(user.status)}</td>
+            <td style="font-size:0.8125rem;color:hsl(220,14%,50%);">${user.joinDate}</td>
+            <td>
+                <button class="us-toggle ${user.status === 'active' ? 'active' : ''}"
+                    data-user-id="${user.id}" onclick="toggleUser(${user.id})"
+                    title="Toggle Status"></button>
+            </td>
+            <td>
+                <button onclick="viewUserDetails(${user.id})" class="us-view-btn">
+                    <i class="fas fa-eye" style="font-size:0.7rem;"></i> View
+                </button>
             </td>
         </tr>
     `).join('');
 }
-// Toggle user status
-window.toggleUser = async function(userId) {
+
+window.toggleUser = async function (userId) {
     const toggle = document.querySelector(`[data-user-id="${userId}"]`);
-    toggle.style.opacity = '0.5';
-    toggle.style.pointerEvents = 'none';
+    toggle.disabled = true; toggle.style.opacity = '0.5';
     const result = await API.toggleUser(userId);
-
-    if (result.success) {
+    if (result && result.success) {
         const user = allUsers.find(u => u.id === userId);
-        if (user) {
-            user.status = user.status === 'active' ? 'blocked' : 'active';
-            filterAndRenderUsers();
-        }
+        if (user) { user.status = user.status === 'active' ? 'blocked' : 'active'; filterAndRenderUsers(); }
     }
-    toggle.style.opacity = '1';
-    toggle.style.pointerEvents = 'auto';
-}
-// Filter users
+    if (toggle) { toggle.disabled = false; toggle.style.opacity = '1'; }
+};
+
 function filterAndRenderUsers() {
-    const searchTerm = document.getElementById('search-input').value.toLowerCase();
-    const roleFilter = document.getElementById('role-filter').value;
-    const branchFilter = document.getElementById('branch-filter').value;
-    const statusFilter = document.getElementById('status-filter').value;
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const role = document.getElementById('role-filter').value;
+    const branch = document.getElementById('branch-filter').value;
+    const status = document.getElementById('status-filter').value;
+
     let filtered = [...allUsers];
-    if (searchTerm) {
-        filtered = filtered.filter(user =>
-            user.username.toLowerCase().includes(searchTerm) ||
-            user.email.toLowerCase().includes(searchTerm)
-        );
-    }
-    if (roleFilter) {
-        filtered = filtered.filter(user => user.role === roleFilter);
-    }
-    if (branchFilter) {
-        filtered = filtered.filter(user => user.major === branchFilter);
-    }
-    if (statusFilter) {
-        filtered = filtered.filter(user => user.status === statusFilter);
-    }
-
-    // Default sort: Name (A-Z)
+    if (search) filtered = filtered.filter(u => u.username.toLowerCase().includes(search) || u.email.toLowerCase().includes(search));
+    if (role) filtered = filtered.filter(u => u.role === role);
+    if (branch) filtered = filtered.filter(u => u.major === branch);
+    if (status) filtered = filtered.filter(u => u.status === status);
     filtered.sort((a, b) => a.username.localeCompare(b.username));
-
     renderUsers(filtered);
 }
-// Initialize page
+
 async function initUsers() {
     allUsers = await API.getUsers();
-
-    // Initial sort
     allUsers.sort((a, b) => a.username.localeCompare(b.username));
 
-    // Populate branch filter dynamically based on available users
-    const branches = [...new Set(allUsers.map(u => u.major).filter(b => b))].sort();
+    const branches = [...new Set(allUsers.map(u => u.major).filter(Boolean))].sort();
     const branchSelect = document.getElementById('branch-filter');
-    branches.forEach(branch => {
-        const option = document.createElement('option');
-        option.value = branch;
-        option.textContent = branch;
-        branchSelect.appendChild(option);
+    branches.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b; opt.textContent = b;
+        branchSelect.appendChild(opt);
     });
 
     document.getElementById('users-loading').style.display = 'none';
     document.getElementById('users-table').style.display = 'table';
-
     filterAndRenderUsers();
-    // Add event listeners for filters
+
     document.getElementById('search-input').addEventListener('input', filterAndRenderUsers);
     document.getElementById('role-filter').addEventListener('change', filterAndRenderUsers);
     document.getElementById('branch-filter').addEventListener('change', filterAndRenderUsers);
@@ -124,68 +98,47 @@ async function initUsers() {
 }
 document.addEventListener('DOMContentLoaded', initUsers);
 
-// View User Details Modal Logic
-window.viewUserDetails = async function(userId) {
+// ─── USER DETAILS MODAL ──────────────────────────────────────────
+window.viewUserDetails = async function (userId) {
     const modal = document.getElementById('user-details-modal');
     const loading = document.getElementById('modal-loading');
     const content = document.getElementById('modal-data');
-    
-    // Show modal
     modal.style.display = 'flex';
-    loading.style.display = 'flex';
-    content.classList.add('hidden');
-    
+    loading.style.display = 'block';
+    content.style.display = 'none';
     try {
         const response = await fetch(`/admin/api/users/${userId}/details`);
         const data = await response.json();
-        
         if (response.ok) {
-            // Populate data
             document.getElementById('modal-avatar').src = data.profile_picture;
             document.getElementById('modal-name').textContent = data.full_name;
             document.getElementById('modal-email').textContent = data.email;
-            
+
             const roleBadge = document.getElementById('modal-role');
+            const roleMap = { admin: 'us-badge-admin', official: 'us-badge-official', student: 'us-badge-student', club: 'us-badge-club' };
             roleBadge.textContent = data.role;
-            roleBadge.className = `mt-2 px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-                data.role === 'admin' ? 'bg-red-100 text-red-700' : 
-                data.role === 'official' ? 'bg-blue-100 text-blue-700' : 
-                'bg-green-100 text-green-700'
-            }`;
-            
+            roleBadge.className = 'us-badge ' + (roleMap[data.role] || 'us-badge-student');
+
             document.getElementById('modal-status').textContent = data.status;
-            document.getElementById('modal-status').className = `font-medium capitalize ${data.status === 'active' ? 'text-green-600' : 'text-red-600'}`;
-            
+            document.getElementById('modal-status').style.color = data.status === 'active' ? 'hsl(142,60%,30%)' : 'hsl(0,65%,45%)';
             document.getElementById('modal-joined').textContent = data.joined_date;
             document.getElementById('modal-university').textContent = data.university || 'N/A';
             document.getElementById('modal-major').textContent = data.major || 'N/A';
             document.getElementById('modal-batch').textContent = data.batch || 'N/A';
             document.getElementById('modal-id').textContent = `#${data.id}`;
-            
             document.getElementById('modal-posts-count').textContent = data.stats.posts;
             document.getElementById('modal-connections-count').textContent = data.stats.connections;
-            
-            // Show content
+
             loading.style.display = 'none';
-            content.classList.remove('hidden');
-        } else {
-            alert('Failed to load user details');
-            closeUserModal();
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error loading user details');
-        closeUserModal();
-    }
-}
+            content.style.display = 'block';
+        } else { showToast('Error', 'Failed to load user details', 'error'); closeUserModal(); }
+    } catch (error) { console.error('Error:', error); showToast('Error', 'Error loading user details', 'error'); closeUserModal(); }
+};
 
-window.closeUserModal = function() {
-    document.getElementById('user-details-modal').style.display = 'none';
-}
+window.closeUserModal = function () { document.getElementById('user-details-modal').style.display = 'none'; };
 
-// Close on outside click
-document.getElementById('user-details-modal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeUserModal();
-    }
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('user-details-modal').addEventListener('click', function (e) {
+        if (e.target === this) closeUserModal();
+    });
 });

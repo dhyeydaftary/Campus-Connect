@@ -89,14 +89,14 @@ document.addEventListener('DOMContentLoaded', () => {
             submitIcon.classList.add('fa-spinner', 'fa-spin');
             const formData = new FormData(form);
             try {
-                const response = await fetch('/support/contact-support', {
+                const response = await fetch('/contact-support', {
                     method: 'POST',
                     headers: { 'X-CSRFToken': csrfToken },
                     body: formData
                 });
                 const result = await response.json();
                 if (response.ok && result.success) {
-                    window.location.href = `/support/ticket-success?id=${result.ticket_id}&email=${encodeURIComponent(result.email)}`;
+                    window.location.href = `/ticket-success?id=${result.ticket_id}&email=${encodeURIComponent(result.email)}`;
                 } else {
                     if (window.showToast) showToast(result.error || 'Failed to submit ticket.', 'error');
                     else alert(result.error || 'Failed to submit ticket.');

@@ -1,37 +1,210 @@
 {% extends "emails/base_email.html" %}
+{% block email_title %}New Support Ticket #{{ ticket.id }} &mdash; Campus Connect{% endblock %}
 
 {% block content %}
-<h2>New Support Ticket Received</h2>
-<p>A new support ticket has been submitted to the Campus Connect help desk.</p>
 
-<table style="width: 100%; text-align: left; margin-top: 15px; border-collapse: collapse;">
+{# ── Priority colours ── #}
+{% if ticket.priority == 'critical' %}
+{% set p_bg = '#fef2f2' %}
+{% set p_border = '#fecaca' %}
+{% set p_bar = '#dc2626' %}
+{% set p_text = '#991b1b' %}
+{% set p_label = 'CRITICAL' %}
+{% set p_alert = true %}
+{% elif ticket.priority == 'high' %}
+{% set p_bg = '#fff7ed' %}
+{% set p_border = '#fed7aa' %}
+{% set p_bar = '#ea580c' %}
+{% set p_text = '#9a3412' %}
+{% set p_label = 'HIGH' %}
+{% set p_alert = true %}
+{% elif ticket.priority == 'normal' %}
+{% set p_bg = '#fffbeb' %}
+{% set p_border = '#fde68a' %}
+{% set p_bar = '#d97706' %}
+{% set p_text = '#92400e' %}
+{% set p_label = 'NORMAL' %}
+{% set p_alert = false %}
+{% else %}
+{% set p_bg = '#eff6ff' %}
+{% set p_border = '#bfdbfe' %}
+{% set p_bar = '#2563eb' %}
+{% set p_text = '#1e40af' %}
+{% set p_label = 'LOW' %}
+{% set p_alert = false %}
+{% endif %}
+
+<!-- Priority alert banner (high / critical only) -->
+{% if p_alert %}
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:20px;">
     <tr>
-        <th style="padding: 8px; border-bottom: 1px solid #ddd;">Ticket ID</th>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd;">#{{ ticket.id }}</td>
+        <td style="background:{{ p_bg }};border:1px solid {{ p_border }};
+               border-left:3px solid {{ p_bar }};
+               border-radius:4px;padding:11px 16px;">
+            <p style="margin:0;font-size:13px;font-weight:700;color:{{ p_text }};
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                {{ p_label }} PRIORITY &mdash; This ticket requires prompt attention.
+            </p>
+        </td>
     </tr>
+</table>
+{% endif %}
+
+<p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.8;">
+    A new support ticket has been submitted. Please review the details below and take appropriate action.
+</p>
+
+<!-- Ticket detail table -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"
+    style="margin-bottom:24px;border:1px solid #dde1e9;border-radius:6px;overflow:hidden;">
+
+    <!-- Table header -->
     <tr>
-        <th style="padding: 8px; border-bottom: 1px solid #ddd;">User</th>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ ticket.name }} ({{ ticket.email }})</td>
+        <td colspan="2" style="background:#1e3a8a;padding:10px 18px;">
+            <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.9);
+                   text-transform:uppercase;letter-spacing:0.09em;
+                   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                Ticket Details
+            </span>
+        </td>
     </tr>
-    <tr>
-        <th style="padding: 8px; border-bottom: 1px solid #ddd;">Category</th>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ ticket.category }}</td>
+
+    <!-- Ticket ID -->
+    <tr style="background:#f9fafb;">
+        <td style="width:120px;padding:12px 18px;
+               font-size:12px;font-weight:600;color:#6b7280;
+               text-transform:uppercase;letter-spacing:0.06em;
+               border-bottom:1px solid #e5e7eb;vertical-align:middle;
+               font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            Ticket ID
+        </td>
+        <td style="padding:12px 18px;border-bottom:1px solid #e5e7eb;vertical-align:middle;">
+            <span style="font-size:15px;font-weight:700;color:#1e3a8a;
+                   font-family:'Courier New',Courier,monospace;letter-spacing:1px;">
+                #{{ ticket.id }}
+            </span>
+        </td>
     </tr>
+
+    <!-- User -->
     <tr>
-        <th style="padding: 8px; border-bottom: 1px solid #ddd;">Priority</th>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong style="color: {% if ticket.priority == 'high' %}#e53e3e{% elif ticket.priority == 'normal' %}#dd6b20{% else %}#3182ce{% endif %};">{{ ticket.priority|title }}</strong></td>
+        <td style="width:120px;padding:12px 18px;
+               font-size:12px;font-weight:600;color:#6b7280;
+               text-transform:uppercase;letter-spacing:0.06em;
+               border-bottom:1px solid #e5e7eb;vertical-align:top;
+               font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            User
+        </td>
+        <td style="padding:12px 18px;border-bottom:1px solid #e5e7eb;vertical-align:top;">
+            <span style="font-size:14px;font-weight:600;color:#111827;display:block;
+                   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                {{ ticket.name }}
+            </span>
+            <a href="mailto:{{ ticket.email }}" style="font-size:13px;color:#1d4ed8;text-decoration:none;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                {{ ticket.email }}
+            </a>
+        </td>
     </tr>
+
+    <!-- Category -->
+    <tr style="background:#f9fafb;">
+        <td style="width:120px;padding:12px 18px;
+               font-size:12px;font-weight:600;color:#6b7280;
+               text-transform:uppercase;letter-spacing:0.06em;
+               border-bottom:1px solid #e5e7eb;vertical-align:middle;
+               font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            Category
+        </td>
+        <td style="padding:12px 18px;border-bottom:1px solid #e5e7eb;vertical-align:middle;
+               font-size:14px;color:#374151;
+               font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            {{ ticket.category }}
+        </td>
+    </tr>
+
+    <!-- Priority -->
     <tr>
-        <th style="padding: 8px; border-bottom: 1px solid #ddd;">Subject</th>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd;">{{ ticket.subject }}</td>
+        <td style="width:120px;padding:12px 18px;
+               font-size:12px;font-weight:600;color:#6b7280;
+               text-transform:uppercase;letter-spacing:0.06em;
+               border-bottom:1px solid #e5e7eb;vertical-align:middle;
+               font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            Priority
+        </td>
+        <td style="padding:12px 18px;border-bottom:1px solid #e5e7eb;vertical-align:middle;">
+            <span style="display:inline-block;
+                   font-size:11px;font-weight:700;
+                   text-transform:uppercase;letter-spacing:0.07em;
+                   color:{{ p_text }};
+                   background:{{ p_bg }};
+                   border:1px solid {{ p_border }};
+                   border-radius:3px;padding:3px 9px;
+                   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                {{ p_label }}
+            </span>
+        </td>
+    </tr>
+
+    <!-- Subject -->
+    <tr style="background:#f9fafb;">
+        <td style="width:120px;padding:12px 18px;
+               font-size:12px;font-weight:600;color:#6b7280;
+               text-transform:uppercase;letter-spacing:0.06em;
+               vertical-align:top;
+               font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            Subject
+        </td>
+        <td style="padding:12px 18px;font-size:14px;font-weight:600;color:#374151;
+               vertical-align:top;line-height:1.5;
+               font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            {{ ticket.subject }}
+        </td>
+    </tr>
+
+</table>
+
+<!-- Message body -->
+<p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#6b7280;
+          text-transform:uppercase;letter-spacing:0.08em;
+          font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+    Message
+</p>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:28px;">
+    <tr>
+        <td style="background:#f5f7fa;border:1px solid #dde1e9;border-radius:5px;
+               padding:16px 18px;font-size:14px;color:#374151;
+               line-height:1.75;white-space:pre-wrap;word-break:break-word;
+               font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            {{ ticket.message }}
+        </td>
     </tr>
 </table>
 
-<h3 style="margin-top: 25px;">Message Content</h3>
-<div style="background-color: #f7fafc; padding: 15px; border-radius: 5px; border: 1px solid #e2e8f0; white-space: pre-wrap;">{{ ticket.message }}</div>
+<!-- CTA -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:28px;">
+    <tr>
+        <td>
+            <a href="{{ config['FRONTEND_URL'] }}/admin/tickets" style="display:inline-block;background:#1d4ed8;color:#ffffff;
+                text-decoration:none;font-size:14px;font-weight:600;
+                padding:12px 28px;border-radius:5px;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                View in Admin Dashboard
+            </a>
+        </td>
+    </tr>
+</table>
 
-<div style="text-align: center; margin-top: 30px;">
-    <!-- Link to the admin dashboard (to be built) -->
-    <a href="{{ config['FRONTEND_URL'] }}/admin/tickets" class="button">View in Admin Dashboard</a>
-</div>
+<!-- Divider -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:20px;">
+    <tr>
+        <td style="border-top:1px solid #e5e7eb;"></td>
+    </tr>
+</table>
+
+<p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.7;">
+    This notification was sent to the Campus Connect admin team.
+    Do not reply to this email directly.
+</p>
+
 {% endblock %}
