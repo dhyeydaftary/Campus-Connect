@@ -20,7 +20,7 @@
         position: absolute;
         left: auto;
         right: 0;
-        top: 100%;
+        top: auto;
         margin-top: 16px;
         width: 24rem;
         /* w-96 */
@@ -67,12 +67,6 @@
    enough width + right:0 on the relative parent that is itself near
    the right edge.
 ──────────────────────────────────────────────────────────────── */
-@media (max-width: 639px) {
-    #notification-dropdown {
-        /* Positioning is handled by toggleNotifications() in navbar-utils.js
-           to work around the position:fixed containing-block trap on the navbar */
-    }
-}
 
 /* Animation for Mobile Search */
 @keyframes fadeInDown {
@@ -106,4 +100,29 @@
 
 .animate-fade-in-up {
     animation: fadeInUp 0.15s ease-out forwards;
+}
+
+/* ── Mobile Back Button ─────────────────────────────────────────
+   Hidden everywhere by default.
+   Shown on mobile (<lg) only when the page body has .page-has-back.
+   On desktop the sidebar toggle / logo layout is unchanged.
+──────────────────────────────────────────────────────────────── */
+.mob-back-btn {
+    display: none;
+}
+
+@media (max-width: 1023px) {
+    body.page-has-back .mob-back-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* Force-hide desktop elements on mobile to prevent layout leakage */
+@media (max-width: 767px) {
+    .desktop-search-bar,
+    .desktop-nav-icons {
+        display: none !important;
+    }
 }
