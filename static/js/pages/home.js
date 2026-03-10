@@ -291,9 +291,13 @@ async function loadEvents() {
     const loading = document.getElementById('events-loading');
     const empty = document.getElementById('events-empty');
 
+    // Mobile containers
+    const mobContainer = document.getElementById('mob-events-container');
+    const mobEmpty = document.getElementById('mob-events-empty');
+
     if (!container) return;
 
-    // Show spinner using style.display (inline styles beat class rules)
+    // Show spinner using style.display
     if (loading) {
         loading.style.display = 'flex';
         loading.classList.remove('hidden');
@@ -311,52 +315,38 @@ async function loadEvents() {
             loading.classList.add('hidden');
         }
 
-        if (events.length === 0) {
-            if (empty) empty.classList.remove('hidden');
-            return;
-        }
-
-        container.innerHTML = events.map((event, index) => `
-            <div class="pb-4 ${index < events.length - 1 ? 'border-b border-gray-100' : ''}">
-                <div class="flex gap-3">
-                    <!-- Date Box -->
-                    <div class="flex-shrink-0 text-center bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-2 w-14 border border-indigo-100">
-                        <div class="text-xs font-semibold text-indigo-600">${event.month}</div>
-                        <div class="text-xl font-bold text-gray-900">${event.day}</div>
+        const renderHtml = events.map((event, index) => `
+            <div style="padding-bottom:0.75rem;${index < events.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}">
+                <div style="display:flex;gap:0.625rem;align-items:flex-start;">
+                    <!-- Date Badge -->
+                    <div style="flex-shrink:0;width:2.75rem;height:2.75rem;background:hsl(221,68%,28%);border-radius:0.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;">
+                        <span style="font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;opacity:0.8;line-height:1;">${event.month}</span>
+                        <span style="font-size:1.125rem;font-weight:800;line-height:1.15;">${event.day}</span>
                     </div>
-                    
+
                     <!-- Event Info -->
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-semibold text-sm text-gray-900 mb-1">${event.title}</h4>
-                        
-                        <!-- Time & Location -->
-                        <div class="flex items-center text-xs text-gray-500 mb-1">
-                            <i class="far fa-clock mr-1"></i>
-                            <span>${event.time}</span>
+                    <div style="flex:1;min-width:0;">
+                        <h4 style="font-size:0.8125rem;font-weight:700;color:var(--ink);margin-bottom:0.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${event.title}</h4>
+
+                        <div style="display:flex;align-items:center;gap:0.25rem;font-size:0.6875rem;color:var(--muted);margin-bottom:0.125rem;">
+                            <i class="far fa-clock" style="font-size:0.6rem;flex-shrink:0;"></i>
+                            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${event.time}</span>
                         </div>
-                        <div class="flex items-center text-xs text-gray-500 mb-2">
-                            <i class="fas fa-map-marker-alt mr-1"></i>
-                            <span>${event.location}</span>
+                        <div style="display:flex;align-items:center;gap:0.25rem;font-size:0.6875rem;color:var(--muted);margin-bottom:0.3rem;">
+                            <i class="fas fa-map-marker-alt" style="font-size:0.6rem;flex-shrink:0;"></i>
+                            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${event.location}</span>
                         </div>
-                        
-                        <!-- Seats Info -->
-                        <div class="flex items-center gap-3 text-xs mb-2">
-                            <span class="text-gray-600">
-                                <i class="fas fa-users mr-1"></i>
-                                ${event.goingCount} going
-                            </span>
-                            <span class="text-gray-600">
-                                <i class="fas fa-star mr-1"></i>
-                                ${event.interestedCount} interested
+
+                        <!-- Seats pill -->
+                        <div style="margin-bottom:0.4rem;">
+                            <span style="display:inline-flex;align-items:center;gap:0.2rem;font-size:0.625rem;font-weight:600;padding:0.1rem 0.4rem;border-radius:9999px;${event.availableSeats > 0 ? 'background:hsl(142,60%,91%);color:hsl(142,60%,28%);' : 'background:hsl(0,90%,93%);color:hsl(0,65%,45%);'}">
+                                <i class="fas fa-chair" style="font-size:0.55rem;"></i>
+                                ${event.availableSeats > 0 ? event.availableSeats + ' seats left' : 'Full'}
                             </span>
                         </div>
-                        <div class="text-xs ${event.availableSeats > 0 ? 'text-green-600' : 'text-red-600'} mb-2">
-                            <i class="fas fa-chair mr-1"></i>
-                            ${event.availableSeats} of ${event.totalSeats} seats available
-                        </div>
-                        
+
                         <!-- Action Buttons -->
-                        <div class="flex gap-2 mt-2">
+                        <div style="display:flex;gap:0.375rem;">
                             ${renderEventButton(event, 'interested')}
                             ${renderEventButton(event, 'going')}
                         </div>
@@ -365,52 +355,58 @@ async function loadEvents() {
             </div>
         `).join('');
 
+        if (events.length === 0) {
+            if (empty) empty.classList.remove('hidden');
+            if (mobEmpty) mobEmpty.classList.remove('hidden');
+            container.innerHTML = '';
+            if (mobContainer) mobContainer.innerHTML = '';
+            return;
+        }
+
+        // Update Desktop
+        container.innerHTML = renderHtml;
+        if (empty) empty.classList.add('hidden');
+
+        // Update Mobile
+        if (mobContainer) {
+            mobContainer.innerHTML = renderHtml;
+            if (mobEmpty) mobEmpty.classList.add('hidden');
+        }
+
     } catch (error) {
         console.error('Failed to load events:', error);
         if (loading) {
             loading.style.display = 'none';
             loading.classList.add('hidden');
         }
-        if (container) {
-            container.innerHTML = '<p class="text-red-500 text-sm text-center py-4">Failed to load events</p>';
-        }
+        const errorHtml = '<p class="text-red-500 text-sm text-center py-4">Failed to load events</p>';
+        if (container) container.innerHTML = errorHtml;
+        if (mobContainer) mobContainer.innerHTML = errorHtml;
     }
 }
 
-// NEW FUNCTION: Render Event Button
+// Compact event action button — sized for the 268px right sidebar
 function renderEventButton(event, type) {
     const isActive = event.userStatus === type;
 
     if (type === 'interested') {
-        return `
-            <button onclick="toggleEventStatus(${event.id}, 'interested')"
-                    class="group flex-1 px-5 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${isActive
-                ? 'bg-purple-100 text-purple-700 ring-2 ring-purple-600'
-                : 'bg-gray-50 text-gray-700 hover:bg-purple-50 hover:text-purple-600 hover:ring-2 hover:ring-purple-300'
-            }">
-                <span class="flex items-center justify-center gap-2">
-                    <i class="fas fa-heart text-sm ${isActive ? '' : 'group-hover:scale-125 transition-transform'}"></i>
-                    <span>Interested</span>
-                </span>
-            </button>
-        `;
+        const base = 'display:inline-flex;align-items:center;justify-content:center;gap:0.3rem;flex:1;padding:0.35rem 0.5rem;font-size:0.6875rem;font-weight:600;border-radius:0.4rem;border:1.5px solid;cursor:pointer;transition:all 0.18s ease;white-space:nowrap;';
+        const active = 'background:hsl(270,60%,93%);color:hsl(270,60%,40%);border-color:hsl(270,60%,70%);';
+        const inactive = 'background:hsl(220,20%,97%);color:hsl(220,14%,40%);border-color:hsl(220,18%,88%);';
+        return `<button onclick="toggleEventStatus(${event.id}, 'interested')" style="${base}${isActive ? active : inactive}">
+            <i class="fas fa-heart" style="font-size:0.6rem;"></i> Interested
+        </button>`;
     } else {
         const disabled = event.availableSeats <= 0 && !isActive;
-        return `
-            <button onclick="toggleEventStatus(${event.id}, 'going')"
-                    ${disabled ? 'disabled' : ''}
-                    class="group flex-1 px-5 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${isActive
-                ? 'bg-green-100 text-green-700 ring-2 ring-green-600'
-                : disabled
-                    ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-50 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 hover:ring-2 hover:ring-indigo-300'
-            }">
-                <span class="flex items-center justify-center gap-2">
-                    <i class="fas ${isActive ? 'fa-check' : disabled ? 'fa-times' : 'fa-plus'} text-sm ${!disabled && !isActive ? 'group-hover:rotate-90 transition-transform' : ''}"></i>
-                    <span>${isActive ? "Going" : disabled ? 'Full' : "Join"}</span>
-                </span>
-            </button>
-        `;
+        const base = 'display:inline-flex;align-items:center;justify-content:center;gap:0.3rem;flex:1;padding:0.35rem 0.5rem;font-size:0.6875rem;font-weight:600;border-radius:0.4rem;border:1.5px solid;cursor:pointer;transition:all 0.18s ease;white-space:nowrap;';
+        const active = 'background:hsl(142,60%,91%);color:hsl(142,60%,28%);border-color:hsl(142,60%,65%);';
+        const dis = 'background:hsl(220,18%,95%);color:hsl(220,14%,60%);border-color:hsl(220,18%,88%);cursor:not-allowed;opacity:0.6;';
+        const inactive = 'background:hsl(221,68%,95%);color:hsl(221,68%,35%);border-color:hsl(221,68%,75%);';
+        const icon = isActive ? 'fa-check' : disabled ? 'fa-times' : 'fa-plus';
+        const label = isActive ? 'Going' : disabled ? 'Full' : 'Join';
+        return `<button onclick="toggleEventStatus(${event.id}, 'going')" ${disabled ? 'disabled' : ''} style="${base}${isActive ? active : disabled ? dis : inactive}">
+            <i class="fas ${icon}" style="font-size:0.6rem;"></i> ${label}
+        </button>`;
     }
 }
 
@@ -562,22 +558,20 @@ async function loadSuggestions() {
         // Add each suggestion
         data.suggestions.forEach(user => {
             const suggestionCard = `
-                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition duration-200">
-                    <div class="flex items-center gap-3">
-                        <img src="${user.profile_picture}" 
-                            class="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                            alt="${user.name}"
-                            onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}'">
-                        <div>
-                            <a href="/profile/${user.id}" 
-                                class="text-sm font-semibold text-gray-900 hover:text-indigo-600 transition">
-                                    ${user.name}
-                                </a>
-                            <p class="text-xs text-gray-500 truncate max-w-[140px]">${user.email}</p>
-                        </div>
+                <div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition duration-200">
+                    <img src="${user.profile_picture}" 
+                        class="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        alt="${user.name}"
+                        onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}'">
+                    <div class="flex-1 min-w-0">
+                        <a href="/profile/${user.id}" 
+                            class="text-sm font-semibold text-gray-900 hover:text-indigo-600 transition block truncate">
+                                ${user.name}
+                            </a>
+                        <p class="text-xs text-gray-500 truncate">${user.email}</p>
                     </div>
                     <button onclick="sendConnectionRequest(${user.id})"
-                            class="px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition duration-200">
+                            class="flex-shrink-0 px-3 py-1 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition duration-200">
                         Connect
                     </button>
                 </div>
@@ -840,11 +834,11 @@ async function loadPendingRequests() {
                         <img src="${req.sender.profile_picture}" 
                                 class="w-12 h-12 rounded-full object-cover flex-shrink-0"
                                 alt="${req.sender.name}">
-                        <div class="flex-1">
-                            <a href="/profile/${req.sender.id}" class="font-semibold text-gray-900 hover:text-indigo-600 transition">
+                        <div class="flex-1 min-w-0">
+                            <a href="/profile/${req.sender.id}" class="font-semibold text-gray-900 hover:text-indigo-600 transition block truncate">
                                 ${req.sender.name}
                             </a>
-                            <p class="text-xs text-gray-500">${req.sender.email}</p>
+                            <p class="text-xs text-gray-500 truncate">${req.sender.email}</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -1144,3 +1138,236 @@ document.addEventListener('click', function (event) {
         }
     }
 });
+
+// =================================================================
+// MOBILE BOTTOM NAV + DRAWER
+// Only active on screens < 1024px. Desktop layout is untouched.
+// =================================================================
+
+(function () {
+    // ── State ──
+    let _currentTab = null;
+    let _dataLoaded = { network: false, more: false };
+
+    // ── Open drawer ──
+    function openMobileDrawer(tab) {
+        if (window.innerWidth >= 1024) return;
+
+        const drawer = document.getElementById('mob-drawer');
+        const backdrop = document.getElementById('mob-drawer-backdrop');
+        if (!drawer || !backdrop) return;
+
+        // Show correct panel, hide others
+        ['network', 'more'].forEach(t => {
+            const panel = document.getElementById('mob-panel-' + t);
+            if (panel) panel.classList.toggle('hidden', t !== tab);
+        });
+
+        // Update bottom nav active state
+        document.querySelectorAll('.mob-nav-item').forEach(el => {
+            el.removeAttribute('data-active');
+            el.classList.remove('mob-nav-item--active');
+        });
+        const btn = document.querySelector(`.mob-nav-item[data-tab="${tab}"]`);
+        if (btn) btn.setAttribute('data-active', 'true');
+
+        // Animate in
+        backdrop.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => drawer.classList.add('mob-drawer--open'));
+        });
+
+        _currentTab = tab;
+        document.body.style.overflow = 'hidden';
+
+        // Lazy-load data once per tab
+        if (!_dataLoaded[tab]) {
+            _dataLoaded[tab] = true;
+            if (tab === 'network') _loadNetwork();
+            if (tab === 'more') _loadMore();
+        }
+    }
+
+    // ── Close drawer ──
+    function closeMobileDrawer() {
+        const drawer = document.getElementById('mob-drawer');
+        const backdrop = document.getElementById('mob-drawer-backdrop');
+        if (!drawer) return;
+
+        drawer.classList.remove('mob-drawer--open');
+
+        setTimeout(() => {
+            if (backdrop) backdrop.classList.add('hidden');
+        }, 320);
+
+        // Restore Home as active
+        document.querySelectorAll('.mob-nav-item').forEach(el => {
+            el.removeAttribute('data-active');
+            el.classList.remove('mob-nav-item--active');
+        });
+        const homeBtn = document.querySelector('.mob-nav-item[data-tab="home"]');
+        if (homeBtn) homeBtn.classList.add('mob-nav-item--active');
+
+        _currentTab = null;
+        document.body.style.overflow = '';
+    }
+
+    // ── Swipe-down to close ──
+    let _touchStartY = 0;
+    document.addEventListener('touchstart', e => {
+        if (document.getElementById('mob-drawer')?.classList.contains('mob-drawer--open')) {
+            _touchStartY = e.touches[0].clientY;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', e => {
+        if (document.getElementById('mob-drawer')?.classList.contains('mob-drawer--open')) {
+            const dy = e.changedTouches[0].clientY - _touchStartY;
+            if (dy > 80) closeMobileDrawer();
+        }
+    }, { passive: true });
+
+    // ── Load: Network (Requests + Suggestions) ──
+    async function _loadNetwork() {
+        // Pending Requests
+        try {
+            const res = await fetch('/api/connections/pending');
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+
+            const container = document.getElementById('mob-pending-container');
+            const badge = document.getElementById('mob-pending-badge');
+            const navBadge = document.getElementById('mob-network-badge');
+
+            // Update badges
+            const count = data.count || 0;
+            [badge, navBadge].forEach(b => {
+                if (!b) return;
+                if (count > 0) { b.textContent = count; b.classList.remove('hidden'); }
+                else b.classList.add('hidden');
+            });
+
+            if (container) {
+                if (!data.requests || data.requests.length === 0) {
+                    container.innerHTML = '<p class="mob-empty">No pending requests</p>';
+                } else {
+                    container.innerHTML = data.requests.map(req => `
+                        <div style="background:var(--bg);border-radius:var(--r);padding:0.625rem 0.75rem;margin-top:0.5rem;">
+                            <div style="display:flex;align-items:center;gap:0.625rem;margin-bottom:0.5rem;">
+                                <img src="${req.sender.profile_picture}"
+                                     style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid var(--border);"
+                                     alt="${req.sender.name}">
+                                <div>
+                                    <a href="/profile/${req.sender.id}"
+                                       style="font-weight:600;font-size:0.8125rem;color:var(--ink);text-decoration:none;">
+                                        ${req.sender.name}
+                                    </a>
+                                    <p style="font-size:0.6875rem;color:var(--muted);">${req.sender.email}</p>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:0.5rem;">
+                                <button onclick="acceptConnectionRequest(${req.request_id})"
+                                        style="flex:1;padding:0.375rem 0;background:var(--p);color:#fff;font-size:0.8125rem;font-weight:600;border:none;border-radius:var(--r);cursor:pointer;">
+                                    Accept
+                                </button>
+                                <button onclick="rejectConnectionRequest(${req.request_id})"
+                                        style="flex:1;padding:0.375rem 0;background:var(--bg-deep);color:var(--ink-soft);font-size:0.8125rem;font-weight:600;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;">
+                                    Reject
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch (e) {
+            const c = document.getElementById('mob-pending-container');
+            if (c) c.innerHTML = '<p class="mob-empty">Could not load requests</p>';
+        }
+
+        // Suggestions
+        try {
+            const res = await fetch('/api/connections/suggestions');
+            if (!res.ok) throw new Error();
+            const suggestions = await res.json();
+            const container = document.getElementById('mob-suggestions-container');
+
+            if (container) {
+                if (!suggestions || suggestions.length === 0) {
+                    container.innerHTML = '<p class="mob-empty">No suggestions available</p>';
+                } else {
+                    container.innerHTML = suggestions.slice(0, 5).map(s => `
+                        <div style="display:flex;align-items:center;gap:0.625rem;padding:0.5rem 0;border-bottom:1px solid var(--border-soft);">
+                            <img src="${s.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=3b4fd8&color=fff&size=40`}"
+                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid var(--border);"
+                                 alt="${s.name}">
+                            <div style="flex:1;min-width:0;">
+                                <a href="/profile/${s.id}"
+                                   style="font-weight:600;font-size:0.8125rem;color:var(--ink);text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    ${s.name}
+                                </a>
+                                <p style="font-size:0.6875rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    ${s.major || ''}
+                                </p>
+                            </div>
+                            <button onclick="sendConnectionRequest(${s.id}, this)"
+                                    style="flex-shrink:0;padding:0.3rem 0.75rem;background:var(--p-light);color:var(--p);font-size:0.75rem;font-weight:600;border:1px solid hsl(225 70% 40% / 0.2);border-radius:999px;cursor:pointer;white-space:nowrap;">
+                                Connect
+                            </button>
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch (e) {
+            const c = document.getElementById('mob-suggestions-container');
+            if (c) c.innerHTML = '<p class="mob-empty">Could not load suggestions</p>';
+        }
+    }
+
+    // ── Load: More (Announcements + Events + Profile Completion) ──
+    function _loadMore() {
+        // Mirror DOM content from desktop sidebar (already fetched by page load)
+        // Use a small delay to ensure sidebar JS has already run
+        setTimeout(() => {
+            // Announcements
+            const src = document.getElementById('mini-announcements-list');
+            const dest = document.getElementById('mob-announcements-list');
+            if (src && dest) dest.innerHTML = src.innerHTML || '<p class="mob-empty">No announcements yet.</p>';
+
+            // Events
+            const srcEv = document.getElementById('events-container');
+            const destEv = document.getElementById('mob-events-container');
+            const srcEmp = document.getElementById('events-empty');
+            const destEmp = document.getElementById('mob-events-empty');
+            if (srcEv && destEv) {
+                if (srcEv.innerHTML.trim()) {
+                    destEv.innerHTML = srcEv.innerHTML;
+                } else if (srcEmp && !srcEmp.classList.contains('hidden')) {
+                    if (destEmp) destEmp.classList.remove('hidden');
+                }
+            }
+
+            // Profile Completion
+            const srcComp = document.getElementById('profile-completion-card');
+            const destComp = document.getElementById('mob-completion-card');
+            if (srcComp && destComp) destComp.innerHTML = srcComp.innerHTML;
+
+        }, 400);
+    }
+
+    // ── Sync network badge on page load ──
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const desktopBadge = document.getElementById('pending-requests-badge');
+            const navBadge = document.getElementById('mob-network-badge');
+            if (desktopBadge && navBadge && !desktopBadge.classList.contains('hidden')) {
+                navBadge.textContent = desktopBadge.textContent;
+                navBadge.classList.remove('hidden');
+            }
+        }, 1500);
+    });
+
+    // ── Expose to global scope (used by onclick in HTML) ──
+    window.openMobileDrawer = openMobileDrawer;
+    window.closeMobileDrawer = closeMobileDrawer;
+
+})();

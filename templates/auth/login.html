@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/login.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <script defer src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/pages/login.js') }}"></script>
 </head>
@@ -136,13 +137,11 @@
                         </div>
 
                         <div>
-                            <label for="otp" class="text-sm font-medium text-slate-700">Enter OTP</label>
-                            <div class="relative mt-1.5">
-                                <i
-                                    class="fa-solid fa-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <label for="otp" class="text-sm font-medium text-slate-700 block text-center mb-2">Enter 6-Digit OTP</label>
+                            <div class="relative max-w-[240px] mx-auto">
                                 <input id="otp" type="text" maxlength="6"
-                                    class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-3 text-sm input-glow tracking-[0.3em] font-mono text-center transition-all duration-200"
-                                    placeholder="000000">
+                                    class="h-14 w-full rounded-xl border-2 border-slate-200 bg-slate-50/50 text-2xl tracking-[0.5em] font-bold text-center transition-all duration-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 outline-none"
+                                    placeholder="••••••" autocomplete="one-time-code">
                             </div>
                         </div>
 

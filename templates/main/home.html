@@ -388,7 +388,7 @@
                     <span>Post</span>
                 </button>
             </div>
-            
+
         </div>
     </div>
     <!-- End Create Post Modal -->
@@ -542,6 +542,145 @@
 
     <!-- Page-level announcement logic -->
     <script src="{{ url_for('static', filename='js/features/student_announcements.js') }}"></script>
+
+
+    <!-- ================================================================
+         MOBILE BOTTOM NAVIGATION BAR  (hidden on desktop via CSS)
+    ================================================================ -->
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile navigation">
+
+        <a href="/home" class="mob-nav-item mob-nav-item--active" data-tab="home" aria-label="Home">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+
+        <button class="mob-nav-item" data-tab="network" onclick="openMobileDrawer('network')" aria-label="Network">
+            <i class="fas fa-users"></i>
+            <span>Network</span>
+            <span id="mob-network-badge" class="mob-nav-badge hidden">0</span>
+        </button>
+
+        <a href="/messages" class="mob-nav-item" data-tab="messages" aria-label="Messages">
+            <i class="fas fa-comment-alt"></i>
+            <span>Messages</span>
+        </a>
+
+        <button class="mob-nav-item" data-tab="more" onclick="openMobileDrawer('more')" aria-label="More">
+            <i class="fas fa-th-large"></i>
+            <span>More</span>
+        </button>
+
+        <a href="/profile/{{ session.user_id }}" class="mob-nav-item" data-tab="profile" aria-label="Profile">
+            <img src="{{ user.profile_picture if user.profile_picture else 'https://ui-avatars.com/api/?name=' + user_name + '&background=3b4fd8&color=fff&size=32' }}"
+                alt="{{ user_name }}" class="mob-nav-avatar">
+            <span>Profile</span>
+        </a>
+
+    </nav>
+
+
+    <!-- ================================================================
+         MOBILE SLIDE-UP DRAWER  (hidden on desktop via CSS)
+    ================================================================ -->
+    <div id="mob-drawer-backdrop" class="mob-drawer-backdrop hidden" onclick="closeMobileDrawer()"></div>
+
+    <div id="mob-drawer" class="mob-drawer" aria-modal="true" role="dialog">
+
+        <!-- Drag handle -->
+        <div class="mob-drawer-handle" onclick="closeMobileDrawer()"></div>
+
+        <!-- ── NETWORK PANEL ── -->
+        <div id="mob-panel-network" class="mob-panel hidden">
+            <div class="mob-panel-header">
+                <h2 class="mob-panel-title">Network</h2>
+                <button class="mob-panel-close" onclick="closeMobileDrawer()" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mob-panel-body">
+
+                <!-- Connection Requests -->
+                <div class="mob-card">
+                    <div class="mob-card-head">
+                        <h3 class="mob-card-title">
+                            <i class="fas fa-user-plus"></i> Requests
+                        </h3>
+                        <span id="mob-pending-badge" class="pending-badge hidden">0</span>
+                    </div>
+                    <div id="mob-pending-container">
+                        <p class="mob-empty">Loading…</p>
+                    </div>
+                </div>
+
+                <!-- Suggestions -->
+                <div class="mob-card">
+                    <div class="mob-card-head">
+                        <h3 class="mob-card-title">
+                            <i class="fas fa-user-friends"></i> Suggested for You
+                        </h3>
+                    </div>
+                    <div id="mob-suggestions-container">
+                        <p class="mob-empty">Loading…</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── MORE PANEL ── -->
+        <div id="mob-panel-more" class="mob-panel hidden">
+            <div class="mob-panel-header">
+                <h2 class="mob-panel-title">More</h2>
+                <button class="mob-panel-close" onclick="closeMobileDrawer()" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mob-panel-body">
+
+                <!-- Announcements -->
+                <div class="mob-card">
+                    <div class="mob-card-head">
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <div class="ann-icon-wrap"><i class="fas fa-bullhorn"></i></div>
+                            <h3 class="mob-card-title">Announcements</h3>
+                        </div>
+                        <span class="ann-badge">Latest</span>
+                    </div>
+                    <div id="mob-announcements-list"
+                        style="display:flex;flex-direction:column;gap:2px;margin-top:0.625rem;">
+                        <p class="mob-empty">Loading…</p>
+                    </div>
+                    <button onclick="openAllAnnouncements()" class="view-all-link" style="margin-top:0.75rem;">
+                        View all announcements →
+                    </button>
+                </div>
+
+                <!-- Events -->
+                <div class="mob-card">
+                    <div class="mob-card-head">
+                        <h3 class="mob-card-title">
+                            <i class="fas fa-calendar-alt"></i> Events
+                        </h3>
+                        <a href="#" class="sidebar-see-all">See all</a>
+                    </div>
+                    <div id="mob-events-container"
+                        style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.625rem;"></div>
+                    <div id="mob-events-empty" class="hidden"
+                        style="text-align:center;padding:1rem 0;color:var(--muted);font-size:0.8125rem;">
+                        <i class="fas fa-calendar-times"
+                            style="font-size:1.5rem;margin-bottom:0.5rem;display:block;opacity:0.4;"></i>
+                        <p>No upcoming events</p>
+                    </div>
+                </div>
+
+                <!-- Profile Completion (mirrored) -->
+                <div id="mob-completion-card"></div>
+
+            </div>
+        </div>
+
+    </div>
+    <!-- End Mobile Drawer -->
 
 </body>
 
