@@ -1,26 +1,155 @@
 {% extends "emails/base_email.html" %}
+{% block email_title %}Ticket Status Update &mdash; Campus Connect{% endblock %}
 
 {% block content %}
-<h2>Update on Your Support Ticket</h2>
-<p>There has been a status update regarding your recent support ticket (#{{ ticket.id }}).</p>
 
-<div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 20px; text-align: center; margin: 20px 0; border-radius: 6px;">
-    <p style="margin: 0; color: #4a5568; font-size: 14px;">Current Status</p>
-    <h3 style="margin: 5px 0 0 0; color: {% if ticket.status == 'resolved' or ticket.status == 'closed' %}#38a169{% elif ticket.status == 'in_progress' %}#d69e2e{% else %}#3182ce{% endif %}; font-size: 24px; text-transform: uppercase;">
-        {{ ticket.status.replace('_', ' ') }}
-    </h3>
-</div>
-
-<p><strong>Subject:</strong> {{ ticket.subject }}</p>
-
-{% if ticket.status == 'resolved' or ticket.status == 'closed' %}
-<p>This ticket has now been marked as resolved/closed. We hope our team was able to provide the assistance you needed.</p>
-<p>If you are still experiencing issues, or have a new issue to report, please consider submitting a new ticket.</p>
+{# ── Resolve status colours ── #}
+{% if ticket.status in ['resolved', 'closed'] %}
+{% set s_bg = '#f0fdf4' %}
+{% set s_border = '#86efac' %}
+{% set s_text = '#166534' %}
+{% set s_label = 'Resolved' if ticket.status == 'resolved' else 'Closed' %}
+{% set s_bar = '#16a34a' %}
+{% elif ticket.status == 'in_progress' %}
+{% set s_bg = '#fffbeb' %}
+{% set s_border = '#fde68a' %}
+{% set s_text = '#92400e' %}
+{% set s_label = 'In Progress' %}
+{% set s_bar = '#d97706' %}
 {% else %}
-<p>Our team is currently working on this ticket and will provide further updates or reach out if we require additional information.</p>
+{% set s_bg = '#eff6ff' %}
+{% set s_border = '#bfdbfe' %}
+{% set s_text = '#1e40af' %}
+{% set s_label = ticket.status | replace('_', ' ') | title %}
+{% set s_bar = '#2563eb' %}
 {% endif %}
 
-<div style="text-align: center; margin-top: 30px;">
-    <a href="{{ config['FRONTEND_URL'] }}/support/help_center" class="button">Visit Help Center</a>
-</div>
+<p style="margin:0 0 6px;font-size:15px;color:#374151;line-height:1.8;">Hello,</p>
+
+<p style="margin:0 0 28px;font-size:15px;color:#374151;line-height:1.8;">
+    There has been a status update on your support ticket
+    (<strong>#{{ ticket.id }}</strong>). Please see the details below.
+</p>
+
+<!-- Status card -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:28px;">
+    <tr>
+        <td style="border:1px solid {{ s_border }};border-radius:6px;overflow:hidden;">
+
+            <!-- Coloured bar -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                    <td style="background:{{ s_bar }};padding:10px 18px;">
+                        <span style="font-size:11px;font-weight:700;color:#ffffff;
+                         text-transform:uppercase;letter-spacing:0.09em;
+                         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                            Status Update &nbsp;&middot;&nbsp; Ticket #{{ ticket.id }}
+                        </span>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Status detail -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <!-- Status row -->
+                <tr>
+                    <td style="width:110px;padding:14px 18px;
+                     font-size:12px;font-weight:600;color:#6b7280;
+                     text-transform:uppercase;letter-spacing:0.06em;
+                     border-bottom:1px solid {{ s_border }};
+                     background:{{ s_bg }};vertical-align:middle;
+                     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                        Status
+                    </td>
+                    <td style="padding:14px 18px;border-bottom:1px solid {{ s_border }};
+                     background:{{ s_bg }};vertical-align:middle;">
+                        <span style="display:inline-block;
+                         font-size:12px;font-weight:700;
+                         text-transform:uppercase;letter-spacing:0.07em;
+                         color:{{ s_text }};
+                         background:{{ s_bg }};
+                         border:1.5px solid {{ s_border }};
+                         border-radius:4px;
+                         padding:3px 10px;
+                         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                            {{ s_label }}
+                        </span>
+                    </td>
+                </tr>
+                <!-- Subject row -->
+                <tr>
+                    <td style="width:110px;padding:14px 18px;
+                     font-size:12px;font-weight:600;color:#6b7280;
+                     text-transform:uppercase;letter-spacing:0.06em;
+                     background:{{ s_bg }};vertical-align:top;
+                     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                        Subject
+                    </td>
+                    <td style="padding:14px 18px;font-size:14px;color:#374151;
+                     background:{{ s_bg }};vertical-align:top;line-height:1.6;
+                     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                        {{ ticket.subject }}
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+<!-- Context message -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:28px;">
+    <tr>
+        <td style="background:#f5f7fa;border:1px solid #dde1e9;border-radius:6px;padding:16px 18px;">
+            {% if ticket.status in ['resolved', 'closed'] %}
+            <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:#111827;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                This ticket has been marked as {{ s_label | lower }}.
+            </p>
+            <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                We hope our team was able to provide the assistance you needed. If you continue to experience issues or
+                have a new request, please submit a new support ticket.
+            </p>
+            {% else %}
+            <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:#111827;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                Our team is currently working on your request.
+            </p>
+            <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                We will provide further updates or reach out directly if we require additional information from you.
+                Thank you for your patience.
+            </p>
+            {% endif %}
+        </td>
+    </tr>
+</table>
+
+<!-- CTA -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:28px;">
+    <tr>
+        <td>
+            <a href="{{ config['FRONTEND_URL'] }}/support/help_center" style="display:inline-block;background:#1d4ed8;color:#ffffff;
+                text-decoration:none;font-size:14px;font-weight:600;
+                padding:12px 28px;border-radius:5px;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                Visit Help Center
+            </a>
+        </td>
+    </tr>
+</table>
+
+<!-- Divider -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:20px;">
+    <tr>
+        <td style="border-top:1px solid #e5e7eb;"></td>
+    </tr>
+</table>
+
+<p style="margin:0;font-size:14px;color:#374151;line-height:1.7;">
+    Thank you for using Campus Connect Support.<br>
+    <strong>The Campus Connect Support Team</strong>
+</p>
+
 {% endblock %}

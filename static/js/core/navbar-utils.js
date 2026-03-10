@@ -157,18 +157,26 @@ async function updateMessageBadge() {
         const response = await fetch('/api/chats/unread-count');
         if (response.ok) {
             const data = await response.json();
-            const badge = document.getElementById('message-badge');
-            if (badge) {
-                const count = data.total_unread;
-                if (count > 0) {
-                    badge.textContent = count > 99 ? '99+' : count;
-                    badge.classList.remove('hidden');
-                    badge.classList.add('flex');
-                } else {
-                    badge.classList.add('hidden');
-                    badge.classList.remove('flex');
+            const count = data.total_unread;
+            
+            // Target both desktop and mobile badges
+            const badges = [
+                document.getElementById('message-badge'),
+                document.getElementById('mob-message-badge')
+            ];
+
+            badges.forEach(badge => {
+                if (badge) {
+                    if (count > 0) {
+                        badge.textContent = count > 99 ? '99+' : count;
+                        badge.classList.remove('hidden');
+                        badge.classList.add('flex');
+                    } else {
+                        badge.classList.add('hidden');
+                        badge.classList.remove('flex');
+                    }
                 }
-            }
+            });
         }
     } catch (error) {
         console.error('Error updating message badge:', error);

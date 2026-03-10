@@ -16,8 +16,7 @@ def admin_required():
         abort(redirect(url_for("auth.admin_login_page")))  # Redirect to admin login if not authenticated
     
     if session.get("account_type") != "admin":
-        flash("Administrator access required.", "error")
-        abort(redirect(url_for("auth.login_page")))  # Redirect regular student to student login
+        abort(403)  # Forbidden for non-admins
 
 
 def login_required(f):

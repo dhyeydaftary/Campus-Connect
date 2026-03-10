@@ -1,169 +1,108 @@
-// Load announcements
 let currentAnnouncements = [];
-let currentStatus = 'active'; // 'active' or 'deleted'
+let currentStatus = 'active';
 
-/**
- * Injects the 'Active' and 'Past Announcements' tabs into the DOM if they don't exist.
- * This allows users to switch between viewing active and soft-deleted announcements.
- */
-function injectTabs() {
-    const listContainer = document.getElementById('announcements-list');
-    if (!listContainer || document.getElementById('announcement-tabs')) return;
-
-    const tabsHtml = `
-        <div id="announcement-tabs" class="flex border-b border-gray-200 mb-4 transition-all duration-300">
-            <button id="tab-active" class="px-4 py-2 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 focus:outline-none transition-colors duration-200">
-                Active Announcements
-            </button>
-            <button id="tab-deleted" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors duration-200">
-                Past Announcements <i class="fas fa-history ml-1"></i>
-            </button>
-        </div>
-    `;
-    listContainer.insertAdjacentHTML('beforebegin', tabsHtml);
-
-    // Add event listeners
-    document.getElementById('tab-active').addEventListener('click', () => switchTab('active'));
-    document.getElementById('tab-deleted').addEventListener('click', () => switchTab('deleted'));
-}
-
-/**
- * Handles the UI and logic for switching between the 'active' and 'deleted' announcement tabs.
- * @param {'active' | 'deleted'} status - The status to switch to.
- */
-window.switchTab = function(status) {
-    if (currentStatus === status) return; // Prevent reload if same tab
+// ─── TAB SWITCHING ───────────────────────────────────────────────
+window.switchTab = function (status) {
+    if (currentStatus === status) return;
     currentStatus = status;
-    
-    // Update Tab UI
+
     const activeTab = document.getElementById('tab-active');
     const deletedTab = document.getElementById('tab-deleted');
-    
-    if (status === 'active') {
-        activeTab.className = "px-4 py-2 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 focus:outline-none transition-colors duration-200";
-        deletedTab.className = "px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors duration-200";
-    } else {
-        activeTab.className = "px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors duration-200";
-        deletedTab.className = "px-4 py-2 text-sm font-medium text-red-600 border-b-2 border-red-600 focus:outline-none transition-colors duration-200";
-    }
-    
-    loadAnnouncements();
-}
 
-/**
- * Fetches announcements from the API based on the current status ('active' or 'deleted') and renders them.
- */
+    if (status === 'active') {
+        activeTab.className = 'an-tab active';
+        deletedTab.className = 'an-tab';
+    } else {
+        activeTab.className = 'an-tab';
+        deletedTab.className = 'an-tab active-past';
+    }
+    loadAnnouncements();
+};
+
+// ─── LOAD ─────────────────────────────────────────────────────────
 async function loadAnnouncements() {
     const container = document.getElementById('announcements-list');
-    
-    // Smooth transition: Fade out
     if (container) {
-        container.style.transition = 'opacity 0.15s ease-in-out';
         container.style.opacity = '0.5';
+        container.style.transition = 'opacity 0.15s ease-in-out';
     }
-
     try {
-        // Add timestamp to prevent caching
         const response = await fetch(`/admin/api/announcements?status=${currentStatus}&_=${Date.now()}`);
         const announcements = await response.json();
-        
-        // Small delay to allow fade-out effect to be visible
         setTimeout(() => {
-        renderAnnouncements(announcements);
-            if (container) {
-                container.style.opacity = '1';
-            }
+            renderAnnouncements(announcements);
+            if (container) container.style.opacity = '1';
         }, 150);
-
     } catch (error) {
         console.error('Error loading announcements:', error);
-        if (container) container.style.opacity = '1';
+        if (container) { container.style.opacity = '1'; container.innerHTML = '<div class="an-empty"><div class="an-empty-icon" style="background:hsl(0,90%,95%);color:hsl(0,65%,48%);"><i class="fa-solid fa-circle-exclamation"></i></div><strong>Failed to load</strong><span>Please try refreshing the page.</span></div>'; }
     }
 }
 
-/**
- * Renders a list of announcement objects into the DOM.
- * @param {Array<object>} announcements - The array of announcement objects to render.
- */
+// ─── RENDER ───────────────────────────────────────────────────────
 function renderAnnouncements(announcements) {
     currentAnnouncements = announcements;
     const container = document.getElementById('announcements-list');
 
     if (announcements.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                ${currentStatus === 'active' ? 'No active announcements.' : 'No past announcements found.'}
-            </div>
-        `;
+            <div class="an-empty">
+                <div class="an-empty-icon">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <strong>${currentStatus === 'active' ? 'No active announcements' : 'No past announcements'}</strong>
+                <span>${currentStatus === 'active' ? 'Create one using the form above.' : 'Archived announcements will appear here.'}</span>
+            </div>`;
         return;
     }
 
-    // Different actions based on status
     const getActions = (ann) => {
         if (currentStatus === 'active') {
             return `
-                <button onclick="editAnnouncement(${ann.id})" class="text-blue-600 hover:text-blue-800 p-1" title="Edit">
+                <button onclick="editAnnouncement(${ann.id})" class="an-btn-icon an-btn-edit" title="Edit">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteAnnouncement(${ann.id})" class="text-red-600 hover:text-red-800 p-1" title="Move to Past">
+                <button onclick="deleteAnnouncement(${ann.id})" class="an-btn-icon an-btn-archive" title="Archive">
                     <i class="fas fa-archive"></i>
-                </button>
-            `;
+                </button>`;
         } else {
             return `
-                <button onclick="restoreAnnouncement(${ann.id})" class="text-green-600 hover:text-green-800 p-1 flex items-center gap-1" title="Restore">
-                    <i class="fas fa-trash-restore"></i> Restore
-                </button>
-            `;
+                <button onclick="restoreAnnouncement(${ann.id})" class="an-btn-icon an-btn-restore" title="Restore">
+                    <i class="fas fa-trash-restore"></i>
+                </button>`;
         }
     };
 
-    // Styling: Blue line for active, Red line for deleted
-    const activeClass = "bg-white border-l-4 border-indigo-500 shadow-sm rounded-r-md p-4 mb-3";
-    const deletedClass = "bg-red-50 border-l-4 border-red-500 shadow-sm rounded-r-md p-4 mb-3";
-
-    container.innerHTML = announcements.map(ann => `
-        <div class="announcement-item ${currentStatus === 'deleted' ? deletedClass : activeClass}">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-800">${ann.title || 'No Title'}</h3>
-                    <div class="announcement-date text-sm text-gray-500">
-                        <strong>${ann.author}</strong> • ${ann.date}
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    ${getActions(ann)}
-                </div>
+    container.innerHTML = announcements.map((ann, idx) => `
+        <div class="an-item ${currentStatus === 'deleted' ? 'past' : ''}" style="animation-delay:${idx * 0.05}s;">
+            <div class="an-item-accent ${currentStatus === 'deleted' ? 'past' : 'active'}"></div>
+            <div class="an-item-body">
+                <p class="an-item-title">${ann.title || 'No Title'}</p>
+                <p class="an-item-meta"><strong>${ann.author}</strong> &bull; ${ann.date}</p>
+                <p class="an-item-content">${ann.content}</p>
             </div>
-            <div class="announcement-text text-gray-700 whitespace-pre-wrap">${ann.content}</div>
+            <div class="an-item-actions">${getActions(ann)}</div>
         </div>
     `).join('');
 }
 
-/**
- * Updates the character count display for the announcement text area.
- */
+// ─── CHAR COUNT ───────────────────────────────────────────────────
 function updateCharCount() {
     const text = document.getElementById('announcement-text').value;
     document.getElementById('char-count').textContent = text.length;
 }
 
-/**
- * Handles the submission of the new announcement form.
- * @param {Event} e - The form submission event.
- */
+// ─── CREATE ───────────────────────────────────────────────────────
 async function handleSubmit(e) {
     e.preventDefault();
     const title = document.getElementById('announcement-title').value.trim();
     const content = document.getElementById('announcement-text').value.trim();
-    
     if (!title || !content) return;
-    
+
     const publishBtn = document.getElementById('publish-btn');
     publishBtn.disabled = true;
-    publishBtn.innerHTML = '<div class="spinner" style="width: 18px; height: 18px; border-width: 2px;"></div> Publishing...';
-    
-    // API call now sends title and content
+    publishBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing…';
+
     try {
         const response = await fetch('/admin/api/announcements', {
             method: 'POST',
@@ -171,281 +110,164 @@ async function handleSubmit(e) {
             body: JSON.stringify({ title, content })
         });
         const result = await response.json();
-        
         if (response.ok) {
             document.getElementById('announcement-title').value = '';
             document.getElementById('announcement-text').value = '';
             updateCharCount();
+            showToast('Published', 'Announcement posted successfully.', 'success');
             loadAnnouncements();
         } else {
-            alert(result.error || 'Failed to create announcement');
+            showToast('Error', result.error || 'Failed to create announcement', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('An error occurred');
+        showToast('Error', 'An error occurred. Please try again.', 'error');
     }
-    
+
     publishBtn.disabled = false;
-    publishBtn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m3 11 18-5v12L3 14v-3z"/>
-        </svg>
-        Publish Announcement
-    `;
+    publishBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Publish Announcement';
 }
 
-/**
- * Opens the edit modal and populates it with the data of the selected announcement.
- * @param {number} id - The ID of the announcement to edit.
- */
-window.editAnnouncement = function(id) {
+// ─── EDIT MODAL ───────────────────────────────────────────────────
+window.editAnnouncement = function (id) {
     const ann = currentAnnouncements.find(a => a.id === id);
     if (!ann) return;
-    
     document.getElementById('edit-id').value = ann.id;
     document.getElementById('edit-title').value = ann.title;
-    document.getElementById('edit-content').value = ann.content; // Use content, not text alias
-    
+    document.getElementById('edit-content').value = ann.content;
     document.getElementById('edit-modal').style.display = 'flex';
-}
+};
 
-/**
- * Closes the announcement edit modal.
- */
-window.closeEditModal = function() {
+window.closeEditModal = function () {
     document.getElementById('edit-modal').style.display = 'none';
-}
+};
 
-/**
- * Event listener for the edit form submission to update an announcement.
- */
-document.getElementById('edit-form').addEventListener('submit', async function(e) {
+document.getElementById('edit-form').addEventListener('submit', async function (e) {
     e.preventDefault();
     const id = document.getElementById('edit-id').value;
     const title = document.getElementById('edit-title').value;
     const content = document.getElementById('edit-content').value;
-    
     try {
         const response = await fetch(`/admin/api/announcements/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title, content })
         });
-        
         if (response.ok) {
             closeEditModal();
+            showToast('Updated', 'Announcement updated successfully.', 'success');
             loadAnnouncements();
         } else {
-            alert('Failed to update announcement');
+            showToast('Error', 'Failed to update announcement', 'error');
         }
-    } catch (error) {
-        console.error(error);
-        alert('Error updating announcement');
-    }
+    } catch (error) { showToast('Error', 'Error updating announcement', 'error'); }
 });
 
-/**
- * Logic for handling the delete/archive confirmation modal.
- */
+// ─── ARCHIVE (delete) ─────────────────────────────────────────────
 let announcementToDeleteId = null;
 
-/**
- * Injects the delete confirmation modal into the DOM if it doesn't exist.
- */
 function injectDeleteModal() {
     if (document.getElementById('delete-modal')) return;
-    
-    const modalHtml = `
-    <div id="delete-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden transform transition-all">
-            <div class="p-6">
-                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-yellow-100 rounded-full mb-4">
-                    <i class="fas fa-archive text-yellow-600 text-2xl"></i>
+    const html = `
+    <div id="delete-modal" class="an-modal-backdrop" style="display:none;">
+        <div class="an-confirm-modal">
+            <div style="padding:2rem;text-align:center;">
+                <div class="an-confirm-icon-wrap" style="background:hsl(45,93%,90%);color:hsl(32,80%,35%);">
+                    <i class="fas fa-archive"></i>
                 </div>
-                <h3 class="text-lg font-medium text-center text-gray-900 mb-2">Archive Announcement</h3>
-                <p class="text-sm text-center text-gray-500">Are you sure you want to archive this announcement? It will be moved to Past Announcements.</p>
+                <h3 style="font-size:1rem;font-weight:700;color:hsl(221,39%,11%);margin-bottom:0.5rem;">Archive Announcement</h3>
+                <p style="font-size:0.875rem;color:hsl(220,14%,50%);">This will move the announcement to Past Announcements. It can be restored later.</p>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-2">
-                <button onclick="closeDeleteModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                    Cancel
-                </button>
-                <button id="confirm-delete-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                    Archive
-                </button>
-                
+            <div style="display:flex;justify-content:flex-end;gap:0.625rem;padding:1rem 1.5rem;border-top:1px solid hsl(220,18%,92%);background:hsl(220,20%,98%);">
+                <button onclick="closeDeleteModal()" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;font-size:0.875rem;font-weight:600;border-radius:0.5rem;border:1.5px solid hsl(220,18%,86%);background:white;color:hsl(220,14%,35%);cursor:pointer;">Cancel</button>
+                <button id="confirm-delete-btn" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;font-size:0.875rem;font-weight:600;border-radius:0.5rem;border:none;background:hsl(38,80%,45%);color:white;cursor:pointer;"><i class="fas fa-archive"></i> Archive</button>
             </div>
         </div>
     </div>`;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
+    document.body.insertAdjacentHTML('beforeend', html);
     document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
-        if (announcementToDeleteId) {
-            await performDelete(announcementToDeleteId);
-        }
+        if (announcementToDeleteId) await performDelete(announcementToDeleteId);
     });
 }
 
-/**
- * Opens the delete confirmation modal for a specific announcement.
- * @param {number} id - The ID of the announcement to delete.
- */
-window.deleteAnnouncement = function(id) {
+window.deleteAnnouncement = function (id) {
     announcementToDeleteId = id;
-    const modal = document.getElementById('delete-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.style.display = 'flex';
-    }
-}
+    document.getElementById('delete-modal').style.display = 'flex';
+};
 
-/**
- * Closes the delete confirmation modal.
- */
-window.closeDeleteModal = function() {
-    const modal = document.getElementById('delete-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-    }
+window.closeDeleteModal = function () {
+    document.getElementById('delete-modal').style.display = 'none';
     announcementToDeleteId = null;
-}
+};
 
-/**
- * Performs the actual API call to soft-delete (archive) an announcement.
- * @param {number} id - The ID of the announcement to delete.
- */
 async function performDelete(id) {
     const btn = document.getElementById('confirm-delete-btn');
-    const originalText = btn.innerText;
-    btn.disabled = true;
-    btn.innerText = 'Deleting...';
-    
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Archiving…';
     try {
-        const response = await fetch(`/admin/api/announcements/${id}`, {
-            method: 'DELETE'
-        });
-        
+        const response = await fetch(`/admin/api/announcements/${id}`, { method: 'DELETE' });
         if (response.ok) {
-            loadAnnouncements();
-            closeDeleteModal();
-        } else {
-            alert('Failed to delete announcement');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('Error deleting announcement');
-    } finally {
-        btn.disabled = false;
-        btn.innerText = originalText;
-    }
+            showToast('Archived', 'Announcement moved to Past.', 'success');
+            loadAnnouncements(); closeDeleteModal();
+        } else { showToast('Error', 'Failed to archive announcement', 'error'); }
+    } catch (error) { showToast('Error', 'Error archiving announcement', 'error'); }
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-archive"></i> Archive';
 }
 
-/**
- * Logic for handling the restore confirmation modal.
- */
+// ─── RESTORE ─────────────────────────────────────────────────────
 let announcementToRestoreId = null;
 
-/**
- * Injects the restore confirmation modal into the DOM if it doesn't exist.
- */
 function injectRestoreModal() {
     if (document.getElementById('restore-modal')) return;
-    
-    const modalHtml = `
-    <div id="restore-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden transform transition-all">
-            <div class="p-6">
-                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full mb-4">
-                    <i class="fas fa-trash-restore text-green-600 text-2xl"></i>
+    const html = `
+    <div id="restore-modal" class="an-modal-backdrop" style="display:none;">
+        <div class="an-confirm-modal">
+            <div style="padding:2rem;text-align:center;">
+                <div class="an-confirm-icon-wrap" style="background:hsl(142,60%,91%);color:hsl(142,60%,28%);">
+                    <i class="fas fa-trash-restore"></i>
                 </div>
-                <h3 class="text-lg font-medium text-center text-gray-900 mb-2">Restore Announcement</h3>
-                <p class="text-sm text-center text-gray-500">Are you sure you want to restore this announcement? It will become visible to students again.</p>
+                <h3 style="font-size:1rem;font-weight:700;color:hsl(221,39%,11%);margin-bottom:0.5rem;">Restore Announcement</h3>
+                <p style="font-size:0.875rem;color:hsl(220,14%,50%);">This will make the announcement visible to students again.</p>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-2">
-                <button onclick="closeRestoreModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                    Cancel
-                </button>
-                <button id="confirm-restore-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-                    Restore
-                </button>
+            <div style="display:flex;justify-content:flex-end;gap:0.625rem;padding:1rem 1.5rem;border-top:1px solid hsl(220,18%,92%);background:hsl(220,20%,98%);">
+                <button onclick="closeRestoreModal()" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;font-size:0.875rem;font-weight:600;border-radius:0.5rem;border:1.5px solid hsl(220,18%,86%);background:white;color:hsl(220,14%,35%);cursor:pointer;">Cancel</button>
+                <button id="confirm-restore-btn" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;font-size:0.875rem;font-weight:600;border-radius:0.5rem;border:none;background:hsl(142,60%,40%);color:white;cursor:pointer;"><i class="fas fa-trash-restore"></i> Restore</button>
             </div>
         </div>
     </div>`;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
+    document.body.insertAdjacentHTML('beforeend', html);
     document.getElementById('confirm-restore-btn').addEventListener('click', async () => {
-        if (announcementToRestoreId) {
-            await performRestore(announcementToRestoreId);
-        }
+        if (announcementToRestoreId) await performRestore(announcementToRestoreId);
     });
 }
 
-/**
- * Opens the restore confirmation modal for a specific announcement.
- * @param {number} id - The ID of the announcement to restore.
- */
-window.restoreAnnouncement = function(id) {
+window.restoreAnnouncement = function (id) {
     announcementToRestoreId = id;
-    const modal = document.getElementById('restore-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.style.display = 'flex';
-    }
-}
+    document.getElementById('restore-modal').style.display = 'flex';
+};
 
-/**
- * Closes the restore confirmation modal.
- */
-window.closeRestoreModal = function() {
-    const modal = document.getElementById('restore-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-    }
+window.closeRestoreModal = function () {
+    document.getElementById('restore-modal').style.display = 'none';
     announcementToRestoreId = null;
-}
+};
 
-/**
- * Performs the actual API call to restore a soft-deleted announcement.
- * @param {number} id - The ID of the announcement to restore.
- */
 async function performRestore(id) {
     const btn = document.getElementById('confirm-restore-btn');
-    const originalText = btn.innerText;
-    btn.disabled = true;
-    btn.innerText = 'Restoring...';
-    
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Restoring…';
     try {
-        const response = await fetch(`/admin/api/announcements/${id}/restore`, {
-            method: 'POST'
-        });
-        
+        const response = await fetch(`/admin/api/announcements/${id}/restore`, { method: 'POST' });
         if (response.ok) {
-            loadAnnouncements();
-            closeRestoreModal();
-        } else {
-            alert('Failed to restore announcement');
-        }
-    } catch (error) {
-        console.error(error);
-        alert('Error restoring announcement');
-    } finally {
-        btn.disabled = false;
-        btn.innerText = originalText;
-    }
+            showToast('Restored', 'Announcement is now active again.', 'success');
+            loadAnnouncements(); closeRestoreModal();
+        } else { showToast('Error', 'Failed to restore announcement', 'error'); }
+    } catch (error) { showToast('Error', 'Error restoring announcement', 'error'); }
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-restore"></i> Restore';
 }
 
-/**
- * Main entry point for the announcements page. Initializes tabs, modals, and loads initial data.
- */
+// ─── INIT ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    injectTabs();
     loadAnnouncements();
     injectDeleteModal();
     injectRestoreModal();
-
     document.getElementById('announcement-text').addEventListener('input', updateCharCount);
     document.getElementById('announcement-form').addEventListener('submit', handleSubmit);
 });

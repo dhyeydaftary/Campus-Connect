@@ -648,7 +648,7 @@ def admin_update_ticket_status(ticket_id):
     # TODO: Send email notification to user about status change if resolved
     if new_status in ['resolved', 'closed'] and old_status not in ['resolved', 'closed']:
         from app.services.email_service import send_status_update_email
-        send_status_update_email(ticket.email, ticket.id, new_status)
+        send_status_update_email(ticket)
     
     return jsonify({"success": True, "message": f"Status updated to {new_status}"})
 

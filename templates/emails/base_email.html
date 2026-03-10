@@ -1,57 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
     <meta charset="UTF-8">
-    <title>{{ title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{% block email_title %}Campus Connect{% endblock %}</title>
+    <!--[if mso]>
+    <noscript><xml><o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings></xml></noscript>
+    <![endif]-->
+    <style type="text/css">
+        body,
+        table,
+        td,
+        p,
+        a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+
+        table,
+        td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+            border-collapse: collapse;
+        }
+
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            outline: none;
+            text-decoration: none;
+        }
+
+        @media only screen and (max-width:600px) {
+            .outer-pad {
+                padding: 20px 12px !important;
+            }
+
+            .card-body {
+                padding: 32px 24px !important;
+            }
+
+            .card-foot {
+                padding: 18px 24px !important;
+            }
+
+            .otp-box {
+                width: 34px !important;
+                height: 44px !important;
+                line-height: 44px !important;
+                font-size: 20px !important;
+                margin: 0 2px !important;
+            }
+        }
+    </style>
 </head>
 
-<body
-    style="margin:0; padding:0; background-color:#f4f6f9; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+<body style="margin:0;padding:0;background-color:#ebeef3;">
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="padding:60px 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation"
+        style="background-color:#ebeef3;">
         <tr>
-            <td align="center">
+            <td align="center" class="outer-pad" style="padding:44px 20px;">
 
-                <table width="520" cellpadding="0" cellspacing="0"
-                    style="background:#ffffff; border-radius:10px; padding:48px 40px; box-shadow:0 12px 30px rgba(0,0,0,0.05);">
+                <!-- 600px container -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" role="presentation"
+                    style="max-width:600px;width:100%;">
 
-                    <!-- Header -->
+                    <!-- ── Header ─────────────────────────────── -->
                     <tr>
-                        <td align="center" style="padding-bottom:30px;">
-                            <h1 style="margin:0; font-size:20px; font-weight:600; color:#111827;">
-                                Campus Connect
-                            </h1>
-                            <p style="margin:6px 0 0; font-size:14px; color:#6b7280;">
-                                {{ subtitle }}
-                            </p>
+                        <td style="padding:0;border-radius:8px 8px 0 0;overflow:hidden;">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                                <tr>
+                                    <!-- Blue accent strip -->
+                                    <td style="width:5px;background:#2563eb;">&nbsp;</td>
+                                    <!-- Brand area -->
+                                    <td style="background:#1e3a8a;padding:20px 32px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                                            role="presentation">
+                                            <tr>
+                                                <td>
+                                                    <span style="font-family:Georgia,'Times New Roman',Times,serif;
+                                     font-size:16px;font-weight:700;
+                                     color:#ffffff;letter-spacing:0.03em;
+                                     display:block;margin-bottom:{% if subtitle %}3px{% else %}0{% endif %};">
+                                                        Campus Connect
+                                                    </span>
+                                                    {% if subtitle %}
+                                                    <span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
+                                     Helvetica,Arial,sans-serif;
+                                     font-size:11px;color:rgba(255,255,255,0.55);
+                                     letter-spacing:0.06em;text-transform:uppercase;">
+                                                        {{ subtitle }}
+                                                    </span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
 
-                    <!-- Content -->
+                    <!-- ── Body ───────────────────────────────── -->
                     <tr>
-                        <td style="color:#374151; font-size:15px; line-height:1.7;">
+                        <td class="card-body" style="background:#ffffff;
+                     padding:40px 48px;
+                     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                     font-size:15px;line-height:1.8;color:#1f2937;
+                     border-left:1px solid #dde1e9;
+                     border-right:1px solid #dde1e9;">
                             {% block content %}{% endblock %}
                         </td>
                     </tr>
 
-                    <!-- Divider -->
+                    <!-- ── Footer ─────────────────────────────── -->
                     <tr>
-                        <td style="padding-top:40px;">
-                            <hr style="border:none; border-top:1px solid #e5e7eb;">
-                        </td>
-                    </tr>
-
-                    <!-- Footer -->
-                    <tr>
-                        <td style="padding-top:18px; font-size:13px; color:#9ca3af; text-align:center;">
-                            © {{ current_year }} Campus Connect. All rights reserved.<br>
-                            This is an automated message. Please do not reply.
+                        <td class="card-foot" style="background:#f5f6f9;
+                     border:1px solid #dde1e9;border-top:none;
+                     border-radius:0 0 8px 8px;
+                     padding:18px 48px;text-align:center;">
+                            <p style="margin:0 0 4px;
+                      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                      font-size:12px;color:#9ca3af;line-height:1.5;">
+                                &copy; {{ current_year }} Campus Connect &nbsp;&middot;&nbsp; All rights reserved
+                            </p>
+                            <p style="margin:0;
+                      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+                      font-size:11px;color:#bcc2cc;line-height:1.5;">
+                                This is an automated message &mdash; please do not reply to this email.
+                            </p>
                         </td>
                     </tr>
 
                 </table>
-
             </td>
         </tr>
     </table>

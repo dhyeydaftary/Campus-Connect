@@ -1,36 +1,140 @@
 {% extends "emails/base_email.html" %}
+{% block email_title %}Welcome to Campus Connect{% endblock %}
 
 {% block content %}
 
-<p>Hello {{ user_name }},</p>
-
-<p>
-    Welcome to Campus Connect.
-    Your account has been successfully created.
+<!-- Greeting -->
+<p style="margin:0 0 20px;font-size:22px;font-weight:700;color:#111827;line-height:1.3;
+          font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+    Welcome to Campus Connect, {{ user_name }}.
 </p>
 
-<p>
-    With Campus Connect, you can:
+<p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.8;">
+    Your account has been successfully created. You can now sign in and begin using the platform to connect with peers,
+    share updates, and stay informed about campus life.
 </p>
 
-<ul style="padding-left:18px; margin:15px 0;">
-    <li>Connect with students and peers</li>
-    <li>Share updates and academic insights</li>
-    <li>Participate in discussions</li>
-    <li>Stay informed about campus events</li>
-</ul>
+<!-- Divider -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:24px;">
+    <tr>
+        <td style="border-top:1px solid #e5e7eb;"></td>
+    </tr>
+</table>
 
-<p>
-    We encourage you to complete your profile and begin exploring the platform.
+<!-- What you can do -->
+<p style="margin:0 0 14px;font-size:12px;font-weight:700;color:#6b7280;
+          text-transform:uppercase;letter-spacing:0.08em;">
+    What you can do
 </p>
 
-<p>
-    If you have any questions, feel free to reach out to our support team.
-</p>
+<!-- Feature rows -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:28px;">
 
-<p>
-    Best regards,<br>
-    Campus Connect Team
+    <tr>
+        <td style="padding:11px 14px;background:#f9fafb;border:1px solid #e5e7eb;
+               border-radius:6px;margin-bottom:8px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                    <td style="width:32px;vertical-align:middle;">
+                        <div style="width:28px;height:28px;background:#dbeafe;border-radius:4px;
+                        text-align:center;line-height:28px;font-size:14px;">&#128101;</div>
+                    </td>
+                    <td style="padding-left:12px;vertical-align:middle;">
+                        <span style="font-size:14px;font-weight:600;color:#111827;display:block;
+                         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                            Connect with students &amp; peers
+                        </span>
+                        <span style="font-size:13px;color:#6b7280;
+                         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                            Build your network across departments and batches.
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="height:7px;"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:11px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                    <td style="width:32px;vertical-align:middle;">
+                        <div style="width:28px;height:28px;background:#dbeafe;border-radius:4px;
+                        text-align:center;line-height:28px;font-size:14px;">&#128221;</div>
+                    </td>
+                    <td style="padding-left:12px;vertical-align:middle;">
+                        <span style="font-size:14px;font-weight:600;color:#111827;display:block;
+                         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                            Share posts &amp; academic insights
+                        </span>
+                        <span style="font-size:13px;color:#6b7280;
+                         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                            Post updates, projects, and ideas for your community.
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <tr>
+        <td style="height:7px;"></td>
+    </tr>
+
+    <tr>
+        <td style="padding:11px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                    <td style="width:32px;vertical-align:middle;">
+                        <div style="width:28px;height:28px;background:#dbeafe;border-radius:4px;
+                        text-align:center;line-height:28px;font-size:14px;">&#128197;</div>
+                    </td>
+                    <td style="padding-left:12px;vertical-align:middle;">
+                        <span style="font-size:14px;font-weight:600;color:#111827;display:block;
+                         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                            Stay informed about campus events
+                        </span>
+                        <span style="font-size:13px;color:#6b7280;
+                         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                            Discover and RSVP to events happening on campus.
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+</table>
+
+<!-- CTA -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:28px;">
+    <tr>
+        <td>
+            <a href="{{ profile_url | default('#') }}" style="display:inline-block;background:#1d4ed8;color:#ffffff;
+                text-decoration:none;font-size:14px;font-weight:600;
+                padding:12px 28px;border-radius:5px;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                Complete Your Profile
+            </a>
+        </td>
+    </tr>
+</table>
+
+<!-- Divider -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom:20px;">
+    <tr>
+        <td style="border-top:1px solid #e5e7eb;"></td>
+    </tr>
+</table>
+
+<p style="margin:0;font-size:14px;color:#6b7280;line-height:1.7;">
+    If you have questions or need assistance, please reach out to our
+    <a href="{{ config['FRONTEND_URL'] | default('#') }}/support/help_center"
+        style="color:#1d4ed8;text-decoration:none;font-weight:500;">support team</a>.
 </p>
 
 {% endblock %}

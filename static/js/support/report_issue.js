@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(form);
 
             try {
-                const response = await fetch('/support/report-issue', {
+                const response = await fetch('/report-issue', {
                     method: 'POST',
                     headers: { 'X-CSRFToken': csrfToken },
                     body: formData
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const result = await response.json();
                 if (response.ok && result.success) {
-                    window.location.href = `/support/ticket-success?id=${result.ticket_id}&email=${encodeURIComponent(result.email)}`;
+                    window.location.href = `/ticket-success?id=${result.ticket_id}&email=${encodeURIComponent(result.email)}`;
                 } else {
                     if (window.showToast) showToast(result.error || 'Failed to submit report.', 'error');
                     else alert(result.error);

@@ -1,126 +1,653 @@
 {% extends "layouts/admin_base.html" %}
-{% block title %}Users Management| Admin{% endblock %}
+{% block title %}Users Management | Admin{% endblock %}
 {% block header_title %}Users Management{% endblock %}
-{% block content %}
 
-<!-- Content Area -->
+{% block head %}
+<style>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    @keyframes rowIn {
+        from {
+            opacity: 0;
+            transform: translateX(-6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes modalIn {
+        from {
+            opacity: 0;
+            transform: scale(0.96) translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .us-page {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        animation: fadeInUp 0.45s ease-out both;
+    }
+
+    /* ── Card ── */
+    .us-card {
+        background: white;
+        border: 1px solid hsl(220, 18%, 90%);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 1px 4px hsl(221 30% 50%/0.07);
+    }
+
+    .us-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid hsl(220, 18%, 92%);
+        flex-wrap: wrap;
+        gap: 0.875rem;
+    }
+
+    .us-card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .us-card-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        background: hsl(221, 68%, 93%);
+        color: hsl(221, 68%, 40%);
+    }
+
+    .us-card-title {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: hsl(221, 39%, 11%);
+    }
+
+    /* ── Filters ── */
+    .us-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.625rem;
+        align-items: center;
+    }
+
+    .us-search {
+        flex: 1;
+        min-width: 200px;
+        padding: 0.5rem 0.875rem;
+        font-size: 0.875rem;
+        border: 1.5px solid hsl(220, 18%, 86%);
+        border-radius: 0.5rem;
+        background: white;
+        color: hsl(221, 39%, 11%);
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .us-search:focus {
+        border-color: hsl(221, 68%, 50%);
+        box-shadow: 0 0 0 3px hsl(221 68% 50%/0.12);
+    }
+
+    .us-select {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        border: 1.5px solid hsl(220, 18%, 86%);
+        border-radius: 0.5rem;
+        background: white;
+        color: hsl(221, 39%, 11%);
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .us-select:focus {
+        border-color: hsl(221, 68%, 50%);
+        box-shadow: 0 0 0 3px hsl(221 68% 50%/0.12);
+    }
+
+    /* ── Table ── */
+    .us-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .us-table thead {
+        background: hsl(221, 68%, 28%);
+    }
+
+    .us-table thead th {
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: rgba(255, 255, 255, 0.85);
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .us-table tbody tr {
+        border-bottom: 1px solid hsl(220, 18%, 94%);
+        transition: background 0.12s;
+        animation: rowIn 0.3s ease-out both;
+    }
+
+    .us-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .us-table tbody tr:hover {
+        background: hsl(221, 68%, 28%, 0.025);
+    }
+
+    .us-table td {
+        padding: 0.875rem 1.25rem;
+    }
+
+    /* ── Avatar ── */
+    .us-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: linear-gradient(135deg, hsl(221, 68%, 40%), hsl(270, 60%, 50%));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 0.875rem;
+    }
+
+    /* ── Badges ── */
+    .us-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .us-badge-active {
+        background: hsl(142, 60%, 90%);
+        color: hsl(142, 60%, 28%);
+    }
+
+    .us-badge-blocked {
+        background: hsl(0, 90%, 93%);
+        color: hsl(0, 65%, 40%);
+    }
+
+    .us-badge-pending {
+        background: hsl(45, 93%, 88%);
+        color: hsl(32, 80%, 33%);
+    }
+
+    .us-badge-inactive {
+        background: hsl(220, 14%, 92%);
+        color: hsl(220, 14%, 44%);
+    }
+
+    .us-badge-student {
+        background: hsl(213, 94%, 93%);
+        color: hsl(213, 68%, 38%);
+    }
+
+    .us-badge-official {
+        background: hsl(221, 68%, 93%);
+        color: hsl(221, 68%, 35%);
+    }
+
+    .us-badge-admin {
+        background: hsl(0, 90%, 93%);
+        color: hsl(0, 65%, 40%);
+    }
+
+    .us-badge-club {
+        background: hsl(270, 60%, 92%);
+        color: hsl(270, 60%, 40%);
+    }
+
+    /* ── Toggle ── */
+    .us-toggle {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        background: hsl(220, 14%, 80%);
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: background 0.2s;
+        flex-shrink: 0;
+        border: none;
+    }
+
+    .us-toggle.active {
+        background: hsl(142, 60%, 40%);
+    }
+
+    .us-toggle::after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        background: white;
+        border-radius: 50%;
+        top: 2px;
+        left: 2px;
+        transition: transform 0.2s;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .us-toggle.active::after {
+        transform: translateX(18px);
+    }
+
+    .us-toggle:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* ── View details btn ── */
+    .us-view-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        border: 1.5px solid hsl(221, 68%, 80%);
+        background: hsl(221, 68%, 95%);
+        color: hsl(221, 68%, 38%);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .us-view-btn:hover {
+        background: hsl(221, 68%, 88%);
+        border-color: hsl(221, 68%, 60%);
+    }
+
+    /* ── Skeleton ── */
+    .sk-row td {
+        padding: 0.875rem 1.25rem;
+    }
+
+    .sk-block {
+        height: 0.875rem;
+        border-radius: 0.25rem;
+        background: linear-gradient(90deg, hsl(220, 18%, 93%) 25%, hsl(220, 18%, 97%) 50%, hsl(220, 18%, 93%) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s ease-in-out infinite;
+    }
+
+    /* ── Empty ── */
+    .us-empty {
+        padding: 3.5rem 1.5rem;
+        text-align: center;
+    }
+
+    .us-empty-icon {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 50%;
+        background: hsl(220, 18%, 95%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.875rem;
+        color: hsl(220, 14%, 50%);
+        font-size: 1.25rem;
+    }
+
+    .us-empty strong {
+        display: block;
+        font-size: 0.9375rem;
+        color: hsl(221, 39%, 11%);
+        margin-bottom: 0.25rem;
+    }
+
+    .us-empty span {
+        font-size: 0.875rem;
+        color: hsl(220, 14%, 55%);
+    }
+
+    /* ── Modal backdrop ── */
+    .us-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 12, 24, 0.55);
+        backdrop-filter: blur(4px);
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .us-modal {
+        background: white;
+        border-radius: 1rem;
+        width: 100%;
+        max-width: 660px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+        animation: modalIn 0.25s cubic-bezier(0.34, 1.1, 0.64, 1) both;
+    }
+
+    .us-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.125rem 1.5rem;
+        border-bottom: 1px solid hsl(220, 18%, 92%);
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    .us-modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .us-modal-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        background: hsl(221, 68%, 93%);
+        color: hsl(221, 68%, 40%);
+    }
+
+    .us-modal-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: hsl(221, 39%, 11%);
+    }
+
+    .us-modal-close {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        border: none;
+        background: hsl(220, 18%, 94%);
+        color: hsl(220, 14%, 46%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.15s;
+    }
+
+    .us-modal-close:hover {
+        background: hsl(0, 90%, 93%);
+        color: hsl(0, 65%, 45%);
+    }
+
+    .us-modal-body {
+        padding: 1.5rem;
+    }
+
+    /* ── Modal content ── */
+    .us-modal-profile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .us-modal-avatar {
+        width: 5rem;
+        height: 5rem;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid hsl(221, 68%, 90%);
+        margin-bottom: 0.875rem;
+        box-shadow: 0 4px 12px hsl(221 68% 50%/0.15);
+    }
+
+    .us-modal-name {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: hsl(221, 39%, 11%);
+        margin-bottom: 0.25rem;
+    }
+
+    .us-modal-email {
+        font-size: 0.8125rem;
+        color: hsl(220, 14%, 50%);
+        margin-bottom: 0.625rem;
+    }
+
+    .us-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.625rem;
+    }
+
+    @media(max-width:480px) {
+        .us-detail-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .us-detail-cell {
+        background: hsl(220, 20%, 98%);
+        border: 1px solid hsl(220, 18%, 91%);
+        border-radius: 0.625rem;
+        padding: 0.75rem;
+    }
+
+    .us-detail-cell .lbl {
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: hsl(220, 14%, 55%);
+        margin-bottom: 0.25rem;
+    }
+
+    .us-detail-cell .val {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: hsl(221, 39%, 11%);
+    }
+
+    .us-stats-row {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .us-stat-cell {
+        flex: 1;
+        text-align: center;
+        background: hsl(221, 68%, 97%);
+        border: 1px solid hsl(221, 68%, 88%);
+        border-radius: 0.75rem;
+        padding: 1rem;
+    }
+
+    .us-stat-cell .sv {
+        font-size: 1.875rem;
+        font-weight: 800;
+        color: hsl(221, 68%, 35%);
+    }
+
+    .us-stat-cell .sl {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: hsl(221, 68%, 45%);
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="content-area">
-    <div class="card">
-        <div class="card-header flex items-center justify-between">
-            <h2 class="card-title">All Users</h2>
-            <div class="flex gap-4">
-                <input type="text" class="form-input" style="width: 280px;" placeholder="Search users..."
-                    id="search-input">
-                <select class="form-select" style="width: 150px;" id="branch-filter">
-                    <option value="">All Branches</option>
-                </select>
-                <select class="form-select" style="width: 150px;" id="status-filter">
-                    <option value="">All Statuses</option>
-                    <option value="active" selected>Active</option>
-                    <option value="pending">Pending</option>
-                    <option value="blocked">Blocked</option>
-                </select>
-                <select class="form-select" style="width: 150px;" id="role-filter">
-                    <option value="">All Roles</option>
-                    <option value="student">Student</option>
-                    <option value="official">Official</option>
-                    <option value="admin">Admin</option>
-                    <option value="club">Club</option>
-                </select>
+    <div class="us-page">
+
+        <div class="us-card">
+            <div class="us-card-header">
+                <div class="us-card-header-left">
+                    <div class="us-card-icon"><i class="fa-solid fa-users"></i></div>
+                    <span class="us-card-title">All Users</span>
+                </div>
+                <div class="us-filters">
+                    <input type="text" class="us-search" placeholder="Search by name or email…" id="search-input">
+                    <select class="us-select" id="branch-filter">
+                        <option value="">All Branches</option>
+                    </select>
+                    <select class="us-select" id="status-filter">
+                        <option value="">All Statuses</option>
+                        <option value="active" selected>Active</option>
+                        <option value="pending">Pending</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
+                    <select class="us-select" id="role-filter">
+                        <option value="">All Roles</option>
+                        <option value="student">Student</option>
+                        <option value="official">Official</option>
+                        <option value="admin">Admin</option>
+                        <option value="club">Club</option>
+                    </select>
+                </div>
+            </div>
+            <div style="overflow-x:auto;">
+                <div id="users-loading" style="padding:2rem;text-align:center;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem;color:hsl(221,68%,40%);"></i>
+                </div>
+                <table class="us-table" id="users-table" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Join Date</th>
+                            <th>Active</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody"></tbody>
+                </table>
             </div>
         </div>
-        <div class="card-body" style="padding: 0;">
-            <div class="loading-spinner" id="users-loading">
-                <div class="spinner"></div>
-            </div>
-            <table class="data-table" id="users-table" style="display: none;">
-                <thead>
-                    <tr>
-                        <th class="text-left px-4 py-3">User</th>
-                        <th class="text-left px-4 py-3">Role</th>
-                        <th class="text-left px-4 py-3">Status</th>
-                        <th class="text-left px-4 py-3">Join Date</th>
-                        <th class="text-center px-4 py-3">Action</th>
-                        <th class="text-left px-4 py-3">Details</th>
-                    </tr>
-                </thead>
-                <tbody id="users-tbody">
-                </tbody>
-            </table>
-        </div>
+
     </div>
 </div>
 
-<!-- User Details Modal -->
-<div id="user-details-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"
-    style="display: none;">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 overflow-hidden animate-fade-in">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-            <h3 class="text-lg font-semibold text-gray-800">User Details</h3>
-            <button onclick="closeUserModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </div>
-
-        <div class="p-6" id="modal-content">
-            <!-- Loading State -->
-            <div id="modal-loading" class="flex justify-center py-8">
-                <div class="spinner"></div>
+<!-- ══ User Details Modal ══ -->
+<div id="user-details-modal" class="us-modal-backdrop" style="display:none;">
+    <div class="us-modal">
+        <div class="us-modal-header">
+            <div class="us-modal-header-left">
+                <div class="us-modal-icon"><i class="fa-solid fa-user"></i></div>
+                <h3 class="us-modal-title">User Details</h3>
             </div>
-
-            <!-- Content State -->
-            <div id="modal-data" class="hidden">
-                <div class="flex flex-col md:flex-row gap-6">
-                    <!-- Left: Profile Image & Basic Info -->
-                    <div class="flex-shrink-0 flex flex-col items-center text-center md:w-1/3">
-                        <img id="modal-avatar" src="" alt="Profile"
-                            class="w-32 h-32 rounded-full object-cover border-4 border-indigo-50 mb-4 shadow-sm">
-                        <h4 id="modal-name" class="text-xl font-bold text-gray-900"></h4>
-                        <p id="modal-email" class="text-sm text-gray-500 break-all"></p>
-                        <span id="modal-role"
-                            class="mt-2 px-3 py-1 rounded-full text-xs font-semibold uppercase"></span>
+            <button class="us-modal-close" onclick="closeUserModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="us-modal-body">
+            <div id="modal-loading" style="text-align:center;padding:2rem;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem;color:hsl(221,68%,40%);"></i>
+            </div>
+            <div id="modal-data" style="display:none;">
+                <div class="us-modal-profile">
+                    <img id="modal-avatar" src="" alt="Profile" class="us-modal-avatar">
+                    <p class="us-modal-name" id="modal-name"></p>
+                    <p class="us-modal-email" id="modal-email"></p>
+                    <span id="modal-role" class="us-badge"></span>
+                </div>
+                <div class="us-detail-grid">
+                    <div class="us-detail-cell">
+                        <div class="lbl">Status</div>
+                        <div class="val" id="modal-status"></div>
                     </div>
-
-                    <!-- Right: Details Grid -->
-                    <div class="flex-1 grid grid-cols-1 gap-4 content-start">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <p class="text-xs text-gray-500 uppercase font-semibold">Status</p>
-                                <p id="modal-status" class="font-medium capitalize"></p>
-                            </div>
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <p class="text-xs text-gray-500 uppercase font-semibold">Joined</p>
-                                <p id="modal-joined" class="font-medium text-sm"></p>
-                            </div>
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <p class="text-xs text-gray-500 uppercase font-semibold">University</p>
-                                <p id="modal-university" class="font-medium text-sm truncate"></p>
-                            </div>
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <p class="text-xs text-gray-500 uppercase font-semibold">Major</p>
-                                <p id="modal-major" class="font-medium text-sm truncate"></p>
-                            </div>
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <p class="text-xs text-gray-500 uppercase font-semibold">Batch</p>
-                                <p id="modal-batch" class="font-medium"></p>
-                            </div>
-                            <div class="bg-gray-50 p-3 rounded-lg">
-                                <p class="text-xs text-gray-500 uppercase font-semibold">User ID</p>
-                                <p id="modal-id" class="font-medium"></p>
-                            </div>
-                        </div>
-
-                        <!-- Stats -->
-                        <div class="flex gap-4 mt-2">
-                            <div class="flex-1 bg-indigo-50 p-3 rounded-lg text-center border border-indigo-100">
-                                <p class="text-2xl font-bold text-indigo-600" id="modal-posts-count">0</p>
-                                <p class="text-xs text-indigo-800 font-medium">Posts</p>
-                            </div>
-                            <div class="flex-1 bg-purple-50 p-3 rounded-lg text-center border border-purple-100">
-                                <p class="text-2xl font-bold text-purple-600" id="modal-connections-count">0</p>
-                                <p class="text-xs text-purple-800 font-medium">Connections</p>
-                            </div>
-                        </div>
+                    <div class="us-detail-cell">
+                        <div class="lbl">Joined</div>
+                        <div class="val" id="modal-joined"></div>
+                    </div>
+                    <div class="us-detail-cell">
+                        <div class="lbl">University</div>
+                        <div class="val" id="modal-university"
+                            style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                    </div>
+                    <div class="us-detail-cell">
+                        <div class="lbl">Major</div>
+                        <div class="val" id="modal-major"></div>
+                    </div>
+                    <div class="us-detail-cell">
+                        <div class="lbl">Batch</div>
+                        <div class="val" id="modal-batch"></div>
+                    </div>
+                    <div class="us-detail-cell">
+                        <div class="lbl">User ID</div>
+                        <div class="val" id="modal-id"></div>
+                    </div>
+                </div>
+                <div class="us-stats-row">
+                    <div class="us-stat-cell">
+                        <div class="sv" id="modal-posts-count">0</div>
+                        <div class="sl">Posts</div>
+                    </div>
+                    <div class="us-stat-cell">
+                        <div class="sv" id="modal-connections-count">0</div>
+                        <div class="sl">Connections</div>
                     </div>
                 </div>
             </div>
