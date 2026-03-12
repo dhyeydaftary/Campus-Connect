@@ -12,6 +12,7 @@ from app.services.email_service import send_otp_email, send_welcome_email, send_
 
 auth_bp = Blueprint('auth', __name__)
 
+
 def _mask_email(email: str) -> str:
     """Returns a privacy-safe masked email: d*****y@college.edu"""
     try:
@@ -28,6 +29,7 @@ def _mask_email(email: str) -> str:
 # PAGE RENDERING ROUTES
 # ==============================================================================
 
+
 @auth_bp.route("/login")
 def login_page():
     """Renders the login/authentication page."""
@@ -37,39 +39,40 @@ def login_page():
         return redirect(url_for("main.home_page"))
     return render_template("auth/login.html")
 
+
 @auth_bp.route("/admin/login", methods=["GET", "POST"])
 def admin_login_page():
     """Admin-only dedicated login page."""
     import logging
     logger = logging.getLogger(__name__)
-    
+
     if "user_id" in session:
         if session.get("account_type") == "admin":
             return redirect(url_for("admin.admin_dashboard_page"))
         else:
             return redirect(url_for("main.home_page"))
-            
+
     if request.method == "POST":
         from flask import flash
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password")
-        
+
         user = User.query.filter_by(email=email, account_type="admin").first()
-        
+
         if user and user.check_password(password):
             session.clear()
             session["user_id"] = user.id
             session["user_name"] = user.full_name
             session["account_type"] = user.account_type
-            
+
             logger.info(f"Admin login successful: {email}")
             return redirect(url_for("admin.admin_dashboard_page"))
         else:
             logger.warning(f"Failed admin login attempt: {email}")
-            from flask import flash
+
             flash("Invalid admin credentials", "error")
             return redirect(url_for("auth.admin_login_page"))
-            
+
     return render_template("admin/admin_login.html")
 
 
@@ -85,12 +88,12 @@ def set_password_page():
     """Renders the page for a new user to set their initial password."""
     if "user_id" not in session:
         return redirect(url_for("auth.login_page"))
-    
+
     user = db.session.get(User, session["user_id"])
     # If user has already set a password, they shouldn't be on this page.
     if user and user.is_password_set:
         return redirect(url_for("main.home_page"))
-        
+
     # The template should contain the form handled by set-password.js
     return render_template("auth/set-password.html", user=user, user_name=user.full_name)
 
@@ -205,13 +208,13 @@ def request_otp():
 
     if not user:
         return jsonify({"error": "Student not found. Please contact administration."}), 404
-    
+
     if user.major.lower() != major.lower():
         return jsonify({"error": "Enrollment number does not match the selected major."}), 400
 
     if user.status == "BLOCKED":
         return jsonify({"error": "Account is disabled."}), 403
-    
+
     if user.status == "ACTIVE":
         return jsonify({"error": "Password already set. Please login with password."}), 400
 
@@ -265,9 +268,9 @@ def verify_otp():
         return jsonify({"error": "Invalid or expired OTP"}), 400
 
     otp_record.is_used = True
-    
+
     user = User.query.filter(User.enrollment_no.ilike(enrollment_no)).first()
-    
+
     if not user.is_verified:
         user.is_verified = True
 
@@ -286,7 +289,8 @@ def verify_otp():
     if user.password_hash is None:
         redirect_url = url_for("auth.set_password_page")
     else:
-        redirect_url = url_for("admin.admin_dashboard_page") if user.account_type == "admin" else url_for("main.home_page")
+        redirect_url = url_for(
+            "admin.admin_dashboard_page") if user.account_type == "admin" else url_for("main.home_page")
 
     return jsonify({
         "message": "Login successful",
@@ -304,19 +308,19 @@ def login_with_password():
     password = data.get("password")
 
     user = None
-    
+
     if role == "admin":
         return jsonify({"error": "Administrators must use the dedicated /admin/login page."}), 403
     elif role == "student":
         enrollment = data.get("enrollment_no", "").strip()
         user = User.query.filter(User.enrollment_no.ilike(enrollment), User.account_type == "student").first()
-    
+
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials"}), 401
 
     if user.status == "BLOCKED":
         return jsonify({"error": "Account is blocked"}), 403
-    
+
     if user.status == "PENDING":
         session.clear()
         session["user_id"] = user.id
@@ -344,14 +348,17 @@ def forgot_password_request():
     """Handles the 'Forgot Password' request by sending a secure, time-sensitive reset link."""
     data = request.json
     identifier = data.get("identifier", "").strip()
-    
+
     if not identifier:
-        return jsonify({"message": "If an account with that email or enrollment number exists, a password reset link has been sent."}), 200
-        
+        return jsonify({
+            "message": "If an account with that email or enrollment number exists, "
+                       "a password reset link has been sent."
+        }), 200
+
     user = User.query.filter(
         or_(User.enrollment_no.ilike(identifier), User.email.ilike(identifier))
     ).first()
-    
+
     if user and user.status == 'ACTIVE':
         ts = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
         hash_anchor = (user.password_hash or "")[-10:]
@@ -360,10 +367,13 @@ def forgot_password_request():
 
         frontend_url = current_app.config["FRONTEND_URL"]
         reset_link = f"{frontend_url.rstrip('/')}/reset-password?token={token}"
-        
+
         send_password_reset_email(user, reset_link)
-        
-    return jsonify({"message": "If an account with that email or enrollment number exists, a password reset link has been sent."}), 200
+
+    return jsonify({
+        "message": "If an account with that email or enrollment number exists, "
+                   "a password reset link has been sent."
+    }), 200
 
 
 @auth_bp.route("/api/auth/reset-password", methods=["POST"])
@@ -418,22 +428,22 @@ def update_password():
     """Allows a logged-in user to update their password."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
-    
+
     user = db.session.get(User, session["user_id"])
     if not user:
         return jsonify({"error": "User not found"}), 404
-    
+
     data = request.json
     current_password = data.get("current_password")
     new_password = data.get("new_password")
     confirm_password = data.get("confirm_password")
-    
+
     if not new_password or len(new_password) < 6:
         return jsonify({"error": "New password must be at least 6 characters"}), 400
-        
+
     if new_password != confirm_password:
         return jsonify({"error": "Passwords do not match"}), 400
-        
+
     if user.password_hash:
         if not current_password:
             return jsonify({"error": "Current password is required"}), 400
@@ -443,7 +453,7 @@ def update_password():
     is_activating = user.status == "PENDING"
 
     user.set_password(new_password)
-    
+
     if is_activating:
         user.status = "ACTIVE"
         user.is_password_set = True

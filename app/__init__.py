@@ -55,9 +55,9 @@ def create_app(test_config=None):
     # Initialize extensions
     if app.config.get("TESTING"):
         app.config["REDIS_URL"] = None
-        
+
     db.init_app(app)
-    
+
     # Enable SQLite foreign key support
     if app.config.get("SQLALCHEMY_DATABASE_URI", "").startswith("sqlite"):
         with app.app_context():
@@ -71,10 +71,10 @@ def create_app(test_config=None):
     bcrypt.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
-    
+
     is_testing = os.environ.get("TESTING") == "true"
     redis_url = app.config.get("REDIS_URL")
-    
+
     # Attempt to use Redis, but fall back to memory if server is unreachable
     use_redis = False
     if redis_url and not is_testing:
@@ -93,11 +93,12 @@ def create_app(test_config=None):
     else:
         socketio.init_app(app, cors_allowed_origins=[])
         app.config["RATELIMIT_STORAGE_URI"] = "memory://"
-        
+
     limiter.init_app(app)
 
     # User init event listener
     from app.models import User
+
     @sa_event.listens_for(User, 'init')
     def set_user_defaults(target, args, kwargs):
         account_type = kwargs.get('account_type')
@@ -180,6 +181,7 @@ def create_app(test_config=None):
 
     # Seed admin CLI command
     from app.services.seeder import seed_admin
+
     @app.cli.command("seed-admin")
     def seed_admin_command():
         """Seeds/Updates the admin user via CLI using .env credentials."""
@@ -191,6 +193,7 @@ def create_app(test_config=None):
     _register_error_handlers(app)
 
     return app
+
 
 def _register_error_handlers(app):
     """JSON-aware handlers for 403, 404, 429, 500."""

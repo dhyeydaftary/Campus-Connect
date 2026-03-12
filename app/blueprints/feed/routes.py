@@ -16,7 +16,6 @@ from app.services.comment_queue import comment_queue_service
 from . import feed_bp
 
 
-
 # ==============================================================================
 
 @feed_bp.route("/posts")
@@ -28,7 +27,7 @@ def api_posts():
         limit = int(request.args.get("limit", 5))
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid pagination parameters"}), 400
-        
+
     offset = (page - 1) * limit
 
     likes_subq = (
@@ -95,7 +94,6 @@ def api_posts():
     })
 
 
-
 @feed_bp.route("/posts/<int:post_id>")
 @login_required
 def get_single_post_api(post_id):
@@ -133,16 +131,15 @@ def get_single_post_api(post_id):
 
     post, user, likes_count, comments_count = post_data
 
-    formatted_post = _format_post_for_api(post_data, session["user_id"]) # Uses fallback logic
+    formatted_post = _format_post_for_api(post_data, session["user_id"])  # Uses fallback logic
 
     return jsonify({
         "viewer": {
             "id": session.get("user_id"),
             "name": session.get("user_name")
         },
-        "posts": [formatted_post] # Keep as a list for frontend consistency
+        "posts": [formatted_post]  # Keep as a list for frontend consistency
     })
-
 
 
 @feed_bp.route("/posts/create", methods=["POST"])
@@ -151,35 +148,45 @@ def create_post_with_file():
     """Creates a new post, supporting text, photo, and document uploads."""
     post_type = request.form.get("post_type")  # 'photo', 'document', 'text'
     caption = request.form.get("caption", "").strip()
-    
+
     if post_type not in ['photo', 'document', 'text']:
         return jsonify({"error": "Invalid post type"}), 400
-    
+
     file_path = None
     file_type = None
-    
+
     # Handle file uploads for photo and document
     if post_type in ['photo', 'document']:
         if 'file' not in request.files:
             return jsonify({"error": "No file provided"}), 400
-        
+
         file = request.files['file']
         if file.filename == '':
             return jsonify({"error": "No file selected"}), 400
-        
+
         # Validate file type
         ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
-        
+
         if post_type == 'photo':
             if ext not in current_app.config['ALLOWED_IMAGE_EXTENSIONS']:
-                return jsonify({"error": f"Invalid image format. Allowed: {', '.join(current_app.config['ALLOWED_IMAGE_EXTENSIONS'])}"}), 400
+                return jsonify({
+                    "error": (
+                        "Invalid image format. "
+                        f"Allowed: {', '.join(current_app.config['ALLOWED_IMAGE_EXTENSIONS'])}"
+                    )
+                }), 400
             file_type = 'image'
-        
+
         if post_type == 'document':
             if ext not in current_app.config['ALLOWED_DOC_EXTENSIONS']:
-                return jsonify({"error": f"Invalid document format. Allowed: {', '.join(current_app.config['ALLOWED_DOC_EXTENSIONS'])}"}), 400
+                return jsonify({
+                    "error": (
+                        "Invalid document format. "
+                        f"Allowed: {', '.join(current_app.config['ALLOWED_DOC_EXTENSIONS'])}"
+                    )
+                }), 400
             file_type = 'document'
-        
+
         # Save file
         try:
             file_path = save_uploaded_file(file, file_type)
@@ -187,12 +194,12 @@ def create_post_with_file():
                 return jsonify({"error": "Failed to save file"}), 500
         except Exception as e:
             return jsonify({"error": f"File upload failed: {str(e)}"}), 500
-    
+
     elif post_type == 'text':
         if not caption:
             return jsonify({"error": "Text posts require content"}), 400
         file_type = 'text'
-    
+
     # Create post
     try:
         post = Post(
@@ -203,19 +210,18 @@ def create_post_with_file():
             file_type=file_type,
             post_type="normal"
         )
-        
+
         db.session.add(post)
         db.session.commit()
-        
+
         return jsonify({
             "message": "Post created successfully",
             "post_id": post.id
         }), 201
-    
+
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Failed to create post: {str(e)}"}), 500
-
 
 
 @feed_bp.route("/posts/<int:post_id>/download")
@@ -228,18 +234,17 @@ def download_post_attachment(post_id):
 
     # Construct absolute path
     file_path = os.path.join(current_app.root_path, 'static', post.file_path)
-    
+
     if not os.path.exists(file_path):
         return jsonify({"error": "File not found"}), 404
-    
+
     clean_name = get_clean_filename(post.file_path)
-    
+
     return send_file(
         file_path,
         as_attachment=True,
         download_name=clean_name
     )
-
 
 
 @feed_bp.route("/posts/<int:post_id>/like", methods=["POST"])
@@ -249,7 +254,7 @@ def toggle_like(post_id):
     post = db.session.get(Post, post_id)
     if not post:
         return jsonify({"error": "Post not found"}), 404
-        
+
     user_id = session["user_id"]
 
     existing = Like.query.filter_by(
@@ -259,7 +264,7 @@ def toggle_like(post_id):
 
     if existing:
         db.session.delete(existing)
-        
+
         # Remove associated notification if it exists
         notif = Notification.query.filter_by(
             type='post_like',
@@ -268,13 +273,13 @@ def toggle_like(post_id):
         ).first()
         if notif:
             db.session.delete(notif)
-            
+
         db.session.commit()
         liked = False
     else:
         like = Like(user_id=user_id, post_id=post_id)
         db.session.add(like)
-        
+
         # Create notification if not liking own post
         post = db.session.get(Post, post_id)
         if post and post.user_id != user_id:
@@ -287,7 +292,7 @@ def toggle_like(post_id):
                 actor_id=user_id
             )
             db.session.add(notification)
-            
+
         db.session.commit()
         liked = True
 
@@ -297,8 +302,6 @@ def toggle_like(post_id):
         "liked": liked,
         "likesCount": likes_count
     })
-
-
 
 
 @feed_bp.route("/posts/<int:post_id>/comments")
@@ -322,8 +325,6 @@ def get_comments(post_id):
     ])
 
 
-
-
 @feed_bp.route("/posts/<int:post_id>/comments", methods=["POST"])
 @login_required
 def add_comment(post_id):
@@ -331,7 +332,7 @@ def add_comment(post_id):
     post = db.session.get(Post, post_id)
     if not post:
         return jsonify({"error": "Post not found"}), 404
-        
+
     text = request.json.get("text")
     if not text:
         return jsonify({"error": "Empty comment"}), 400
@@ -354,4 +355,3 @@ def add_comment(post_id):
     })
 
     return jsonify({"message": "Comment added (processing in background)"}), 201
-

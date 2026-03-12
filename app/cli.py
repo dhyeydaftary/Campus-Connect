@@ -13,7 +13,7 @@ cli_bp = Blueprint("cli", __name__)
 @cli_bp.cli.command("prune-otps")
 def prune_otps():
     """Delete expired and used OTP records.
-    
+
     Run via Heroku Scheduler hourly: flask prune-otps
     """
     from app.extensions import db

@@ -8,6 +8,7 @@ from flask import Blueprint, render_template
 
 trust_bp = Blueprint('trust', __name__)
 
+
 @trust_bp.route('/trust/security')
 def security():
     """
@@ -17,6 +18,7 @@ def security():
     """
     return render_template('trust/security.html')
 
+
 @trust_bp.route('/trust/verification_policy')
 def verification_policy():
     """
@@ -25,6 +27,7 @@ def verification_policy():
     Informational only - no database needed.
     """
     return render_template('trust/verification_policy.html')
+
 
 @trust_bp.route('/trust/data_protection')
 def data_protection():

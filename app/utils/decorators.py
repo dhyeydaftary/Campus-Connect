@@ -14,7 +14,7 @@ def admin_required():
     """
     if "user_id" not in session:
         abort(redirect(url_for("auth.admin_login_page")))  # Redirect to admin login if not authenticated
-    
+
     if session.get("account_type") != "admin":
         abort(403)  # Forbidden for non-admins
 
@@ -42,7 +42,7 @@ def status_required(allowed_statuses):
         def decorated_function(*args, **kwargs):
             if "user_id" not in session:
                 return redirect(url_for("auth.login_page"))
-            
+
             user = db.session.get(User, session["user_id"])
             if not user:
                 session.clear()
@@ -52,10 +52,10 @@ def status_required(allowed_statuses):
                 session.clear()
                 flash("Your account is blocked. Please contact support.", "danger")
                 return redirect(url_for("auth.login_page"))
-            
+
             if user.status not in allowed_statuses:
                 abort(403)
-                
+
             return f(*args, **kwargs)
         return decorated_function
     return decorator

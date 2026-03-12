@@ -42,17 +42,18 @@ def save_uploaded_file(file, file_type):
     """
     if not file or file.filename == '':
         return None
-    
+
     file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f"{session['user_id']}_{timestamp}_{secure_filename(file.filename)}"
-    
-    upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'post', 'post_images' if file_type == 'image' else 'post_docs')
+
+    upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'post',
+                              'post_images' if file_type == 'image' else 'post_docs')
     os.makedirs(upload_dir, exist_ok=True)
-    
+
     file_path = os.path.join(upload_dir, filename)
     file.save(file_path)
-    
+
     return file_path.replace('static/', '')
 
 
@@ -75,7 +76,8 @@ def _format_post_for_api(post_data_tuple, current_user_id, liked_post_ids=None):
             is_liked = post.id in liked_post_ids
         else:
             # Fallback for single-post fetches (acceptable performance)
-            is_liked = db.session.query(Like.query.filter_by(post_id=post.id, user_id=current_user_id).exists()).scalar()
+            is_liked = db.session.query(Like.query.filter_by(
+                post_id=post.id, user_id=current_user_id).exists()).scalar()
 
     return {
         "id": post.id,
@@ -89,7 +91,7 @@ def _format_post_for_api(post_data_tuple, current_user_id, liked_post_ids=None):
         "collegeName": user.major,
         "likesCount": likes_count,
         "commentsCount": comments_count,
-        "comments": [], # Intentionally empty for performance; fetched on demand
+        "comments": [],  # Intentionally empty for performance; fetched on demand
         "isLiked": is_liked,
         "createdAt": post.created_at.isoformat(),
         "file_path": post.file_path,

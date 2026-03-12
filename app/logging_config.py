@@ -7,6 +7,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 
+
 def configure_logging(app):
     """
     Configures application logging.
@@ -27,11 +28,11 @@ def configure_logging(app):
     if not app.debug and not app.testing:
         if not os.path.exists('logs'):
             os.mkdir('logs')
-            
+
         # 10MB max size, keep 10 backups
         file_handler = RotatingFileHandler(
-            'logs/app.log', 
-            maxBytes=10485760, 
+            'logs/app.log',
+            maxBytes=10485760,
             backupCount=10
         )
         file_handler.setFormatter(logging.Formatter(

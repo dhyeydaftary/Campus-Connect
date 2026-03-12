@@ -28,7 +28,7 @@ def seed_admin():
     if admin:
         # Update existing admin to ensure credentials match .env and hash is correct
         admin.email = email.lower()
-        admin.set_password(password) # Use the model's method
+        admin.set_password(password)  # Use the model's method
         db.session.commit()
         current_app.logger.info("[OK] Admin account updated")
         return

@@ -11,68 +11,71 @@ def get_status_default(context):
     return "PENDING"
 
 
-
-
-
 # ═══════════════════════════════════════════════════════════════════════════
 # CORE TABLES
 # ═══════════════════════════════════════════════════════════════════════════
 
 class User(db.Model):
-    """Represents a user in the system. This is the central model for authentication, profile information, and relationships."""
-    
+    """
+    Represents a user in the system.
+
+    This is the central model for authentication, profile information,
+    and relationships.
+    """
+
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
-    
+
     # Authentication
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=True)
     is_password_set = db.Column(db.Boolean, default=False, nullable=False)
-    
+
     # OTP & Student Details
     enrollment_no = db.Column(db.String(50), unique=True, nullable=False, index=True)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
-    
+
     # Profile
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     profile_picture = db.Column(db.String(500), nullable=True)
     bio = db.Column(db.Text, nullable=True)
-    
+
     # University info
     university = db.Column(db.String(100), nullable=False, index=True)
     major = db.Column(db.String(100), nullable=False, index=True)
     batch = db.Column(db.String(20), nullable=False)
-    
+
     # Status
     status = db.Column(db.String(20), default=get_status_default, nullable=False)
-    
+
     # Role-based access control
     account_type = db.Column(db.String(20), default="student", nullable=False)
-    
+
     # Timestamps
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(
+        timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
     posts = db.relationship("Post", backref="user", lazy="dynamic", cascade="all, delete-orphan")
     events = db.relationship("Event", backref="author", lazy="dynamic")
     event_registrations = db.relationship("EventRegistration", backref="user", lazy="dynamic")
-    
+
     # Connection relationships handled via queries (see Connection table)
-    sent_requests = db.relationship("ConnectionRequest", 
+    sent_requests = db.relationship("ConnectionRequest",
                                     foreign_keys="ConnectionRequest.sender_id",
-                                    backref="sender", 
+                                    backref="sender",
                                     lazy="dynamic")
     received_requests = db.relationship("ConnectionRequest",
                                         foreign_keys="ConnectionRequest.receiver_id",
                                         backref="receiver",
                                         lazy="dynamic")
-    notifications = db.relationship("Notification", 
+    notifications = db.relationship("Notification",
                                     foreign_keys="Notification.user_id",
-                                    backref="user", 
-                                    lazy="dynamic", 
+                                    backref="user",
+                                    lazy="dynamic",
                                     cascade="all, delete-orphan")
 
     __table_args__ = (
@@ -98,7 +101,7 @@ class User(db.Model):
             return bcrypt.check_password_hash(self.password_hash, password)
         except ValueError:
             return False
-    
+
     def get_connection_count(self):
         """
         Get total number of ACCEPTED connections.
@@ -111,11 +114,11 @@ class User(db.Model):
                 Connection.connected_user_id == self.id
             )
         ).count()
-    
+
     def get_post_count(self):
         """Get total number of posts by this user"""
         return Post.query.filter_by(user_id=self.id).count()
-    
+
     def is_connected_with(self, other_user_id):
         """
         Check if this user is connected with another user.
@@ -126,7 +129,7 @@ class User(db.Model):
                 and_(Connection.user_id == other_user_id, Connection.connected_user_id == self.id)
             )
         ).first() is not None
-    
+
     def get_connection_ids(self):
         """
         Get list of all user IDs this user is connected with.
@@ -140,14 +143,14 @@ class User(db.Model):
                 Connection.connected_user_id == self.id
             )
         ).all()
-        
+
         connection_ids = []
         for uid, connected_uid in results:
             if uid == self.id:
                 connection_ids.append(connected_uid)
             else:
                 connection_ids.append(uid)
-        
+
         return connection_ids
 
     @classmethod
@@ -205,7 +208,7 @@ class OTPVerification(db.Model):
 
 class Connection(db.Model):
     __tablename__ = "connections"
-    
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
         db.Integer,
@@ -218,19 +221,19 @@ class Connection(db.Model):
         nullable=False
     )
     connected_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    
+
     __table_args__ = (
         # Prevent duplicate connections
         db.UniqueConstraint("user_id", "connected_user_id", name="unique_connection"),
-        
+
         # Prevent self-connections
         CheckConstraint("user_id != connected_user_id", name="no_self_connection"),
-        
+
         # Indexes for fast queries
         # Individual indexes for "get all connections of user X"
         Index("idx_connections_user", "user_id"),
         Index("idx_connections_connected_user", "connected_user_id"),
-        
+
         # Composite index for "check if A and B are connected"
         Index("idx_connections_pair", "user_id", "connected_user_id"),
     )
@@ -239,7 +242,7 @@ class Connection(db.Model):
 class ConnectionRequest(db.Model):
 
     __tablename__ = "connection_requests"
-    
+
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(
         db.Integer,
@@ -256,21 +259,21 @@ class ConnectionRequest(db.Model):
         nullable=False,
         default='pending'
     )  # 'pending', 'accepted', 'rejected'
-    
+
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     responded_at = db.Column(db.DateTime(timezone=True), nullable=True)  # When accepted/rejected
-    
+
     __table_args__ = (
         # Only one request between two users
         db.UniqueConstraint("sender_id", "receiver_id", name="unique_request"),
-        
+
         # Cannot request self
         CheckConstraint("sender_id != receiver_id", name="no_self_request"),
-        
+
         # Indexes
         # For "show my pending requests" query
         Index("idx_requests_receiver_status", "receiver_id", "status"),
-        
+
         # For "have I already sent a request to X?" check
         Index("idx_requests_sender_receiver", "sender_id", "receiver_id"),
     )
@@ -279,7 +282,7 @@ class ConnectionRequest(db.Model):
 class Notification(db.Model):
 
     __tablename__ = "notifications"
-    
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
         db.Integer,
@@ -296,17 +299,17 @@ class Notification(db.Model):
     )  # Who performed the action
     is_read = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    
+
     # Relationships defined in parent models via backref
     actor = db.relationship("User", foreign_keys=[actor_id])
-    
+
     __table_args__ = (
         # For "show unread notifications" query
         Index("idx_notifications_user_unread", "user_id", "is_read"),
-        
+
         # For "recent notifications" query
         Index("idx_notifications_user_created", "user_id", "created_at"),
-        
+
         # For cleanup queries
         Index("idx_notifications_created_read", "created_at", "is_read"),
     )
@@ -315,7 +318,7 @@ class Notification(db.Model):
 class UserBlock(db.Model):
 
     __tablename__ = "user_blocks"
-    
+
     id = db.Column(db.Integer, primary_key=True)
     blocker_id = db.Column(
         db.Integer,
@@ -330,18 +333,18 @@ class UserBlock(db.Model):
     reason = db.Column(db.String(50), nullable=True)  # 'spam', 'harassment', 'other'
     is_active = db.Column(db.Boolean, default=True, nullable=False)  # Can unblock
     blocked_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    
+
     # Relationships
     blocker = db.relationship("User", foreign_keys=[blocker_id], backref="blocks_made")
     blocked = db.relationship("User", foreign_keys=[blocked_id], backref="blocked_by")
-    
+
     __table_args__ = (
         # One block per user pair
         db.UniqueConstraint("blocker_id", "blocked_id", name="unique_block"),
-        
+
         # Cannot block self
         CheckConstraint("blocker_id != blocked_id", name="no_self_block"),
-        
+
         # Indexes
         Index("idx_blocks_blocker", "blocker_id"),
         Index("idx_blocks_blocked", "blocked_id"),
@@ -362,29 +365,30 @@ class Post(db.Model):
         db.ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
-    
+
     # Content
     caption = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(500), nullable=True)
     file_path = db.Column(db.String(500), nullable=True)
     file_type = db.Column(db.String(50), nullable=True)  # 'image', 'document', 'text'
     post_type = db.Column(db.String(20), default="normal")  # 'normal', 'event'
-    
+
     # Privacy
     visibility = db.Column(
-        db.String(20), 
-        default='connections', 
+        db.String(20),
+        default='connections',
         nullable=False
     )  # 'public', 'connections', 'private'
-    
+
     # Timestamps
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # 🆕
-    
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(
+        timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # 🆕
+
     __table_args__ = (
         # For "get user's posts" query
         Index("idx_posts_user_created", "user_id", "created_at"),
-        
+
         # For "get public posts" query
         Index("idx_posts_visibility_created", "visibility", "created_at"),
     )
@@ -414,10 +418,10 @@ class Like(db.Model):
     __table_args__ = (
         # Prevent double-likes
         db.UniqueConstraint("user_id", "post_id", name="unique_user_post_like"),
-        
+
         # For counting likes per post
         Index("idx_likes_post", "post_id"),
-        
+
         # For getting user's liked posts
         Index("idx_likes_user", "user_id"),
     )
@@ -443,7 +447,7 @@ class Comment(db.Model):
         db.ForeignKey("comments.id", ondelete="CASCADE"),
         nullable=True
     )
-    
+
     text = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
@@ -455,20 +459,20 @@ class Comment(db.Model):
         lazy="dynamic",
         cascade="all, delete-orphan"
     )
-    
+
     # Relationships to User and Post are handled by parent models
-    
+
     __table_args__ = (
         # For getting comments on a post
         Index("idx_comments_post_created", "post_id", "created_at"),
-        
+
         # For getting replies to a comment
         Index("idx_comments_parent", "parent_comment_id"),
     )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# EVENT TABLES 
+# EVENT TABLES
 # ═══════════════════════════════════════════════════════════════════════════
 
 class Event(db.Model):
@@ -490,12 +494,13 @@ class Event(db.Model):
     )
 
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # 🆕
-    
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(
+        timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # 🆕
+
     # Relationships
     registrations = db.relationship(
-        "EventRegistration", 
-        backref="event", 
+        "EventRegistration",
+        backref="event",
         lazy="dynamic",
         cascade="all, delete-orphan"
     )
@@ -515,7 +520,7 @@ class Event(db.Model):
     def interested_count(self):
         """Number of interested users"""
         return self.registrations.filter_by(status='interested').count()
-    
+
     @classmethod
     def get_active_count(cls):
         """Count of upcoming, non-cancelled events"""
@@ -523,8 +528,8 @@ class Event(db.Model):
 
     __table_args__ = (
         # For "upcoming events" query
-        Index("idx_events_date", "event_date"), 
-        
+        Index("idx_events_date", "event_date"),
+
         # For "my events" query
         Index("idx_events_user_date", "user_id", "event_date"),
     )
@@ -551,9 +556,9 @@ class EventRegistration(db.Model):
     __table_args__ = (
         # One registration per user per event
         db.UniqueConstraint("event_id", "user_id", name="unique_event_user"),
-        
+
         # For counting going/interested users
-        Index("idx_registrations_event_status", "event_id", "status"),  
+        Index("idx_registrations_event_status", "event_id", "status"),
     )
 
 
@@ -564,7 +569,7 @@ class EventRegistration(db.Model):
 class Skill(db.Model):
 
     __tablename__ = "skills"
-    
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
         db.Integer,
@@ -574,10 +579,10 @@ class Skill(db.Model):
     skill_name = db.Column(db.String(100), nullable=False)
     skill_level = db.Column(db.String(20), nullable=True)  # 'beginner', 'intermediate', 'advanced', 'expert'
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    
+
     # Relationship
     user = db.relationship("User", backref=db.backref("skills", lazy="dynamic", cascade="all, delete-orphan"))
-    
+
     __table_args__ = (
         # Prevent duplicate skills for same user
         db.UniqueConstraint("user_id", "skill_name", name="unique_user_skill"),
@@ -588,14 +593,14 @@ class Skill(db.Model):
 class Experience(db.Model):
 
     __tablename__ = "experiences"
-    
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
-    
+
     # Experience details
     title = db.Column(db.String(100), nullable=False)  # e.g., "Software Engineer Intern"
     company = db.Column(db.String(100), nullable=False)  # e.g., "Google"
@@ -604,12 +609,12 @@ class Experience(db.Model):
     end_date = db.Column(db.String(20), nullable=True)  # e.g., "Present" or "Jun 2024"
     description = db.Column(db.Text, nullable=True)  # Brief description of role
     is_current = db.Column(db.Boolean, default=False)  # Currently working here?
-    
+
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    
+
     # Relationship
     user = db.relationship("User", backref=db.backref("experiences", lazy="dynamic", cascade="all, delete-orphan"))
-    
+
     __table_args__ = (
         Index("idx_experiences_user", "user_id"),
     )
@@ -658,8 +663,9 @@ class Announcement(db.Model):
     content = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), default='active', nullable=False)  # 'active', 'deleted'
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(
+        timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     author = db.relationship("User", backref="announcements")
 
@@ -671,7 +677,7 @@ class Announcement(db.Model):
 class AdminLog(db.Model):
 
     __tablename__ = "admin_logs"
-    
+
     id = db.Column(db.Integer, primary_key=True)
     admin_id = db.Column(
         db.Integer,
@@ -691,18 +697,18 @@ class AdminLog(db.Model):
     )
     details = db.Column(db.Text, nullable=True)  # JSON or text details about the action
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    
+
     # Relationships
     admin = db.relationship("User", foreign_keys=[admin_id], backref="admin_actions")
     target_user = db.relationship("User", foreign_keys=[target_user_id])
-    
+
     __table_args__ = (
         # For querying admin's action history
         Index("idx_admin_logs_admin", "admin_id", "created_at"),
-        
+
         # For querying actions on a specific user
         Index("idx_admin_logs_target_user", "target_user_id", "created_at"),
-        
+
         # For querying by action type
         Index("idx_admin_logs_action_type", "action_type", "created_at"),
     )
@@ -715,7 +721,7 @@ class AdminLog(db.Model):
 class Conversation(db.Model):
     """
     Represents a one-to-one conversation between two users.
-    
+
     USAGE:
     - Get all conversations for a user
     - Find existing conversation between two users
@@ -723,9 +729,9 @@ class Conversation(db.Model):
     """
 
     __tablename__ = "conversations"
-    
+
     id = db.Column(db.Integer, primary_key=True)
-    
+
     # Participants (always user1_id < user2_id)
     user1_id = db.Column(
         db.Integer,
@@ -737,7 +743,7 @@ class Conversation(db.Model):
         db.ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
-    
+
     # Timestamps
     created_at = db.Column(
         db.DateTime(timezone=True),
@@ -749,7 +755,7 @@ class Conversation(db.Model):
         default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
-    
+
     # Relationships
     messages = db.relationship(
         "Message",
@@ -758,30 +764,30 @@ class Conversation(db.Model):
         cascade="all, delete-orphan",
         order_by="Message.created_at"
     )
-    
+
     user1 = db.relationship("User", foreign_keys=[user1_id])
     user2 = db.relationship("User", foreign_keys=[user2_id])
-    
+
     __table_args__ = (
         # Prevent duplicate conversations
         db.UniqueConstraint("user1_id", "user2_id", name="unique_conversation"),
-        
+
         # Prevent self-conversations
         CheckConstraint("user1_id != user2_id", name="no_self_conversation"),
-        
+
         # Ensure user1_id < user2_id
         CheckConstraint("user1_id < user2_id", name="ordered_users"),
-        
+
         # Indexes
         Index("idx_conversations_user1", "user1_id"),
         Index("idx_conversations_user2", "user2_id"),
         Index("idx_conversations_updated", "updated_at"),
     )
-    
+
     def get_other_user_id(self, current_user_id):
         """Get the ID of the other participant in the conversation"""
         return self.user2_id if self.user1_id == current_user_id else self.user1_id
-    
+
     def get_unread_count(self, user_id):
         """Get number of unread messages for a specific user"""
         return Message.query.filter_by(
@@ -789,31 +795,31 @@ class Conversation(db.Model):
             receiver_id=user_id,
             is_read=False
         ).count()
-    
+
     def get_last_message(self):
         """Get the most recent message in this conversation"""
         return self.messages.order_by(Message.created_at.desc()).first()
-    
+
     @classmethod
     def get_or_create(cls, user1_id, user2_id):
         """
         Get existing conversation or create new one.
         Automatically handles user ordering.
-        
+
         Returns: (conversation, was_created)
         """
         # Ensure user1_id < user2_id
         if user1_id > user2_id:
             user1_id, user2_id = user2_id, user1_id
-        
+
         conversation = cls.query.filter_by(
             user1_id=user1_id,
             user2_id=user2_id
         ).first()
-        
+
         if conversation:
             return conversation, False
-        
+
         # Create new conversation
         try:
             conversation = cls(user1_id=user1_id, user2_id=user2_id)
@@ -827,12 +833,12 @@ class Conversation(db.Model):
                 user2_id=user2_id
             ).first()
             return conversation, False
-    
+
     @classmethod
     def get_user_conversations(cls, user_id):
         """
         Get all conversations for a user, ordered by last activity.
-        
+
         Returns: List of conversations sorted by updated_at DESC
         """
         return cls.query.filter(
@@ -846,21 +852,21 @@ class Conversation(db.Model):
 class Message(db.Model):
     """
     Represents an individual message sent within a conversation.
-    
+
     Includes sender/receiver IDs, content, and read-receipt status.
     """
 
     __tablename__ = "messages"
-    
+
     id = db.Column(db.Integer, primary_key=True)
-    
+
     # Conversation reference
     conversation_id = db.Column(
         db.Integer,
         db.ForeignKey("conversations.id", ondelete="CASCADE"),
         nullable=False
     )
-    
+
     # Participants
     sender_id = db.Column(
         db.Integer,
@@ -872,29 +878,29 @@ class Message(db.Model):
         db.ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
-    
+
     # Content
     content = db.Column(db.Text, nullable=False)
-    
+
     # Status
     is_read = db.Column(db.Boolean, default=False, nullable=False)
     read_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    
+
     # Timestamp
     created_at = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
-    
+
     # Relationships
     sender = db.relationship("User", foreign_keys=[sender_id])
     receiver = db.relationship("User", foreign_keys=[receiver_id])
-    
+
     __table_args__ = (
         # Prevent self-messages
         CheckConstraint("sender_id != receiver_id", name="no_self_message"),
-        
+
         # Indexes
         Index("idx_messages_conversation", "conversation_id", "created_at"),
         Index("idx_messages_sender", "sender_id"),
@@ -909,14 +915,14 @@ class Message(db.Model):
         # Optimization for fetching last message in conversation
         Index("idx_messages_conversation_id_id", "conversation_id", "id"),
     )
-    
+
     def mark_as_read(self):
         """Mark this message as read"""
         if not self.is_read:
             self.is_read = True
             self.read_at = datetime.now(timezone.utc)
             db.session.commit()
-    
+
     def to_dict(self):
         """Convert message to dictionary for JSON response"""
         return {
@@ -931,33 +937,34 @@ class Message(db.Model):
             "sender_name": self.sender.full_name if self.sender else "Unknown",
             "sender_avatar": self.sender.profile_picture if self.sender else None
         }
-    
+
     @classmethod
     def mark_conversation_as_read(cls, conversation_id, user_id):
         """
         Mark all unread messages in a conversation as read for a specific user.
-        
+
         Args:
             conversation_id: The conversation ID
             user_id: The user who is marking messages as read (receiver)
         """
         now = datetime.now(timezone.utc)
-        
+
         # Bulk update for performance
         count = cls.query.filter_by(
             conversation_id=conversation_id,
             receiver_id=user_id,
             is_read=False
         ).update({'is_read': True, 'read_at': now}, synchronize_session=False)
-        
+
         if count > 0:
             db.session.commit()
-        
+
         return count
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SUPPORT TABLES
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class SupportTicket(db.Model):
     """
@@ -967,25 +974,26 @@ class SupportTicket(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    
+
     # Author details
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), nullable=False)
-    
+
     # Ticket details
     subject = db.Column(db.String(200), nullable=False)
     category = db.Column(db.String(50), nullable=False)
     message = db.Column(db.Text, nullable=False)
     attachment = db.Column(db.String(255), nullable=True)
-    
+
     # State tracking
     status = db.Column(db.String(20), default="open", nullable=False)  # open, in_progress, resolved, closed
     priority = db.Column(db.String(20), default="normal", nullable=False)  # low, normal, high
     assigned_to = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    
+
     # Timestamps
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(
+        timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     response_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
@@ -1002,26 +1010,27 @@ class IssueReport(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    
+
     # Issue specifics
     report_type = db.Column(db.String(50), nullable=False)  # bug, abuse, security, other
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
     steps_to_reproduce = db.Column(db.Text, nullable=True)
     severity = db.Column(db.String(20), nullable=True)  # low, medium, high, critical
-    
+
     # Author & evidence
     email = db.Column(db.String(120), nullable=False)
     attachments = db.Column(db.JSON, nullable=True)  # Store list of paths
-    
+
     # State tracking
     status = db.Column(db.String(20), default="new", nullable=False)  # new, investigating, resolved, closed, duplicate
     assigned_to = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     duplicate_of = db.Column(db.Integer, db.ForeignKey("issue_reports.id", ondelete="SET NULL"), nullable=True)
-    
+
     # Timestamps
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(
+        timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     resolved_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
@@ -1030,9 +1039,10 @@ class IssueReport(db.Model):
         Index("idx_report_created", "created_at"),
     )
 
-# 
+#
 # EVENT LISTENERS (POLYMORPHIC CLEANUP)
-# 
+#
+
 
 @sa_event.listens_for(Post, 'after_delete')
 def delete_post_notifications(mapper, connection, target):
@@ -1046,6 +1056,7 @@ def delete_post_notifications(mapper, connection, target):
             )
         )
     )
+
 
 @sa_event.listens_for(Event, 'after_delete')
 def delete_event_notifications(mapper, connection, target):

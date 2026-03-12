@@ -8,11 +8,13 @@ from flask import Flask
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("CommentQueue")
 
+
 class CommentProcessingQueue:
     """
     A thread-safe FIFO queue for processing comments asynchronously.
     Implements the Producer-Consumer pattern.
     """
+
     def __init__(self):
         # Thread-safe FIFO queue
         self._queue = queue.Queue()
@@ -69,10 +71,10 @@ class CommentProcessingQueue:
             try:
                 # Wait for a task (blocking with timeout to allow checking stop_event)
                 task = self._queue.get(timeout=1)
-                
+
                 # Process the task
                 self._perform_task_logic(task)
-                
+
                 # Mark as done
                 self._queue.task_done()
             except queue.Empty:
@@ -97,7 +99,7 @@ class CommentProcessingQueue:
             comment_id = task.get('comment_id')
             user_id = task.get('user_id')
             post_id = task.get('post_id')
-            
+
             # Logic: Create Notification for the post owner
             try:
                 post = db.session.get(Post, post_id)
@@ -116,6 +118,7 @@ class CommentProcessingQueue:
             except Exception as e:
                 logger.error(f"Database error in worker: {e}")
                 db.session.rollback()
+
 
 # Singleton instance
 comment_queue_service = CommentProcessingQueue()

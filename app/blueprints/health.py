@@ -4,6 +4,7 @@ from sqlalchemy import text
 
 health_bp = Blueprint('health', __name__)
 
+
 @health_bp.route('/health')
 def health_check():
     """
@@ -13,13 +14,13 @@ def health_check():
     try:
         # Check database connection
         db.session.execute(text('SELECT 1'))
-        
+
         return jsonify({
             "status": "ok",
             "service": "Campus Connect",
             "database": "ok"
         }), 200
-        
+
     except Exception:
         return jsonify({
             "status": "error",

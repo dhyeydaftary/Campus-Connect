@@ -51,6 +51,7 @@ def messages_page():
     user = db.session.get(User, session["user_id"])
     return render_template("main/messages.html", user=user, user_name=user.full_name)
 
+
 @main_bp.route("/post/<int:post_id>")
 def post_page(post_id):
     """Renders the detailed view for a single post."""
@@ -59,19 +60,20 @@ def post_page(post_id):
     user = db.session.get(User, session["user_id"])
     return render_template("main/post.html", user=user, user_name=user.full_name, post_id=post_id)
 
+
 @main_bp.route("/profile/<int:user_id>")
 def profile_page(user_id):
     """Renders the user profile page."""
     if "user_id" not in session:
         return redirect(url_for("auth.login_page"))
-    
+
     profile_user = db.session.get(User, user_id)
     if not profile_user:
         abort(404)
-    
+
     current_user = db.session.get(User, session["user_id"])
     is_own_profile = (session["user_id"] == user_id)
-    
+
     return render_template(
         "main/profile.html",
         profile_user=profile_user,
@@ -80,6 +82,7 @@ def profile_page(user_id):
         is_own_profile=is_own_profile,
         current_user_id=session["user_id"]
     )
+
 
 @main_bp.route('/favicon.ico')
 def favicon():
@@ -96,37 +99,38 @@ def get_announcements():
     """Fetches active announcements for all users."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
-    
+
     try:
         limit = request.args.get("limit")
         if limit is not None:
             limit = int(limit)
             if limit < 1:
-                limit = None # Ignore invalid limits
+                limit = None  # Ignore invalid limits
     except (ValueError, TypeError):
         limit = None
-        
+
     query = Announcement.query.filter_by(status='active').order_by(Announcement.created_at.desc())
-    
+
     if limit:
         announcements = query.limit(limit).all()
     else:
         announcements = query.all()
-    
+
     announcements_data = []
     for ann in announcements:
         announcements_data.append({
             "id": ann.id,
             "title": ann.title,
             "content": ann.content,
-            "text": ann.content, # Backward compatibility for frontend
-            "date": ann.created_at.strftime("%d %b %Y, %I:%M %p"), # Human readable with time
+            "text": ann.content,  # Backward compatibility for frontend
+            "date": ann.created_at.strftime("%d %b %Y, %I:%M %p"),  # Human readable with time
             "iso_date": ann.created_at.isoformat(),
             "author": ann.author.full_name if ann.author else "Admin",
             "updated_at": ann.updated_at.strftime("%d %b %Y, %I:%M %p") if ann.updated_at else None
         })
-    
+
     return jsonify(announcements_data)
+
 
 @main_bp.route("/api/profile/completion", methods=["GET"])
 def get_profile_completion():
@@ -136,22 +140,22 @@ def get_profile_completion():
 
     user_id = session["user_id"]
     user = db.session.get(User, user_id)
-    
+
     if not user:
         return jsonify({"error": "User not found"}), 404
 
     checklist = []
-    
+
     # 1. Profile Picture
     has_pic = getattr(user, 'profile_picture', None) is not None
     if not has_pic:
         checklist.append({"label": "Add profile photo", "action": f"/profile/{user_id}", "is_js": False})
-    
+
     # 2. Bio
     has_bio = user.bio is not None and len(user.bio.strip()) > 0
     if not has_bio:
         checklist.append({"label": "Add bio", "action": f"/profile/{user_id}", "is_js": False})
-        
+
     # 3. Major (Department)
     has_major = user.major is not None and len(user.major.strip()) > 0
     if not has_major:
@@ -172,7 +176,11 @@ def get_profile_completion():
         or_(Connection.user_id == user_id, Connection.connected_user_id == user_id)
     ).count()
     if conn_count == 0:
-        checklist.append({"label": "Connect with someone", "action": "document.getElementById('suggestions-container').scrollIntoView({behavior: 'smooth'})", "is_js": True})
+        checklist.append({
+            "label": "Connect with someone",
+            "action": "document.getElementById('suggestions-container').scrollIntoView({behavior: 'smooth'})",
+            "is_js": True
+        })
 
     total_items = 6
     completed_items = total_items - len(checklist)
@@ -189,14 +197,14 @@ def get_my_profile():
     """Fetches a lightweight summary of the current user's profile for the navbar."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
-    
+
     user = db.session.get(User, session["user_id"])
     if not user:
         return jsonify({"error": "User not found"}), 404
-    
+
     # Count posts
     post_count = Post.query.filter_by(user_id=user.id).count()
-    
+
     # Count connections (bidirectional)
     connection_count = Connection.query.filter(
         or_(
@@ -204,7 +212,7 @@ def get_my_profile():
             Connection.connected_user_id == user.id
         )
     ).count()
-    
+
     return jsonify({
         "id": user.id,
         "name": user.full_name,
@@ -218,7 +226,6 @@ def get_my_profile():
             "connections": connection_count
         }
     })
-
 
 
 @main_bp.route("/api/profile/<int:user_id>/posts")
@@ -240,7 +247,7 @@ def api_profile_posts(user_id):
             return jsonify({"error": "Invalid pagination parameters"}), 400
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid pagination parameters"}), 400
-        
+
     offset = (page - 1) * limit
 
     likes_subq = (
@@ -352,7 +359,7 @@ def get_profile_data(user_id):
                 pending_request_id = received_request.id
             else:
                 connection_status = 'not_connected'
-    elif not current_user_id: # Not logged in
+    elif not current_user_id:  # Not logged in
         connection_status = 'not_connected'
 
     # Get connection count and list
@@ -363,17 +370,17 @@ def get_profile_data(user_id):
         )
     )
     connection_count = connections_query.count()
-    
+
     # Get counts for connection request tabs (only visible on own profile).
     received_count = 0
     sent_count = 0
-    
+
     if is_own_profile:
         received_count = ConnectionRequest.query.filter_by(
             receiver_id=user_id,
             status='pending'
         ).count()
-        
+
         sent_count = ConnectionRequest.query.filter_by(
             sender_id=user_id,
             status='pending'
@@ -530,14 +537,14 @@ def upload_profile_photo():
     """Handles the upload and update of a user's profile photo."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
-    
+
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
-        
+
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "No file selected"}), 400
-        
+
     # Validate file type (Images only)
     allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
@@ -546,21 +553,21 @@ def upload_profile_photo():
     # Create directory if not exists
     upload_folder = os.path.join(current_app.root_path, 'static/uploads/profile_photos')
     os.makedirs(upload_folder, exist_ok=True)
-    
+
     # Secure unique filename: user_{id}_{timestamp}.ext
     ext = file.filename.rsplit('.', 1)[1].lower()
     filename = f"user_{session['user_id']}_{int(time.time())}.{ext}"
     file_path = os.path.join(upload_folder, filename)
-    
+
     file.save(file_path)
-    
+
     # Update User in DB
     user = db.session.get(User, session["user_id"])
     user.profile_picture = f"/static/uploads/profile_photos/{filename}"
     db.session.commit()
-    
+
     return jsonify({
-        "message": "Profile photo updated", 
+        "message": "Profile photo updated",
         "url": user.profile_picture
     })
 
@@ -869,19 +876,20 @@ def update_bio():
 
     return jsonify({"message": "Bio updated", "bio": bio})
 
+
 @main_bp.route("/api/search", methods=["GET"])
 def search_all():
     """Performs a global search across users and announcements."""
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
-        
+
     query = request.args.get("q", "").strip()
-    
+
     if not query or len(query) < 2:
         return jsonify({"users": [], "posts": [], "announcements": []})
-        
+
     search_term = f"%{query}%"
-    
+
     # 1. Search Users (Name, Major)
     users = User.query.filter(
         or_(
@@ -891,13 +899,13 @@ def search_all():
         ),
         User.status == 'ACTIVE'
     ).limit(5).all()
-    
+
     # 2. Search Announcements (Title)
     announcements = Announcement.query.filter(
         Announcement.title.ilike(search_term),
         Announcement.status == 'active'
     ).limit(3).all()
-    
+
     return jsonify({
         "users": [{
             "id": u.id,

@@ -12,7 +12,6 @@ from app.utils.helpers import (
 from . import notifications_bp
 
 
-
 # ==============================================================================
 # NOTIFICATIONS API ROUTES
 # ==============================================================================
@@ -22,12 +21,12 @@ from . import notifications_bp
 def get_notifications():
     """Fetches the latest notifications for the current user."""
     user_id = session["user_id"]
-    
+
     # Get all notifications, ordered by newest first
     notifications = Notification.query.filter_by(
         user_id=user_id
     ).order_by(Notification.created_at.desc()).limit(20).all()
-    
+
     result = []
     for notif in notifications:
         # Get actor info if exists
@@ -40,7 +39,7 @@ def get_notifications():
                     "name": actor_user.full_name,
                     "profile_picture": _get_user_avatar(actor_user)
                 }
-        
+
         result.append({
             "id": notif.id,
             "type": notif.type,
@@ -50,15 +49,14 @@ def get_notifications():
             "is_read": notif.is_read,
             "created_at": notif.created_at.strftime("%Y-%m-%d %H:%M:%S")
         })
-    
+
     # Add unread_count to response so frontend doesn't reset badge to 0
     unread_count = Notification.query.filter_by(
         user_id=user_id,
         is_read=False
     ).count()
-    
-    return jsonify({"notifications": result, "unread_count": unread_count})
 
+    return jsonify({"notifications": result, "unread_count": unread_count})
 
 
 @notifications_bp.route("/notifications/unread-count", methods=["GET"])
@@ -67,14 +65,13 @@ def get_notifications():
 def get_unread_count():
     """Fetches only the count of unread notifications, for badge updates."""
     user_id = session["user_id"]
-    
+
     unread_count = Notification.query.filter_by(
         user_id=user_id,
         is_read=False
     ).count()
-    
-    return jsonify({"count": unread_count})
 
+    return jsonify({"count": unread_count})
 
 
 @notifications_bp.route("/notifications/mark-read/<int:notification_id>", methods=["POST"])
@@ -82,20 +79,19 @@ def get_unread_count():
 def mark_notification_read(notification_id):
     """Marks a single notification as read."""
     user_id = session["user_id"]
-    
+
     notification = db.session.get(Notification, notification_id)
-    
+
     if not notification:
         return jsonify({"error": "Notification not found"}), 404
-    
+
     if notification.user_id != user_id:
         return jsonify({"error": "Not authorized"}), 403
-    
+
     notification.is_read = True
     db.session.commit()
-    
-    return jsonify({"success": True})
 
+    return jsonify({"success": True})
 
 
 @notifications_bp.route("/notifications/mark-all-read", methods=["POST"])
@@ -103,16 +99,15 @@ def mark_notification_read(notification_id):
 def mark_all_notifications_read():
     """Marks all of the user's unread notifications as read."""
     user_id = session["user_id"]
-    
+
     Notification.query.filter_by(
         user_id=user_id,
         is_read=False
     ).update({"is_read": True})
-    
-    db.session.commit()
-    
-    return jsonify({"success": True})
 
+    db.session.commit()
+
+    return jsonify({"success": True})
 
 
 @notifications_bp.route("/notifications/clear", methods=["POST"])
@@ -120,9 +115,8 @@ def mark_all_notifications_read():
 def clear_notifications():
     """Deletes all notifications for the current user."""
     user_id = session["user_id"]
-    
+
     Notification.query.filter_by(user_id=user_id).delete()
     db.session.commit()
-    
-    return jsonify({"success": True})
 
+    return jsonify({"success": True})
