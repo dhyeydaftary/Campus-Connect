@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - CampusConnect</title>
+
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/login.css') }}">
+
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4 gradient-soft text-slate-900">
+    <div class="w-full max-w-md animate-fade-in-up">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-elevated overflow-hidden">
+            <div class="p-8">
+                <!-- Header -->
+                <div class="text-center mb-8 animate-fade-in delay-100">
+                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 mb-4">
+                        <i class="fa-solid fa-shield-halved text-2xl text-indigo-600"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-900">Campus Connect</h1>
+                    <p class="text-slate-500 font-medium tracking-widest uppercase text-xs mt-1">Administrator Portal
+                    </p>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+
+                {% if messages %}
+
+                <div class="mb-6 space-y-2 animate-scale-in">
+                    {% for category, message in messages %}
+                    <div class="p-3 text-sm rounded-xl flex items-center gap-2.5
+                                    {% if category == 'error' or category == 'danger' %}bg-red-50 text-red-700 border border-red-200
+                                    {% elif category == 'warning' %}bg-yellow-50 text-yellow-700 border border-yellow-200
+                                    {% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+                        <i
+                            class="fa-solid {% if category == 'error' or category == 'danger' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %} text-xs"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <!-- Admin Login Form -->
+                <form id="admin-login-form" method="POST" action="{{ url_for('auth.admin_login_page') }}"
+                    class="space-y-4 animate-fade-in delay-200">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="text-sm font-medium text-slate-700">Admin Email</label>
+                        <div class="relative mt-1.5">
+                            <i
+                                class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input id="email" name="email" type="email" required
+                                class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-3 text-sm input-glow transition-all duration-200"
+                                placeholder="admin@ljku.edu.in">
+                        </div>
+                    </div>
+                    <!-- Password -->
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <label for="password" class="text-sm font-medium text-slate-700">Password</label>
+                            <a href="#"
+                                class="text-xs text-indigo-600 hover:text-indigo-800 hover:underline transition-colors duration-200"
+                                tabindex="-1">Forgot?</a>
+                        </div>
+                        <div class="relative mt-1.5">
+                            <i
+                                class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input id="password" name="password" type="password" required
+                                class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-3 text-sm input-glow transition-all duration-200"
+                                placeholder="••••••••">
+                        </div>
+                    </div>
+                    <!-- Remember Me -->
+                    <div class="flex items-center gap-2.5 pt-1">
+                        <input type="checkbox" name="remember_me"
+                            class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/30">
+                        <span class="text-sm text-slate-500">Remember me</span>
+                    </div>
+                    <!-- Submit -->
+                    <button type="submit"
+                        class="w-full h-11 gradient-primary text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98] transition-all duration-200 mt-2">
+                        <i class="fa-solid fa-right-to-bracket text-sm"></i>
+                        Sign In to Dashboard
+                    </button>
+                    <div class="relative my-6">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-slate-200"></div>
+                        </div>
+                        <div class="relative flex justify-center text-xs"><span
+                                class="bg-white px-3 text-slate-400">or</span></div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-slate-500 text-sm">
+                            Student account?
+                            <a href="{{ url_for('auth.login_page') }}"
+                                class="text-indigo-600 font-semibold hover:text-indigo-800 hover:underline transition-colors duration-200">Go
+                                to Student Login</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

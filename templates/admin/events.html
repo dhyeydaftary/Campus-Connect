@@ -1,0 +1,1036 @@
+{% extends "layouts/admin_base.html" %}
+{% block title %}Events | Admin{% endblock %}
+{% block header_title %}Events Management{% endblock %}
+
+{% block head %}
+<style>
+    /* ── Animations ── */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -400% 0;
+        }
+
+        100% {
+            background-position: 400% 0;
+        }
+    }
+
+    @keyframes modalIn {
+        from {
+            opacity: 0;
+            transform: scale(0.96) translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.45s ease-out both;
+    }
+
+    .anim-delay-1 {
+        animation-delay: 0.05s;
+    }
+
+    .anim-delay-2 {
+        animation-delay: 0.10s;
+    }
+
+    /* ── Page wrapper ── */
+    .ev-page {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* ── Shared card shell ── */
+    .ev-card {
+        background: white;
+        border: 1px solid hsl(220, 18%, 90%);
+        border-radius: 1rem;
+        box-shadow: 0 1px 4px hsl(221 30% 50% / 0.07);
+        overflow: hidden;
+    }
+
+    /* ── Card header variants ── */
+    .ev-card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.125rem 1.5rem;
+        border-bottom: 1px solid hsl(220, 18%, 92%);
+    }
+
+    .ev-card-header.dark {
+        background: hsl(221, 68%, 28%);
+    }
+
+    .ev-card-header-icon {
+        width: 2rem;
+        height: 2rem;
+        flex-shrink: 0;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .ev-card-header.dark .ev-card-header-icon {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+    }
+
+    .ev-card-header.light .ev-card-header-icon {
+        background: hsl(221, 68%, 93%);
+        color: hsl(221, 68%, 40%);
+    }
+
+    .ev-card-title {
+        font-size: 0.9375rem;
+        font-weight: 700;
+    }
+
+    .ev-card-header.dark .ev-card-title {
+        color: white;
+    }
+
+    .ev-card-header.light .ev-card-title {
+        color: hsl(221, 39%, 11%);
+    }
+
+    /* ── Form fields ── */
+    .ev-field-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: hsl(220, 14%, 40%);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.375rem;
+    }
+
+    .ev-input,
+    .ev-select,
+    .ev-textarea {
+        width: 100%;
+        padding: 0.625rem 0.875rem;
+        font-size: 0.875rem;
+        border: 1.5px solid hsl(220, 18%, 88%);
+        border-radius: 0.5rem;
+        background: hsl(220, 20%, 99%);
+        color: hsl(221, 39%, 11%);
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
+        font-family: inherit;
+    }
+
+    .ev-input:focus,
+    .ev-select:focus,
+    .ev-textarea:focus {
+        border-color: hsl(221, 68%, 50%);
+        box-shadow: 0 0 0 3px hsl(221 68% 50% / 0.12);
+        background: white;
+    }
+
+    .ev-textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    /* ── Form grid ── */
+    .ev-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem 1.25rem;
+    }
+
+    .ev-form-grid .span-2 {
+        grid-column: span 2;
+    }
+
+    @media (max-width: 640px) {
+        .ev-form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ev-form-grid .span-2 {
+            grid-column: span 1;
+        }
+    }
+
+    /* ── Tab strip ── */
+    .ev-tabs {
+        display: flex;
+        gap: 0.25rem;
+        background: hsl(220, 20%, 95%);
+        border-radius: 0.625rem;
+        padding: 0.25rem;
+    }
+
+    .ev-tab {
+        padding: 0.375rem 1rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        border-radius: 0.4rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: hsl(220, 14%, 46%);
+        background: transparent;
+    }
+
+    .ev-tab:hover {
+        color: hsl(221, 39%, 11%);
+        background: white;
+    }
+
+    .ev-tab.active {
+        background: hsl(221, 68%, 28%);
+        color: white;
+        box-shadow: 0 2px 6px hsl(221 68% 28% / 0.3);
+    }
+
+    .ev-manage-subheader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.125rem 1.5rem;
+        border-bottom: 1px solid hsl(220, 18%, 92%);
+    }
+
+    /* ── Event list items ── */
+    .ev-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ev-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.875rem 1.5rem;
+        border-bottom: 1px solid hsl(220, 18%, 94%);
+        transition: background 0.15s;
+        animation: fadeInUp 0.3s ease-out both;
+    }
+
+    .ev-item:last-child {
+        border-bottom: none;
+    }
+
+    .ev-item:hover {
+        background: hsl(221, 68%, 28%, 0.02);
+    }
+
+    .ev-date-badge {
+        flex-shrink: 0;
+        width: 3rem;
+        height: 3rem;
+        background: hsl(221, 68%, 28%);
+        border-radius: 0.625rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+
+    .ev-date-badge .ev-month {
+        font-size: 0.5rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        opacity: 0.8;
+        line-height: 1;
+    }
+
+    .ev-date-badge .ev-day {
+        font-size: 1.25rem;
+        font-weight: 800;
+        line-height: 1.15;
+    }
+
+    .ev-item-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .ev-item-title {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: hsl(221, 39%, 11%);
+        margin-bottom: 0.2rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ev-item-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 0.875rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .ev-item-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.725rem;
+        color: hsl(220, 14%, 50%);
+    }
+
+    .ev-item-meta i {
+        font-size: 0.6rem;
+    }
+
+    .ev-pills {
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+    }
+
+    .ev-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        padding: 0.1rem 0.45rem;
+        border-radius: 9999px;
+        font-size: 0.6375rem;
+        font-weight: 700;
+    }
+
+    .ev-pill-blue {
+        background: hsl(213, 94%, 93%);
+        color: hsl(213, 68%, 38%);
+    }
+
+    .ev-pill-amber {
+        background: hsl(45, 93%, 90%);
+        color: hsl(32, 80%, 35%);
+    }
+
+    .ev-pill-green {
+        background: hsl(142, 60%, 90%);
+        color: hsl(142, 60%, 28%);
+    }
+
+    .ev-pill-red {
+        background: hsl(0, 90%, 93%);
+        color: hsl(0, 65%, 45%);
+    }
+
+    .ev-pill-indigo {
+        background: hsl(221, 68%, 93%);
+        color: hsl(221, 68%, 35%);
+    }
+
+    .ev-pill-purple {
+        background: hsl(270, 60%, 92%);
+        color: hsl(270, 60%, 40%);
+    }
+
+    .ev-item-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-shrink: 0;
+    }
+
+    .ev-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.375rem 0.7rem;
+        font-size: 0.725rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        border: 1.5px solid hsl(220, 18%, 88%);
+        background: white;
+        color: hsl(220, 14%, 35%);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .ev-action-btn:hover {
+        border-color: hsl(221, 68%, 50%);
+        color: hsl(221, 68%, 40%);
+        background: hsl(221, 68%, 97%);
+    }
+
+    .ev-action-btn.red:hover {
+        border-color: hsl(0, 65%, 55%);
+        color: hsl(0, 65%, 45%);
+        background: hsl(0, 90%, 97%);
+    }
+
+    /* ── Skeleton ── */
+    .ev-skeleton-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.875rem 1.5rem;
+        border-bottom: 1px solid hsl(220, 18%, 94%);
+    }
+
+    .sk-box {
+        border-radius: 0.375rem;
+        background: linear-gradient(90deg, hsl(220, 18%, 93%) 25%, hsl(220, 18%, 97%) 50%, hsl(220, 18%, 93%) 75%);
+        background-size: 400% 100%;
+        animation: shimmer 1.6s ease-in-out infinite;
+    }
+
+    .sk-date {
+        width: 3rem;
+        height: 3rem;
+        flex-shrink: 0;
+        border-radius: 0.625rem;
+    }
+
+    .sk-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* ── Empty state ── */
+    .ev-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3.5rem 1.5rem;
+        text-align: center;
+    }
+
+    .ev-empty-icon {
+        width: 4rem;
+        height: 4rem;
+        background: hsl(221, 68%, 95%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: hsl(221, 68%, 50%);
+        font-size: 1.375rem;
+        margin-bottom: 1rem;
+    }
+
+    .ev-empty strong {
+        font-size: 0.9375rem;
+        color: hsl(221, 39%, 11%);
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .ev-empty span {
+        font-size: 0.8125rem;
+        color: hsl(220, 14%, 55%);
+    }
+
+    /* ── Success banner ── */
+    .ev-success {
+        display: none;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        background: hsl(142, 60%, 96%);
+        border: 1px solid hsl(142, 60%, 80%);
+        border-left: 4px solid hsl(142, 60%, 40%);
+        border-radius: 0.75rem;
+        animation: fadeInUp 0.3s ease-out both;
+    }
+
+    .ev-success-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        flex-shrink: 0;
+        background: hsl(142, 60%, 40%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.875rem;
+    }
+
+    .ev-success-text p:first-child {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: hsl(142, 60%, 22%);
+    }
+
+    .ev-success-text p:last-child {
+        font-size: 0.8125rem;
+        color: hsl(142, 60%, 35%);
+        margin-top: 0.1rem;
+    }
+
+    /* ── Modal backdrop ── */
+    .ev-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 12, 24, 0.58);
+        backdrop-filter: blur(4px);
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .ev-modal {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+        width: 100%;
+        max-width: 640px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: modalIn 0.25s cubic-bezier(0.34, 1.1, 0.64, 1) both;
+    }
+
+    .ev-modal-lg {
+        max-width: 760px;
+    }
+
+    .ev-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.125rem 1.5rem;
+        border-bottom: 1px solid hsl(220, 18%, 92%);
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    .ev-modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .ev-modal-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .ev-modal-icon.edit {
+        background: hsl(221, 68%, 93%);
+        color: hsl(221, 68%, 40%);
+    }
+
+    .ev-modal-icon.view {
+        background: hsl(142, 60%, 91%);
+        color: hsl(142, 60%, 30%);
+    }
+
+    .ev-modal-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: hsl(221, 39%, 11%);
+    }
+
+    .ev-modal-close {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        border: none;
+        background: hsl(220, 18%, 94%);
+        color: hsl(220, 14%, 46%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.15s;
+    }
+
+    .ev-modal-close:hover {
+        background: hsl(0, 90%, 93%);
+        color: hsl(0, 65%, 45%);
+    }
+
+    .ev-modal-body {
+        padding: 1.5rem;
+    }
+
+    .ev-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.625rem;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid hsl(220, 18%, 92%);
+        background: hsl(220, 20%, 98%);
+        border-radius: 0 0 1rem 1rem;
+    }
+
+    /* ── View detail grid ── */
+    .ev-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.625rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .ev-detail-cell {
+        background: hsl(220, 20%, 98%);
+        border: 1px solid hsl(220, 18%, 91%);
+        border-radius: 0.625rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .ev-detail-cell .lbl {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: hsl(220, 14%, 55%);
+        margin-bottom: 0.25rem;
+    }
+
+    .ev-detail-cell .val {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: hsl(221, 39%, 11%);
+    }
+
+    /* ── Participants table ── */
+    .ev-ptable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8125rem;
+    }
+
+    .ev-ptable thead tr {
+        background: hsl(221, 68%, 28%);
+    }
+
+    .ev-ptable thead th {
+        padding: 0.625rem 0.875rem;
+        font-weight: 600;
+        color: white;
+        text-align: left;
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .ev-ptable thead th:first-child {
+        border-radius: 0.5rem 0 0 0;
+    }
+
+    .ev-ptable thead th:last-child {
+        border-radius: 0 0.5rem 0 0;
+    }
+
+    .ev-ptable tbody tr {
+        border-bottom: 1px solid hsl(220, 18%, 93%);
+        transition: background 0.12s;
+    }
+
+    .ev-ptable tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .ev-ptable tbody tr:hover {
+        background: hsl(221, 68%, 98%);
+    }
+
+    .ev-ptable td {
+        padding: 0.625rem 0.875rem;
+        color: hsl(221, 39%, 20%);
+    }
+
+    /* ── Buttons ── */
+    .ev-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.575rem 1.125rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+    .ev-btn-primary {
+        background: hsl(221, 68%, 28%);
+        color: white;
+    }
+
+    .ev-btn-primary:hover {
+        background: hsl(221, 68%, 22%);
+        box-shadow: 0 4px 12px hsl(221 68% 28% / 0.3);
+    }
+
+    .ev-btn-secondary {
+        background: white;
+        color: hsl(220, 14%, 35%);
+        border: 1.5px solid hsl(220, 18%, 86%);
+    }
+
+    .ev-btn-secondary:hover {
+        background: hsl(220, 20%, 97%);
+        border-color: hsl(220, 18%, 72%);
+    }
+
+    .ev-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    /* ── Section label ── */
+    .ev-section-label {
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: hsl(220, 14%, 55%);
+        margin-bottom: 0.625rem;
+    }
+
+    /* ── Datetime-local calendar polish ── */
+    input[type="datetime-local"].ev-input {
+        color-scheme: light;
+        cursor: pointer;
+    }
+
+    input[type="datetime-local"].ev-input::-webkit-calendar-picker-indicator {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234338ca' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+        background-size: 14px;
+        background-position: center;
+        background-repeat: no-repeat;
+        width: 20px;
+        height: 20px;
+        opacity: 0.65;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: opacity 0.15s, background-color 0.15s;
+    }
+
+    input[type="datetime-local"].ev-input::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+        background-color: hsl(221, 68%, 92%);
+    }
+
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-fields-wrapper {
+        padding: 0;
+    }
+
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-text {
+        color: hsl(220, 14%, 65%);
+        padding: 0 1px;
+    }
+
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-month-field,
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-day-field,
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-year-field,
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-hour-field,
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-minute-field,
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-ampm-field {
+        color: hsl(221, 39%, 11%);
+        border-radius: 3px;
+        padding: 0 2px;
+        transition: background 0.1s;
+    }
+
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-month-field:focus,
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-day-field:focus,
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-year-field:focus,
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-hour-field:focus,
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-minute-field:focus,
+    input[type="datetime-local"].ev-input::-webkit-datetime-edit-ampm-field:focus {
+        background: hsl(221, 68%, 28%);
+        color: white;
+        outline: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ev-page content-area animate-fade-in-up">
+
+    <!-- ── Create Event ── -->
+    <div class="ev-card anim-delay-1 animate-fade-in-up">
+        <div class="ev-card-header dark">
+            <div class="ev-card-header-icon"><i class="fa-solid fa-calendar-plus"></i></div>
+            <h2 class="ev-card-title">Create New Event</h2>
+        </div>
+        <div style="padding:1.5rem;">
+            <form id="event-form">
+                <div class="ev-form-grid">
+                    <div>
+                        <label class="ev-field-label" for="event-title">Event Title</label>
+                        <input type="text" class="ev-input" id="event-title" placeholder="e.g. Annual Tech Fest 2025"
+                            required>
+                    </div>
+                    <div>
+                        <label class="ev-field-label" for="event-date">Date & Time</label>
+                        <input type="datetime-local" class="ev-input" id="event-date" required>
+                    </div>
+                    <div>
+                        <label class="ev-field-label" for="event-location">Venue</label>
+                        <select class="ev-select" id="event-location" required>
+                            <option value="">Select Venue</option>
+                            <option value="Engineering Auditorium">Engineering Auditorium</option>
+                            <option value="Law Auditorium">Law Auditorium</option>
+                            <option value="Architecture Auditorium">Architecture Auditorium</option>
+                            <option value="Open Ground">Open Ground</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="ev-field-label" for="total-seats">Total Seats</label>
+                        <input type="number" class="ev-input" id="total-seats" min="1" value="100" required>
+                    </div>
+                    <div>
+                        <label class="ev-field-label" for="event-type">Event Type</label>
+                        <select class="ev-select" id="event-type" required>
+                            <option value="">Select Type</option>
+                            <option value="official">Official</option>
+                            <option value="club">Club</option>
+                        </select>
+                    </div>
+                    <div class="span-2">
+                        <label class="ev-field-label" for="event-description">Description</label>
+                        <textarea class="ev-textarea" id="event-description"
+                            placeholder="Describe the event, agenda, dress code, etc." required></textarea>
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;">
+                    <button type="button" class="ev-btn ev-btn-secondary" onclick="resetForm()">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                    <button type="submit" class="ev-btn ev-btn-primary" id="submit-btn">
+                        <i class="fa-solid fa-plus"></i> Create Event
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Success Banner ── -->
+    <div id="success-message" class="ev-success">
+        <div class="ev-success-icon"><i class="fa-solid fa-check"></i></div>
+        <div class="ev-success-text">
+            <p>Event Created Successfully!</p>
+            <p>Your event has been published and is now visible to the target audience.</p>
+        </div>
+    </div>
+
+    <!-- ── Manage Events ── -->
+    <div class="ev-card anim-delay-2 animate-fade-in-up">
+        <div class="ev-manage-subheader">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <div class="ev-card-header-icon"
+                    style="background:hsl(221,68%,93%);color:hsl(221,68%,40%);width:2rem;height:2rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;font-size:0.875rem;">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <span style="font-size:0.9375rem;font-weight:700;color:hsl(221,39%,11%);">Manage Events</span>
+            </div>
+            <div class="ev-tabs">
+                <button id="tab-upcoming" class="ev-tab active" onclick="switchTab('upcoming')">
+                    <i class="fa-regular fa-clock" style="margin-right:0.3rem;font-size:0.7rem;"></i>Upcoming
+                </button>
+                <button id="tab-past" class="ev-tab" onclick="switchTab('past')">
+                    <i class="fa-solid fa-flag-checkered" style="margin-right:0.3rem;font-size:0.7rem;"></i>Past
+                </button>
+            </div>
+        </div>
+
+        <div id="events-list" class="ev-list">
+            <!-- Skeleton rows -->
+            <div class="ev-skeleton-item">
+                <div class="sk-box sk-date"></div>
+                <div class="sk-body">
+                    <div class="sk-box" style="height:0.875rem;width:50%;"></div>
+                    <div class="sk-box" style="height:0.725rem;width:35%;"></div>
+                    <div class="sk-box" style="height:0.725rem;width:25%;"></div>
+                </div>
+                <div style="display:flex;gap:0.4rem;">
+                    <div class="sk-box" style="height:2rem;width:5rem;border-radius:0.5rem;"></div>
+                    <div class="sk-box" style="height:2rem;width:4rem;border-radius:0.5rem;"></div>
+                </div>
+            </div>
+            <div class="ev-skeleton-item">
+                <div class="sk-box sk-date"></div>
+                <div class="sk-body">
+                    <div class="sk-box" style="height:0.875rem;width:42%;"></div>
+                    <div class="sk-box" style="height:0.725rem;width:28%;"></div>
+                    <div class="sk-box" style="height:0.725rem;width:20%;"></div>
+                </div>
+                <div style="display:flex;gap:0.4rem;">
+                    <div class="sk-box" style="height:2rem;width:5rem;border-radius:0.5rem;"></div>
+                    <div class="sk-box" style="height:2rem;width:4rem;border-radius:0.5rem;"></div>
+                    <div class="sk-box" style="height:2rem;width:3.5rem;border-radius:0.5rem;"></div>
+                </div>
+            </div>
+            <div class="ev-skeleton-item" style="border-bottom:none;">
+                <div class="sk-box sk-date"></div>
+                <div class="sk-body">
+                    <div class="sk-box" style="height:0.875rem;width:58%;"></div>
+                    <div class="sk-box" style="height:0.725rem;width:40%;"></div>
+                    <div class="sk-box" style="height:0.725rem;width:30%;"></div>
+                </div>
+                <div style="display:flex;gap:0.4rem;">
+                    <div class="sk-box" style="height:2rem;width:5rem;border-radius:0.5rem;"></div>
+                    <div class="sk-box" style="height:2rem;width:4rem;border-radius:0.5rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══ EDIT MODAL ══ -->
+<div id="edit-modal" class="ev-modal-backdrop" style="display:none;">
+    <div class="ev-modal">
+        <div class="ev-modal-header">
+            <div class="ev-modal-header-left">
+                <div class="ev-modal-icon edit"><i class="fa-solid fa-pen-to-square"></i></div>
+                <h3 class="ev-modal-title">Update Event</h3>
+            </div>
+            <button class="ev-modal-close" onclick="closeModal('edit-modal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="ev-modal-body">
+            <form id="edit-event-form">
+                <input type="hidden" id="edit-event-id">
+                <div class="ev-form-grid">
+                    <div>
+                        <label class="ev-field-label">Event Title</label>
+                        <input type="text" class="ev-input" id="edit-title" required>
+                    </div>
+                    <div>
+                        <label class="ev-field-label">Date & Time</label>
+                        <input type="datetime-local" class="ev-input" id="edit-date" required>
+                    </div>
+                    <div>
+                        <label class="ev-field-label">Venue</label>
+                        <select class="ev-select" id="edit-location" required>
+                            <option value="Engineering Auditorium">Engineering Auditorium</option>
+                            <option value="Law Auditorium">Law Auditorium</option>
+                            <option value="Architecture Auditorium">Architecture Auditorium</option>
+                            <option value="Open Ground">Open Ground</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="ev-field-label">Total Seats</label>
+                        <input type="number" class="ev-input" id="edit-seats" required>
+                    </div>
+                    <div class="span-2">
+                        <label class="ev-field-label">Description</label>
+                        <textarea class="ev-textarea" id="edit-description" required></textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="ev-modal-footer">
+            <button type="button" class="ev-btn ev-btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
+            <button type="submit" form="edit-event-form" class="ev-btn ev-btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ VIEW MODAL ══ -->
+<div id="view-modal" class="ev-modal-backdrop" style="display:none;">
+    <div class="ev-modal ev-modal-lg">
+        <div class="ev-modal-header">
+            <div class="ev-modal-header-left">
+                <div class="ev-modal-icon view"><i class="fa-solid fa-calendar-check"></i></div>
+                <h3 class="ev-modal-title" id="view-modal-title">Event Details</h3>
+            </div>
+            <button class="ev-modal-close" onclick="closeModal('view-modal')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="ev-modal-body">
+            <p class="ev-section-label"><i class="fa-solid fa-align-left" style="margin-right:0.3rem;"></i>Description
+            </p>
+            <p id="view-description"
+                style="font-size:0.875rem;color:hsl(221,39%,20%);line-height:1.65;white-space:pre-wrap;background:hsl(220,20%,98%);border:1px solid hsl(220,18%,91%);border-radius:0.625rem;padding:0.875rem 1rem;margin-bottom:1.25rem;">
+            </p>
+
+            <div class="ev-detail-grid">
+                <div class="ev-detail-cell">
+                    <div class="lbl"><i class="fa-regular fa-calendar" style="margin-right:0.25rem;"></i>Date</div>
+                    <div class="val" id="view-date">—</div>
+                </div>
+                <div class="ev-detail-cell">
+                    <div class="lbl"><i class="fa-regular fa-clock" style="margin-right:0.25rem;"></i>Time</div>
+                    <div class="val" id="view-time">—</div>
+                </div>
+                <div class="ev-detail-cell">
+                    <div class="lbl"><i class="fa-solid fa-location-dot" style="margin-right:0.25rem;"></i>Location
+                    </div>
+                    <div class="val" id="view-location">—</div>
+                </div>
+                <div class="ev-detail-cell">
+                    <div class="lbl"><i class="fa-solid fa-chair" style="margin-right:0.25rem;"></i>Seats Usage</div>
+                    <div class="val" id="view-seats-ratio">—</div>
+                </div>
+            </div>
+
+            <p class="ev-section-label"><i class="fa-solid fa-users" style="margin-right:0.3rem;"></i>Participated Users
+            </p>
+            <div style="border:1px solid hsl(220,18%,91%);border-radius:0.625rem;overflow:hidden;">
+                <div style="overflow-x:auto;">
+                    <table class="ev-ptable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>College</th>
+                                <th>Dept</th>
+                            </tr>
+                        </thead>
+                        <tbody id="participants-tbody">
+                            <tr>
+                                <td colspan="4"
+                                    style="text-align:center;padding:2rem;color:hsl(220,14%,55%);font-size:0.8125rem;">
+                                    Loading participants…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="ev-modal-footer">
+            <button type="button" class="ev-btn ev-btn-secondary" onclick="closeModal('view-modal')">Close</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin/events.js') }}"></script>
+{% endblock %}

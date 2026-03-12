@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 — Server Error | Campus Connect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
+</head>
+<body class="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+    <div class="text-center max-w-md">
+        <div class="text-8xl font-black text-slate-200 mb-2">500</div>
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">Something went wrong</h1>
+        <p class="text-slate-500 mb-6">An unexpected error occurred. We've been notified.</p>
+        <a href="{{ url_for('main.home_page') }}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+            ← Back to home
+        </a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Campus Connect</title>
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 1.25rem;
+            left: 1.25rem;
+            z-index: 100;
+            width: 2.75rem;
+            height: 2.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            background: hsl(0 0% 100% / 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid hsl(0 0% 100% / 0.15);
+            color: white;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+
+        .back-btn:hover {
+            background: hsl(0 0% 100% / 0.22);
+            transform: translateX(-2px);
+        }
+
+        .back-btn.scrolled {
+            background: white;
+            color: #334155;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px hsl(221 30% 50% / 0.1);
+        }
+
+        .back-btn.scrolled:hover {
+            background: #f1f5f9;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1.visible {
+            transition-delay: 0.1s;
+        }
+
+        .reveal-delay-2.visible {
+            transition-delay: 0.2s;
+        }
+
+        .reveal-delay-3.visible {
+            transition-delay: 0.3s;
+        }
+
+        .page-hero {
+            background: linear-gradient(135deg, hsl(217, 55%, 13%) 0%, hsl(217, 68%, 28%) 50%, hsl(240, 47%, 30%) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 50% at 50% -10%, hsl(217 68% 50% / 0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .page-hero .dot-grid {
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            opacity: 0.04;
+            background-image: radial-gradient(circle, hsl(0, 0%, 100%) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .section-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: hsl(217, 68%, 50%);
+        }
+
+        .data-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: box-shadow 0.35s ease, border-color 0.35s ease, transform 0.35s ease;
+        }
+
+        .data-card:hover {
+            box-shadow: 0 8px 24px -6px hsl(217 50% 30% / 0.12);
+            transform: translateY(-3px);
+        }
+
+        .faq-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background: white;
+        }
+
+        .faq-item:hover,
+        .faq-item.open {
+            border-color: hsl(217 68% 28% / 0.2);
+        }
+
+        .faq-item.open {
+            box-shadow: 0 4px 12px -2px hsl(217 50% 30% / 0.08);
+        }
+
+        .faq-btn {
+            width: 100%;
+            padding: 1.125rem 1.375rem;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #1e293b;
+            transition: background 0.2s ease;
+            font-family: inherit;
+        }
+
+        .faq-btn:hover {
+            background: #f8fafc;
+        }
+
+        .faq-item.open .faq-btn {
+            color: hsl(217, 68%, 28%);
+        }
+
+        .faq-chevron {
+            width: 1.75rem;
+            height: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #f1f5f9;
+            flex-shrink: 0;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .faq-item.open .faq-chevron {
+            transform: rotate(180deg);
+            background: hsl(217 68% 28% / 0.1);
+        }
+
+        .faq-content-wrapper {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .faq-item.open .faq-content-wrapper {
+            grid-template-rows: 1fr;
+        }
+
+        .faq-content {
+            overflow: hidden;
+        }
+
+        .faq-content-inner {
+            padding: 0 1.375rem 1.125rem 1.375rem;
+            color: #64748b;
+            font-size: 0.875rem;
+            line-height: 1.75;
+        }
+
+        .right-card {
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .right-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px -4px hsl(142 50% 30% / 0.1);
+        }
+
+        .cta-card {
+            background: linear-gradient(135deg, hsl(217, 55%, 13%) 0%, hsl(217, 68%, 28%) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 60% at 80% 20%, hsl(217 68% 50% / 0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Back Button -->
+    <a href="{{ url_for('main.home') }}#site-footer" class="back-btn" id="back-btn" title="Back to Footer">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+    </a>
+
+    <!-- HERO -->
+    <section class="page-hero text-white py-24 sm:py-28 px-4 sm:px-6 lg:px-8">
+        <div class="dot-grid"></div>
+        <div class="relative z-10 max-w-3xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-widest mb-8"
+                style="border:1px solid hsl(0 0% 100% / 0.1);background:hsl(0 0% 100% / 0.05);">
+                <span
+                    style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#60a5fa;box-shadow:0 0 8px #60a5fa;"></span>
+                Data Protection
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5"
+                style="letter-spacing:-0.025em;line-height:1.1;">
+                Privacy <span style="color:hsl(217, 68%, 60%);">Policy</span>
+            </h1>
+            <p class="text-base md:text-lg mb-4 max-w-xl mx-auto font-medium" style="color:hsl(217, 19%, 72%);">
+                We care about your data privacy and give you full control over your information.
+            </p>
+            <div class="text-sm font-medium" style="color:hsl(217 30% 65%);">
+                Effective: January 1, 2026 &nbsp;·&nbsp; Updated: March 7, 2026
+            </div>
+        </div>
+    </section>
+
+    <!-- Intro -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
+        <div class="reveal bg-white rounded-2xl p-8 md:p-10 border border-slate-200"
+            style="box-shadow:0 20px 40px -12px hsl(217 50% 20% / 0.12);">
+            <p class="text-base sm:text-lg text-slate-800 leading-relaxed text-center max-w-3xl mx-auto mb-4 font-semibold">
+                <strong>Portfolio Disclaimer:</strong> Campus Connect is a demonstration project and not a commercial service. The policies described here illustrate typical platform practices.
+            </p>
+            <p class="text-base sm:text-lg text-slate-600 leading-relaxed text-center max-w-3xl mx-auto">
+                Campus Connect respects your privacy and is committed to protecting your personal data.
+                This Privacy Policy explains how we collect, use, protect, and share your information
+                in a transparent, easy-to-understand manner.
+            </p>
+        </div>
+    </section>
+
+    <!-- Section 1: Information We Collect -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+        <div class="reveal mb-10">
+            <span class="section-label">Section 1</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900" style="letter-spacing:-0.025em;">Information We
+                Collect</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="data-card reveal">
+                <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-user"></i></div>
+                <h3 class="font-bold text-slate-900 mb-2">Account Details</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Full name, email, password (hashed), date of birth,
+                    university, and grade level provided during registration.</p>
+            </div>
+            <div class="data-card reveal reveal-delay-1">
+                <div class="w-12 h-12 bg-green-50 text-green-500 rounded-xl flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-file-contract"></i></div>
+                <h3 class="font-bold text-slate-900 mb-2">Platform Activity</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Posts, comments, connections, group memberships, event
+                    RSVPs, and content you voluntarily publish.</p>
+            </div>
+            <div class="data-card reveal reveal-delay-2">
+                <div class="w-12 h-12 bg-purple-50 text-purple-500 rounded-xl flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-mobile-screen-button"></i></div>
+                <h3 class="font-bold text-slate-900 mb-2">Technical Data</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">IP address, browser type, operating system, and
+                    automatically collected system logs.</p>
+            </div>
+            <div class="data-card reveal reveal-delay-3">
+                <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-cookie"></i></div>
+                <h3 class="font-bold text-slate-900 mb-2">Tracking & Cookies</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Essential session tokens and preferences that keep you
+                    logged in and remember your settings.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: How We Use -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="reveal mb-8">
+            <span class="section-label">Section 2</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900" style="letter-spacing:-0.025em;">How We Use Your
+                Information</h2>
+            <p class="text-slate-500 mt-3 text-sm sm:text-base">We use your information exclusively to provide and
+                improve Campus Connect:</p>
+        </div>
+        <div class="reveal bg-white rounded-xl border border-slate-200 p-6 sm:p-8"
+            style="box-shadow:0 1px 3px 0 hsl(221 30% 50% / 0.06);">
+            <ul class="space-y-4 text-slate-600 text-sm sm:text-base">
+                <li class="flex gap-3"><span
+                        class="w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center text-xs font-bold"
+                        style="background:hsl(217 80% 95%);color:hsl(217 68% 45%);">1</span><span><strong
+                            class="text-slate-800">Provide Services:</strong> Create and manage your account, enable
+                        posts, deliver messages.</span></li>
+                <li class="flex gap-3"><span
+                        class="w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center text-xs font-bold"
+                        style="background:hsl(217 80% 95%);color:hsl(217 68% 45%);">2</span><span><strong
+                            class="text-slate-800">Improve Services:</strong> Analyze usage patterns to identify
+                        improvements and fix bugs.</span></li>
+                <li class="flex gap-3"><span
+                        class="w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center text-xs font-bold"
+                        style="background:hsl(217 80% 95%);color:hsl(217 68% 45%);">3</span><span><strong
+                            class="text-slate-800">Safety & Security:</strong> Detect fraud, prevent hacking attempts,
+                        investigate reports.</span></li>
+                <li class="flex gap-3"><span
+                        class="w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center text-xs font-bold"
+                        style="background:hsl(217 80% 95%);color:hsl(217 68% 45%);">4</span><span><strong
+                            class="text-slate-800">Communication:</strong> Account notifications, support responses,
+                        security alerts.</span></li>
+                <li class="flex gap-3"><span
+                        class="w-6 h-6 rounded-md flex-shrink-0 flex items-center justify-center text-xs font-bold"
+                        style="background:hsl(217 80% 95%);color:hsl(217 68% 45%);">5</span><span><strong
+                            class="text-slate-800">Research:</strong> Anonymized, aggregate statistics to understand
+                        user behavior.</span></li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Section 3: How We Share -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="reveal mb-8">
+            <span class="section-label">Section 3</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900" style="letter-spacing:-0.025em;">How We Share Your
+                Data</h2>
+        </div>
+
+        <!-- Never Sell Card -->
+        <div class="reveal rounded-xl p-7 sm:p-8 mb-8 border-2"
+            style="background:hsl(0 86% 97%);border-color:hsl(0 72% 75%);">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl"
+                    style="background:hsl(0 72% 90%);color:hsl(0 72% 50%);">🚫</div>
+                <h3 class="text-xl font-bold" style="color:hsl(0 72% 35%);">We NEVER Sell Your Data</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="flex items-center gap-2 text-sm font-medium p-3 rounded-lg"
+                    style="background:white;color:hsl(0 60% 40%);">
+                    <i class="fa-solid fa-check text-xs"></i> Data is NEVER sold to third parties
+                </div>
+                <div class="flex items-center gap-2 text-sm font-medium p-3 rounded-lg"
+                    style="background:white;color:hsl(0 60% 40%);">
+                    <i class="fa-solid fa-check text-xs"></i> Data is NEVER shared with marketers
+                </div>
+                <div class="flex items-center gap-2 text-sm font-medium p-3 rounded-lg"
+                    style="background:white;color:hsl(0 60% 40%);">
+                    <i class="fa-solid fa-check text-xs"></i> Data is NEVER rented to advertisers
+                </div>
+                <div class="flex items-center gap-2 text-sm font-medium p-3 rounded-lg"
+                    style="background:white;color:hsl(0 60% 40%);">
+                    <i class="fa-solid fa-check text-xs"></i> Data is NEVER shared without permission
+                </div>
+            </div>
+        </div>
+
+        <!-- Accordions -->
+        <div class="reveal space-y-2.5" id="sharing-accordion">
+            <div class="faq-item">
+                <button class="faq-btn" aria-expanded="false">
+                    <span class="flex items-center gap-3"><span
+                            class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                            style="background:hsl(217 80% 95%);color:hsl(217 68% 45%);">1</span> Service
+                        Providers</span>
+                    <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                </button>
+                <div class="faq-content-wrapper">
+                    <div class="faq-content">
+                        <div class="faq-content-inner">We use trusted third-party providers for infrastructure (cloud
+                            storage, email delivery, payment processing). They are contractually bound to protect your
+                            data.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-btn" aria-expanded="false">
+                    <span class="flex items-center gap-3"><span
+                            class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                            style="background:hsl(217 80% 95%);color:hsl(217 68% 45%);">2</span> Legal
+                        Requirements</span>
+                    <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                </button>
+                <div class="faq-content-wrapper">
+                    <div class="faq-content">
+                        <div class="faq-content-inner">We may disclose information if required by law, valid court
+                            orders, or government requests with explicit legal authority.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-btn" aria-expanded="false">
+                    <span class="flex items-center gap-3"><span
+                            class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                            style="background:hsl(217 80% 95%);color:hsl(217 68% 45%);">3</span> Aggregated Data</span>
+                    <div class="faq-chevron"><i class="fa-solid fa-chevron-down text-xs text-slate-400"></i></div>
+                </button>
+                <div class="faq-content-wrapper">
+                    <div class="faq-content">
+                        <div class="faq-content-inner">We share completely anonymized statistics and campus trend
+                            reports that cannot contain any personally identifiable information.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: Your Rights -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="reveal mb-8">
+            <span class="section-label">Section 4</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900" style="letter-spacing:-0.025em;">Your Privacy
+                Rights</h2>
+            <p class="text-slate-500 mt-3 text-sm sm:text-base">You maintain ultimate authority over your digital
+                footprint.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="right-card reveal p-5 rounded-xl border"
+                style="background:hsl(142 76% 97%);border-color:hsl(142 50% 82%);">
+                <h4 class="font-bold text-sm mb-1.5 flex items-center gap-2" style="color:hsl(142 60% 25%);"><span
+                        class="w-5 h-5 rounded flex items-center justify-center text-xs"
+                        style="background:hsl(142 50% 82%);color:hsl(142 60% 30%);">1</span> Right to Access</h4>
+                <p class="text-sm leading-relaxed" style="color:hsl(142 40% 35%);">Request a copy of all personal data
+                    we hold. Provided within 30 days.</p>
+            </div>
+            <div class="right-card reveal reveal-delay-1 p-5 rounded-xl border"
+                style="background:hsl(142 76% 97%);border-color:hsl(142 50% 82%);">
+                <h4 class="font-bold text-sm mb-1.5 flex items-center gap-2" style="color:hsl(142 60% 25%);"><span
+                        class="w-5 h-5 rounded flex items-center justify-center text-xs"
+                        style="background:hsl(142 50% 82%);color:hsl(142 60% 30%);">2</span> Right to Correct</h4>
+                <p class="text-sm leading-relaxed" style="color:hsl(142 40% 35%);">Update or correct your personal
+                    information instantly via Edit Profile.</p>
+            </div>
+            <div class="right-card reveal reveal-delay-2 p-5 rounded-xl border"
+                style="background:hsl(142 76% 97%);border-color:hsl(142 50% 82%);">
+                <h4 class="font-bold text-sm mb-1.5 flex items-center gap-2" style="color:hsl(142 60% 25%);"><span
+                        class="w-5 h-5 rounded flex items-center justify-center text-xs"
+                        style="background:hsl(142 50% 82%);color:hsl(142 60% 30%);">3</span> Right to Erasure</h4>
+                <p class="text-sm leading-relaxed" style="color:hsl(142 40% 35%);">Request complete deletion of your
+                    account and data at any time by contacting the site administrator.</p>
+            </div>
+            <div class="right-card reveal reveal-delay-3 p-5 rounded-xl border"
+                style="background:hsl(142 76% 97%);border-color:hsl(142 50% 82%);">
+                <h4 class="font-bold text-sm mb-1.5 flex items-center gap-2" style="color:hsl(142 60% 25%);"><span
+                        class="w-5 h-5 rounded flex items-center justify-center text-xs"
+                        style="background:hsl(142 50% 82%);color:hsl(142 60% 30%);">4</span> Right to Restrict</h4>
+                <p class="text-sm leading-relaxed" style="color:hsl(142 40% 35%);">Limit how we process your sensitive
+                    data temporarily or permanently.</p>
+            </div>
+            <div class="right-card reveal p-5 rounded-xl border"
+                style="background:hsl(142 76% 97%);border-color:hsl(142 50% 82%);">
+                <h4 class="font-bold text-sm mb-1.5 flex items-center gap-2" style="color:hsl(142 60% 25%);"><span
+                        class="w-5 h-5 rounded flex items-center justify-center text-xs"
+                        style="background:hsl(142 50% 82%);color:hsl(142 60% 30%);">5</span> Right to Object</h4>
+                <p class="text-sm leading-relaxed" style="color:hsl(142 40% 35%);">Opt-out of certain processing,
+                    communications, and analytics.</p>
+            </div>
+            <div class="right-card reveal reveal-delay-1 p-5 rounded-xl border"
+                style="background:hsl(142 76% 97%);border-color:hsl(142 50% 82%);">
+                <h4 class="font-bold text-sm mb-1.5 flex items-center gap-2" style="color:hsl(142 60% 25%);"><span
+                        class="w-5 h-5 rounded flex items-center justify-center text-xs"
+                        style="background:hsl(142 50% 82%);color:hsl(142 60% 30%);">6</span> Data Portability</h4>
+                <p class="text-sm leading-relaxed" style="color:hsl(142 40% 35%);">Request your data summary by contacting the project administrator.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: Data Retention -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="reveal mb-8">
+            <span class="section-label">Section 5</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900" style="letter-spacing:-0.025em;">Data Retention
+                Timeline</h2>
+        </div>
+        <div class="reveal overflow-x-auto rounded-xl border border-slate-200 bg-white"
+            style="box-shadow:0 1px 3px 0 hsl(221 30% 50% / 0.06);">
+            <table class="min-w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="py-4 px-6 font-bold text-slate-800 text-sm">Data Category</th>
+                        <th class="py-4 px-6 font-bold text-slate-800 text-sm">Retention Period</th>
+                        <th class="py-4 px-6 font-bold text-slate-800 text-sm">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="py-4 px-6 text-sm text-slate-700 font-medium">Active Account Data</td>
+                        <td class="py-4 px-6 text-sm text-slate-500">Until account deletion</td>
+                        <td class="py-4 px-6 text-sm font-medium" style="color:hsl(217, 68%, 45%);">Maintained Securely
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="py-4 px-6 text-sm text-slate-700 font-medium">Deleted Accounts</td>
+                        <td class="py-4 px-6 text-sm text-slate-500">30 days post-deletion</td>
+                        <td class="py-4 px-6 text-sm font-medium" style="color:hsl(0, 72%, 50%);">Permanent Purge</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="py-4 px-6 text-sm text-slate-700 font-medium">Server Audit Logs</td>
+                        <td class="py-4 px-6 text-sm text-slate-500">90 days rolling</td>
+                        <td class="py-4 px-6 text-sm font-medium" style="color:hsl(0, 72%, 50%);">Auto-Deleted</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="py-4 px-6 text-sm text-slate-700 font-medium">Support Tickets</td>
+                        <td class="py-4 px-6 text-sm text-slate-500">3 years (compliance)</td>
+                        <td class="py-4 px-6 text-sm font-medium text-slate-400">Anonymized</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Section 6: Security -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="reveal mb-8">
+            <span class="section-label">Section 6</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900" style="letter-spacing:-0.025em;">Data Security
+                Measures</h2>
+            <p class="text-slate-500 mt-3 text-sm sm:text-base">Your platform security is backed by industry-leading
+                measures:</p>
+        </div>
+        <div class="reveal bg-white rounded-xl border border-slate-200 p-6 sm:p-8"
+            style="box-shadow:0 1px 3px 0 hsl(221 30% 50% / 0.06);">
+            <ul class="space-y-4 text-slate-600 text-sm sm:text-base">
+                <li class="flex gap-3"><i class="fa-solid fa-lock text-sm mt-1 flex-shrink-0"
+                        style="color:hsl(217 68% 50%);"></i><span><strong class="text-slate-800">Encryption:</strong>
+                        256-bit SSL/TLS in transit and AES-256 at rest.</span></li>
+                <li class="flex gap-3"><i class="fa-solid fa-shield-halved text-sm mt-1 flex-shrink-0"
+                        style="color:hsl(217 68% 50%);"></i><span><strong class="text-slate-800">Access
+                            Control:</strong> Restrictive access models and strict session management.</span></li>
+                <li class="flex gap-3"><i class="fa-solid fa-globe text-sm mt-1 flex-shrink-0"
+                        style="color:hsl(217 68% 50%);"></i><span><strong class="text-slate-800">Cloud
+                            Defenses:</strong> WAF and real-time vulnerability scanning.</span></li>
+                <li class="flex gap-3"><i class="fa-solid fa-bell text-sm mt-1 flex-shrink-0"
+                        style="color:hsl(217 68% 50%);"></i><span><strong class="text-slate-800">Incident
+                            Response:</strong> Affected users notified within 30 days of any verified breach.</span>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- GDPR & CCPA -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="reveal bg-white p-7 rounded-xl border border-slate-200"
+                style="box-shadow:0 1px 3px 0 hsl(221 30% 50% / 0.06);">
+                <h3
+                    class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <i class="fa-solid fa-earth-europe text-blue-600"></i> GDPR Protections</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-4">Fully compliant with the EU's General Data
+                    Protection Regulation, granting comprehensive oversight rights including advanced consent tracking
+                    and immediate DPO escalation.</p>
+                <div class="p-3 rounded-lg text-xs font-semibold flex items-center gap-2"
+                    style="background:hsl(217 80% 97%);color:hsl(217 68% 35%);">
+                    <i class="fa-solid fa-shield text-sm"></i> DPO: dpo@campusconnect.com
+                </div>
+            </div>
+            <div class="reveal reveal-delay-1 bg-white p-7 rounded-xl border border-slate-200"
+                style="box-shadow:0 1px 3px 0 hsl(221 30% 50% / 0.06);">
+                <h3
+                    class="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <i class="fa-solid fa-flag-usa text-red-600"></i> CCPA Rights</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-4">California residents have rights to Know, Delete,
+                    Opt-Out of sharing, Non-Discrimination, and Authorized Agent delegation.</p>
+                <div class="p-3 rounded-lg text-xs font-semibold flex items-center gap-2"
+                    style="background:hsl(217 80% 97%);color:hsl(217 68% 35%);">
+                    <i class="fa-solid fa-star text-sm"></i> We never sell personal information.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="reveal cta-card rounded-2xl p-10 md:p-12 text-white text-center">
+            <div class="relative z-10">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-6" style="letter-spacing:-0.025em;">Contact Privacy
+                    Relations</h2>
+                <div class="inline-flex flex-col sm:flex-row gap-6 sm:gap-10 justify-center items-center">
+                    <div>
+                        <div class="font-bold text-sm mb-1" style="color:hsl(217, 68%, 70%);">Email Inquiries</div>
+                        <a href="mailto:privacy@campusconnect.com"
+                            class="text-white/80 hover:text-white transition-colors text-sm">privacy@campusconnect.com</a>
+                    </div>
+                    <div class="hidden sm:block w-px h-10" style="background:hsl(0 0% 100% / 0.15);"></div>
+                    <div>
+                        <div class="font-bold text-sm mb-1" style="color:hsl(217, 68%, 70%);">Legal Address</div>
+                        <span class="text-white/80 text-sm">N/A - Demonstration Project</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Back button scroll
+        const backBtn = document.getElementById('back-btn');
+        if (backBtn) {
+            window.addEventListener('scroll', () => {
+                backBtn.classList.toggle('scrolled', window.scrollY > 80);
+            }, { passive: true });
+        }
+
+        // Scroll reveal
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+        // FAQ accordion
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(item => {
+            const btn = item.querySelector('.faq-btn');
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    const isOpen = item.classList.contains('open');
+                    
+                    faqItems.forEach(faq => {
+                        faq.classList.remove('open');
+                        const faqBtn = faq.querySelector('.faq-btn');
+                        if (faqBtn) faqBtn.setAttribute('aria-expanded', 'false');
+                    });
+
+                    if (!isOpen) {
+                        item.classList.add('open');
+                        btn.setAttribute('aria-expanded', 'true');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

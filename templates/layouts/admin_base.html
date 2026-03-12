@@ -1,0 +1,67 @@
+<!--
+    Admin Panel Base Layout
+    This is the main HTML skeleton for all pages within the admin dashboard.
+    It includes the shared sidebar, top navigation bar, and defines content
+    blocks that child templates will populate.
+-->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Campus Connect Admin{% endblock %}</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+
+    <!-- Tailwind -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
+
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Admin CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin.css') }}">
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+
+    {% include "admin/sidebar.html" %}
+
+    <main class="main-content">
+        <!-- Top Navbar (Shared) -->
+        <header class="top-navbar">
+            <!-- The title for the current page, defined by child templates -->
+            <h1 class="page-title">{% block header_title %}Dashboard{% endblock %}</h1>
+            <div class="navbar-right">
+                <a href="{{ url_for('auth.logout') }}"
+                    class="text-sm font-medium text-red-600 hover:text-red-800 mr-6">Logout</a>
+                <div class="admin-profile">
+                    <!-- Displays the logged-in admin's initials and name from the session -->
+                    <div class="admin-avatar">{{ session.get('user_name', 'AD')[:2]|upper }}</div>
+                    <div class="admin-info">
+                        <span class="admin-name">{{ session.get('user_name', 'Admin User') }}</span>
+                        <span class="admin-role">{{ session.get('account_type', 'Admin')|title }}</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Main content area, populated by child templates -->
+        {% block content %}{% endblock %}
+    </main>
+    <!-- Global Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[200] w-full max-w-md space-y-3 pointer-events-none"></div>
+
+    <!-- Shared JavaScript for admin API interactions -->
+    <script src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin/api.js') }}"></script>
+
+    <!-- Block for page-specific JavaScript files -->
+    {% block scripts %}{% endblock %}
+
+</body>
+
+</html>

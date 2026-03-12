@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampusConnect — Your Campus, Connected</title>
+    <meta name="description"
+        content="Campus Connect brings your entire college community together — chats, events, posts, and connections — all in one place built exclusively for students." />
+    <meta property="og:title" content="CampusConnect" />
+    <meta property="og:description" content="Where every student belongs." />
+    <meta property="og:type" content="website" />
+
+    <!-- Favicon (Emoji) -->
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=Inter:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Serif+Display:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/landing.css') }}" />
+</head>
+
+<body>
+
+    <svg class="fixed h-0 w-0 overflow-hidden" aria-hidden="true" style="position:absolute;width:0;height:0">
+        <defs>
+            <filter id="morphing-text-threshold">
+                <feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 128 -64" />
+            </filter>
+        </defs>
+    </svg>
+
+    <!-- NAVBAR -->
+    <header id="navbar" class="fixed inset-x-0 top-0 z-50 transition-all duration-300"
+        style="background:hsl(0, 0%, 100%)">
+        <nav class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 lg:px-8">
+            <a href="#" id="brand-link" class="flex items-center gap-2.5 no-underline"
+                style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:1.125rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    style="color:var(--primary)">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                </svg>
+                <span style="color:hsl(221,39%,11%)">Campus<span style="color:var(--primary)">Connect</span></span>
+            </a>
+            <ul class="hidden items-center gap-1 list-none md:flex">
+                <li><button onclick="smoothScroll('#features')" class="nav-btn">Features</button></li>
+                <li><button onclick="smoothScroll('#how-it-works')" class="nav-btn">How it Works</button></li>
+                <li><button onclick="smoothScroll('#about')" class="nav-btn">About</button></li>
+                <li><button onclick="smoothScroll('#team')" class="nav-btn">Team</button></li>
+            </ul>
+            <div class="flex items-center gap-3">
+                <a href="{{ url_for('auth.login_page') }}"
+                    class="hidden rounded-lg px-4 py-2 text-sm font-semibold transition-all md:inline-flex"
+                    style="background:var(--primary);color:var(--primary-fg);text-decoration:none;"
+                    onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-1px)'"
+                    onmouseout="this.style.opacity='1';this.style.transform=''">Sign In</a>
+                <button id="menu-toggle" class="rounded-md p-2 transition-colors md:hidden"
+                    style="background:none;border:none;cursor:pointer;color:var(--muted-fg);" aria-label="Toggle menu">
+                    <svg id="icon-menu" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                    <svg id="icon-close" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" style="display:none">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="mobile-menu md:hidden"
+            style="border-top:1px solid var(--border);background:hsl(0, 0%, 100%)">
+            <div class="flex flex-col gap-0.5 px-6 py-4">
+                <button onclick="smoothScroll('#features');closeMobileMenu()"
+                    class="rounded-md px-3 py-2.5 text-left text-sm font-medium"
+                    style="background:none;border:none;cursor:pointer;color:var(--muted-fg)">Features</button>
+                <button onclick="smoothScroll('#how-it-works');closeMobileMenu()"
+                    class="rounded-md px-3 py-2.5 text-left text-sm font-medium"
+                    style="background:none;border:none;cursor:pointer;color:var(--muted-fg)">How it Works</button>
+                <button onclick="smoothScroll('#about');closeMobileMenu()"
+                    class="rounded-md px-3 py-2.5 text-left text-sm font-medium"
+                    style="background:none;border:none;cursor:pointer;color:var(--muted-fg)">About</button>
+                <button onclick="smoothScroll('#team');closeMobileMenu()"
+                    class="rounded-md px-3 py-2.5 text-left text-sm font-medium"
+                    style="background:none;border:none;cursor:pointer;color:var(--muted-fg)">Team</button>
+                <a href="{{ url_for('auth.login_page') }}"
+                    class="mt-3 rounded-lg px-4 py-2.5 text-center text-sm font-semibold"
+                    style="background:var(--primary);color:var(--primary-fg);text-decoration:none;">Sign In</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section
+        class="hero-bg flex min-h-screen flex-col items-center justify-center px-6 pb-20 pt-28 text-center lg:px-8">
+        <div class="dot-grid"></div>
+        <div class="relative z-10 mx-auto max-w-3xl w-full">
+            <div class="anim-fade-in mb-8 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-widest"
+                style="border:1px solid var(--hero-border);background:var(--hero-surface);color:white">
+                <span class="animate-pulse"
+                    style="background:#22c55e;width:8px;height:8px;border-radius:50%;display:inline-block;box-shadow:0 0 8px #22c55e"></span>
+                College Networking Platform
+            </div>
+            <h1 class="anim-fade-up text-hero-fg text-5xl md:text-6xl lg:text-7xl"
+                style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;line-height:1.25;letter-spacing:-0.025em;">
+                Your Campus,
+                <span id="morph-wrapper" class="mt-1 block" style="color:var(--primary)">
+                    <span class="morph-container" id="morph-container">
+                        <span class="morph-span" id="morph-t1">Connected</span>
+                        <span class="morph-span" id="morph-t2" style="opacity:0%">Connected</span>
+                        <span class="morph-spacer" aria-hidden="true">Connected</span>
+                    </span>
+                </span>
+            </h1>
+            <p class="anim-fade-up-d1 text-hero-fg-muted mx-auto mt-5 text-lg md:text-xl"
+                style="font-family:'DM Serif Display',Georgia,serif;font-style:italic;font-weight:500;">
+                "Where every student belongs."</p>
+            <p class="anim-fade-up-d1 text-hero-fg-muted mx-auto mt-5 max-w-xl text-base md:text-lg"
+                style="line-height:1.625;">Campus Connect brings your entire college community together —
+                chats, events, posts, and connections — all in one place built exclusively for students.</p>
+            <div class="anim-fade-up-d2 mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <a href="{{ url_for('auth.login_page') }}"
+                    class="inline-flex items-center rounded-xl px-6 py-3 text-sm font-semibold transition-all"
+                    style="background:var(--primary);color:var(--primary-fg);text-decoration:none;box-shadow:0 1px 3px hsl(221 68% 28% / 0.2);"
+                    onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)'"
+                    onmouseout="this.style.opacity='1';this.style.transform=''">Join Your Campus</a>
+                <button onclick="smoothScroll('#features')"
+                    class="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all"
+                    style="border:1px solid var(--hero-border);background:var(--hero-surface);color:var(--hero-fg-muted);cursor:pointer;"
+                    onmouseover="this.style.color='hsl(0,0%,100%)';this.style.background='hsl(0 0% 100% / 0.1)'"
+                    onmouseout="this.style.color='var(--hero-fg-muted)';this.style.background='var(--hero-surface)'">Explore
+                    Features</button>
+            </div>
+            <p class="anim-fade-up-d3 mt-8 text-hero-fg-subtle" style="font-size:0.75rem;">Exclusive to students ·
+                Verified campus network · Secure community</p>
+            <button onclick="smoothScroll('#features')"
+                class="anim-bounce-y mt-12 mx-auto flex flex-col items-center gap-1.5 transition-colors text-hero-fg-subtle"
+                style="background:none;border:none;cursor:pointer;" aria-label="Scroll to features">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <polyline points="19 12 12 19 5 12" />
+                </svg>
+            </button>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features" class="bg-background py-24 px-6 lg:px-8">
+        <div class="mx-auto" style="max-width:72rem;">
+            <div class="reveal mx-auto mb-16 text-center" style="max-width:36rem;">
+                <span class="section-label">Core Features</span>
+                <h2 class="text-4xl md:text-[2.75rem]" style="font-weight:700;line-height:1.2;letter-spacing:-0.025em;">
+                    Everything you need <span class="underline-yellow">on
+                        campus</span></h2>
+                <p class="mt-4 text-muted-fg max-w-xl mx-auto" style="font-size:1rem;line-height:1.625;">All the tools
+                    to connect, share,
+                    and stay updated — built for students, by students.</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-4">
+                <div
+                    class="feature-card reveal flex flex-col items-center text-center w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.33%-0.67rem)]">
+                    <div class="mb-4 flex items-center justify-center rounded-lg bg-primary-10"
+                        style="width:40px;height:40px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                            style="color:var(--primary)">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Chat &amp; Connect</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;">Send messages and have
+                        real conversations with your classmates instantly — no delays, no noise.</p>
+                </div>
+                <div
+                    class="feature-card reveal reveal-delay-1 flex flex-col items-center text-center w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.33%-0.67rem)]">
+                    <div class="mb-4 flex items-center justify-center rounded-lg bg-primary-10"
+                        style="width:40px;height:40px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                            style="color:var(--primary)">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Find Your People</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;">Connect with fellow
+                        students from your branch, batch, or department and grow your campus network.</p>
+                </div>
+                <div
+                    class="feature-card reveal reveal-delay-2 flex flex-col items-center text-center w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.33%-0.67rem)]">
+                    <div class="mb-4 flex items-center justify-center rounded-lg bg-primary-10"
+                        style="width:40px;height:40px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                            style="color:var(--primary)">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Campus Events</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;">Never miss a fest,
+                        workshop, or placement drive — every campus event, right where you are.</p>
+                </div>
+                <div
+                    class="feature-card reveal reveal-delay-3 flex flex-col items-center text-center w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.33%-0.67rem)]">
+                    <div class="mb-4 flex items-center justify-center rounded-lg bg-primary-10"
+                        style="width:40px;height:40px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                            style="color:var(--primary)">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Share Your Thoughts</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;">Create posts, edit them
+                        anytime, and delete when you want — your voice, your control.</p>
+                </div>
+                <div
+                    class="feature-card reveal reveal-delay-4 flex flex-col items-center text-center w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.33%-0.67rem)]">
+                    <div class="mb-4 flex items-center justify-center rounded-lg bg-primary-10"
+                        style="width:40px;height:40px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                            style="color:var(--primary)">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                        </svg>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Explore the Feed</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;">Scroll through posts
+                        from
+                        your entire campus community — all in one clean, organised feed.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MARQUEE -->
+    <section class="bg-background py-14 overflow-hidden">
+        <p
+            style="text-align:center;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted-fg);opacity:0.8;margin-bottom:1.5rem;">
+            Live on Campus Connect</p>
+        <div class="marquee-wrap mb-3">
+            <div class="marquee-track" style="animation-duration:80s;" id="mq1a"></div>
+            <div class="marquee-track" style="animation-duration:80s;" id="mq1b" aria-hidden="true"></div>
+        </div>
+        <div class="marquee-wrap">
+            <div class="marquee-track reverse" style="animation-duration:90s;" id="mq2a"></div>
+            <div class="marquee-track reverse" style="animation-duration:90s;" id="mq2b" aria-hidden="true"></div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how-it-works" class="py-24 px-6 lg:px-8" style="background:hsl(220,18%,96%,0.4);">
+        <div class="mx-auto" style="max-width:72rem;">
+            <div class="reveal mx-auto mb-16 text-center" style="max-width:36rem;">
+                <span class="section-label">Your Path</span>
+                <h2 class="text-4xl md:text-[2.75rem]" style="font-weight:700;line-height:1.2;letter-spacing:-0.025em;">
+                    Get started in minutes</h2>
+                <p class="mt-4 text-muted-fg max-w-xl mx-auto" style="font-size:1rem;line-height:1.625;">Four simple
+                    steps to transform
+                    your college experience.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="reveal relative flex flex-col rounded-xl p-6 shadow-sm"
+                    style="border:1px solid var(--border);background:var(--card);">
+                    <div class="mb-4 flex items-center gap-3">
+                        <span
+                            style="font-family:'Plus Jakarta Sans',sans-serif;font-size:2.25rem;font-weight:800;color:hsl(221 68% 28% / 0.15);line-height:1;user-select:none;">01</span>
+                        <div class="flex items-center justify-center rounded-lg bg-primary-10"
+                            style="width:36px;height:36px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                                stroke-linejoin="round" style="color:var(--primary)">
+                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                                <polyline points="10 17 15 12 10 7" />
+                                <line x1="15" y1="12" x2="3" y2="12" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Sign In</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;max-width:18rem;">Login
+                        using your official
+                        college email. Your identity is instantly verified — no fake profiles.</p>
+                    <div class="step-connector"></div>
+                </div>
+                <div class="reveal reveal-delay-1 relative flex flex-col rounded-xl p-6 shadow-sm"
+                    style="border:1px solid var(--border);background:var(--card);">
+                    <div class="mb-4 flex items-center gap-3">
+                        <span
+                            style="font-family:'Plus Jakarta Sans',sans-serif;font-size:2.25rem;font-weight:800;color:hsl(221 68% 28% / 0.15);line-height:1;user-select:none;">02</span>
+                        <div class="flex items-center justify-center rounded-lg bg-primary-10"
+                            style="width:36px;height:36px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                                stroke-linejoin="round" style="color:var(--primary)">
+                                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                                <line x1="7" y1="2" x2="7" y2="22" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Build Your Profile</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;max-width:18rem;">Add your
+                        skills, share
+                        your experiences, and let the campus know who you are.</p>
+                    <div class="step-connector"></div>
+                </div>
+                <div class="reveal reveal-delay-2 relative flex flex-col rounded-xl p-6 shadow-sm"
+                    style="border:1px solid var(--border);background:var(--card);">
+                    <div class="mb-4 flex items-center gap-3">
+                        <span
+                            style="font-family:'Plus Jakarta Sans',sans-serif;font-size:2.25rem;font-weight:800;color:hsl(221 68% 28% / 0.15);line-height:1;user-select:none;">03</span>
+                        <div class="flex items-center justify-center rounded-lg bg-primary-10"
+                            style="width:36px;height:36px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                                stroke-linejoin="round" style="color:var(--primary)">
+                                <circle cx="12" cy="12" r="10" />
+                                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Discover</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;max-width:18rem;">Explore
+                        the campus feed,
+                        find upcoming events, and connect with people around you.</p>
+                    <div class="step-connector"></div>
+                </div>
+                <div class="reveal reveal-delay-3 relative flex flex-col rounded-xl p-6 shadow-sm"
+                    style="border:1px solid var(--border);background:var(--card);">
+                    <div class="mb-4 flex items-center gap-3">
+                        <span
+                            style="font-family:'Plus Jakarta Sans',sans-serif;font-size:2.25rem;font-weight:800;color:hsl(221 68% 28% / 0.15);line-height:1;user-select:none;">04</span>
+                        <div class="flex items-center justify-center rounded-lg bg-primary-10"
+                            style="width:36px;height:36px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                                stroke-linejoin="round" style="color:var(--primary)">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Engage</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;max-width:18rem;">
+                        Participate in events,
+                        start conversations, and become an active part of your campus community.</p>
+                </div>
+            </div>
+
+            <!-- Terminal -->
+            <div class="reveal reveal-delay-2 mt-16">
+                <p
+                    style="text-align:center;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted-fg);opacity:0.8;margin-bottom:1rem;">
+                    What it looks like under the hood</p>
+                <div class="terminal-box mx-auto" style="max-width:42rem;" id="terminal">
+                    <div class="terminal-titlebar">
+                        <span class="term-dot" style="background:hsl(0,84%,60%,0.8)"></span>
+                        <span class="term-dot" style="background:hsl(48,96%,53%,0.8)"></span>
+                        <span class="term-dot" style="background:hsl(142,71%,45%,0.8)"></span>
+                        <span
+                            style="flex:1;text-align:center;font-size:0.75rem;color:var(--hero-fg-subtle);">campus-connect
+                            — bash</span>
+                    </div>
+                    <div class="terminal-body" id="terminal-body">
+                        <div class="term-line"><span class="term-prompt">❯</span><span class="term-cursor"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WHY US -->
+    <section id="about" class="bg-background py-24 px-6 lg:px-8">
+        <div class="mx-auto" style="max-width:72rem;">
+            <div class="reveal mx-auto mb-16 text-center" style="max-width:36rem;">
+                <span class="section-label">Why Us?</span>
+                <h2 class="text-4xl md:text-[2.75rem]" style="font-weight:700;line-height:1.2;letter-spacing:-0.025em;">
+                    Built only for <span class="underline-yellow">your
+                        campus</span></h2>
+                <p class="mt-4 text-muted-fg max-w-xl mx-auto" style="font-size:1rem;line-height:1.625;">To make college
+                    life easier, more
+                    connected, and a little less chaotic.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="feature-card reveal flex flex-col items-center text-center">
+                    <div class="mb-4 flex items-center justify-center rounded-lg bg-primary-10"
+                        style="width:40px;height:40px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                            style="color:var(--primary)">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Verified Students Only</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;">Sign in with your
+                        college
+                        email — no fake profiles, no outsiders, just your real campus community.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-1 flex flex-col items-center text-center">
+                    <div class="mb-4 flex items-center justify-center rounded-lg bg-primary-10"
+                        style="width:40px;height:40px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                            style="color:var(--primary)">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                        </svg>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Everything in One Place</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;">Events, posts, chats,
+                        connections — no switching between apps, it's all right here.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-2 flex flex-col items-center text-center">
+                    <div class="mb-4 flex items-center justify-center rounded-lg bg-primary-10"
+                        style="width:40px;height:40px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                            style="color:var(--primary)">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                            <line x1="9" y1="9" x2="9.01" y2="9" />
+                            <line x1="15" y1="9" x2="15.01" y2="9" />
+                        </svg>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;">Student-First Platform</h3>
+                    <p class="mt-2 text-muted-fg" style="font-size:0.875rem;line-height:1.625;">No external noise, no
+                        ads. Built for students, focused on campus life.</p>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="reveal reveal-delay-2 mt-12 grid grid-cols-3 rounded-2xl"
+                style="border:1px solid var(--border);background:hsl(220,18%,96%,0.5);padding:2rem 0;border-radius:1rem;">
+                <div class="flex flex-col items-center gap-1 px-4 text-center"
+                    style="border-right:1px solid var(--border);">
+                    <span class="tabular-nums tracking-tight text-3xl md:text-4xl"
+                        style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;line-height:1;"
+                        data-ticker="100" data-suffix="%">0%</span>
+                    <span
+                        style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted-fg);">Verified
+                        users</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 px-4 text-center"
+                    style="border-right:1px solid var(--border);">
+                    <span class="tabular-nums tracking-tight text-3xl md:text-4xl"
+                        style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;line-height:1;"
+                        data-ticker="100" data-suffix="%">0%</span>
+                    <span
+                        style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted-fg);">Student
+                        Exclusive</span>
+                </div>
+                <div class="flex flex-col items-center gap-1 px-4 text-center">
+                    <span class="tabular-nums tracking-tight text-3xl md:text-4xl"
+                        style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;line-height:1;"
+                        data-ticker="1">0</span>
+                    <span
+                        style="font-size:0.75rem;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted-fg);">Platform
+                        for it all</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PIXEL GALLERY -->
+    <section class="py-24 px-6 lg:px-8" style="background:hsl(220,18%,96%,0.3);">
+        <div class="mx-auto" style="max-width:72rem;">
+            <div class="reveal mx-auto mb-14 text-center" style="max-width:36rem;">
+                <span class="section-label">Campus Life</span>
+                <h2 class="text-4xl md:text-[2.75rem]" style="font-weight:700;line-height:1.2;letter-spacing:-0.025em;">
+                    See it come to life</h2>
+                <p class="mt-4 text-muted-fg max-w-xl mx-auto" style="font-size:1rem;line-height:1.625;">Real moments,
+                    real connections —
+                    scroll to reveal your campus.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="reveal group relative overflow-hidden rounded-2xl shadow-sm"
+                    style="border:1px solid var(--border);background:var(--card);transition:transform 0.3s;"
+                    onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+                    <div style="position:relative;aspect-ratio:4/3;overflow:hidden;">
+                        <canvas class="pixel-canvas"
+                            data-src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&q=80"
+                            data-pixel></canvas>
+                    </div>
+                    <div class="gallery-label"
+                        style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.6),transparent);padding:1rem;opacity:0;transition:opacity 0.3s;">
+                        <p style="font-size:0.875rem;font-weight:600;color:white;">Study Groups</p>
+                    </div>
+                </div>
+                <div class="reveal reveal-delay-2 group relative overflow-hidden rounded-2xl shadow-sm"
+                    style="border:1px solid var(--border);background:var(--card);transition:transform 0.3s;"
+                    onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+                    <div style="position:relative;aspect-ratio:4/3;overflow:hidden;">
+                        <canvas class="pixel-canvas"
+                            data-src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80"
+                            data-pixel></canvas>
+                    </div>
+                    <div class="gallery-label"
+                        style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.6),transparent);padding:1rem;opacity:0;transition:opacity 0.3s;">
+                        <p style="font-size:0.875rem;font-weight:600;color:white;">Campus Events</p>
+                    </div>
+                </div>
+                <div class="reveal reveal-delay-4 group relative overflow-hidden rounded-2xl shadow-sm"
+                    style="border:1px solid var(--border);background:var(--card);transition:transform 0.3s;"
+                    onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+                    <div style="position:relative;aspect-ratio:4/3;overflow:hidden;">
+                        <canvas class="pixel-canvas"
+                            data-src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80"
+                            data-pixel></canvas>
+                    </div>
+                    <div class="gallery-label"
+                        style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.6),transparent);padding:1rem;opacity:0;transition:opacity 0.3s;">
+                        <p style="font-size:0.875rem;font-weight:600;color:white;">New Connections</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="hero-bg py-24 px-6 lg:px-8">
+        <div class="reveal mx-auto text-center" style="max-width:42rem;">
+            <span class="section-label" style="color:var(--primary)">Ready to join?</span>
+            <h2 class="text-hero-fg text-4xl md:text-5xl"
+                style="line-height:1.25;font-weight:700;letter-spacing:-0.025em;">
+                Your campus is <span class="underline-yellow">waiting</span>.
+                <span style="color:var(--primary)" class="underline-yellow"> Connect today.</span>
+            </h2>
+            <p class="mt-5 text-hero-fg-muted max-w-lg mx-auto" style="font-size:1rem;line-height:1.625;">Sign up in
+                seconds with your
+                college email. Join a verified network of peers — secure, exclusive, and built just for your campus.</p>
+            <div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <a href="{{ url_for('auth.login_page') }}"
+                    class="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-all"
+                    style="background:var(--primary);color:var(--primary-fg);text-decoration:none;"
+                    onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-2px)'"
+                    onmouseout="this.style.opacity='1';this.style.transform=''">
+                    Join Now
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                </a>
+                <button onclick="smoothScroll('#features')"
+                    class="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-hero-fg-muted transition-all"
+                    style="border:1px solid var(--hero-border);background:var(--hero-surface);cursor:pointer;"
+                    onmouseover="this.style.color='hsl(0,0%,100%)'"
+                    onmouseout="this.style.color='var(--hero-fg-muted)'">Learn more</button>
+            </div>
+            <p class="mt-6 text-hero-fg-subtle" style="font-size:0.75rem;">Exclusive for verified students · Official
+                campus email required</p>
+        </div>
+    </section>
+
+    <!-- TEAM -->
+    <section id="team" class="py-24 px-6 lg:px-8" style="background:hsl(220,18%,96%,0.4);">
+        <div class="mx-auto" style="max-width:72rem;">
+            <div class="reveal mx-auto mb-16 text-center" style="max-width:32rem;">
+                <span class="section-label">The Team</span>
+                <h2 class="text-4xl md:text-[2.75rem]" style="font-weight:700;line-height:1.2;letter-spacing:-0.025em;">
+                    Built by <span class="underline-yellow">students</span></h2>
+                <p class="mt-4 text-muted-fg max-w-xl mx-auto" style="font-size:1rem;line-height:1.625;">A passionate
+                    team who wanted to
+                    make campus life better for everyone. Click a card to learn more.</p>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:2rem;">
+
+                <!-- Dhyey -->
+                <div class="flip-card reveal" onclick="this.classList.toggle('flipped')" style="width:260px;">
+                    <div class="flip-inner">
+                        <div class="flip-front flex flex-col items-center justify-center p-6 text-center shadow-sm"
+                            style="border:1px solid var(--border);background:var(--card);">
+                            <div class="mx-auto mb-4 flex items-center justify-center rounded-full"
+                                style="width:80px;height:80px;border:2px solid hsl(221 68% 28% / 0.25);background:hsl(221 68% 28% / 0.1);box-shadow:0 4px 12px hsl(0 0% 0% / 0.1);overflow:hidden;">
+                                <img src="{{ url_for('static', filename='images/team/Dhyey.jpeg') }}"
+                                    alt="Dhyey Daftary" style="width:100%;height:100%;object-fit:cover;">
+                            </div>
+                            <h3 style="font-size:1rem;font-weight:700;">Dhyey Daftary</h3>
+                            <div
+                                style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--muted-fg);margin-top:8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                                </svg>
+                                Information Technology
+                            </div>
+                            <p
+                                style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:hsl(220,14%,46%,0.5);margin-top:20px;">
+                                Click to flip</p>
+                        </div>
+                        <div class="flip-back flex flex-col items-center justify-center p-6 text-center shadow-lg"
+                            style="border:1px solid hsl(221 68% 28% / 0.2);background:var(--primary);">
+                            <div
+                                style="margin-bottom:16px;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:hsl(0 0% 100% / 0.15);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="16 18 22 12 16 6" />
+                                    <polyline points="8 6 2 12 8 18" />
+                                </svg>
+                            </div>
+                            <h3 style="font-size:1rem;font-weight:700;color:white;">Dhyey Daftary</h3>
+                            <p
+                                style="font-size:0.75rem;line-height:1.625;color:hsl(0 0% 100% / 0.8);margin-top:16px;font-style:italic;">
+                                Passionate about building scalable web apps and crafting seamless user experiences from
+                                backend to frontend.</p>
+                            <div style="display:flex;gap:12px;margin-top:24px;">
+                                <a href="https://www.linkedin.com/in/dhyey-daftary/" target="_blank" rel="noopener"
+                                    onclick="event.stopPropagation()"
+                                    style="display:flex;align-items:center;gap:8px;border-radius:8px;background:hsl(0 0% 100% / 0.15);padding:8px 14px;font-size:0.75rem;font-weight:600;color:white;text-decoration:none;"
+                                    onmouseover="this.style.background='hsl(0 0% 100% / 0.25)'"
+                                    onmouseout="this.style.background='hsl(0 0% 100% / 0.15)'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <path
+                                            d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                                        <rect x="2" y="9" width="4" height="12" />
+                                        <circle cx="4" cy="4" r="2" />
+                                    </svg>
+                                    LinkedIn
+                                </a>
+                                <a href="https://github.com/dhyeydaftary" target="_blank" rel="noopener"
+                                    onclick="event.stopPropagation()"
+                                    style="display:flex;align-items:center;gap:8px;border-radius:8px;background:hsl(0 0% 100% / 0.15);padding:8px 14px;font-size:0.75rem;font-weight:600;color:white;text-decoration:none;"
+                                    onmouseover="this.style.background='hsl(0 0% 100% / 0.25)'"
+                                    onmouseout="this.style.background='hsl(0 0% 100% / 0.15)'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <path
+                                            d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                                    </svg>
+                                    GitHub
+                                </a>
+                            </div>
+                            <p
+                                style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:hsl(0 0% 100% / 0.4);margin-top:20px;">
+                                Click to flip back</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Urva -->
+                <div class="flip-card reveal reveal-delay-1" onclick="this.classList.toggle('flipped')"
+                    style="width:260px;">
+                    <div class="flip-inner">
+                        <div class="flip-front flex flex-col items-center justify-center p-6 text-center shadow-sm"
+                            style="border:1px solid var(--border);background:var(--card);">
+                            <div class="mx-auto mb-4 flex items-center justify-center rounded-full"
+                                style="width:80px;height:80px;border:2px solid hsl(221 68% 28% / 0.25);background:hsl(221 68% 28% / 0.1);box-shadow:0 4px 12px hsl(0 0% 0% / 0.1);overflow:hidden;">
+                                <img src="{{ url_for('static', filename='images/team/Urva.jpeg') }}" alt="Urva Shah"
+                                    style="width:100%;height:100%;object-fit:cover;">
+                            </div>
+                            <h3 style="font-size:1rem;font-weight:700;">Urva Shah</h3>
+                            <div
+                                style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--muted-fg);margin-top:8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                                </svg>
+                                AI &amp; Machine Learning
+                            </div>
+                            <p
+                                style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:hsl(220,14%,46%,0.5);margin-top:20px;">
+                                Click to flip</p>
+                        </div>
+                        <div class="flip-back flex flex-col items-center justify-center p-6 text-center shadow-lg"
+                            style="border:1px solid hsl(221 68% 28% / 0.2);background:var(--primary);">
+                            <div
+                                style="margin-bottom:16px;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:hsl(0 0% 100% / 0.15);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="4" y="4" width="16" height="16" rx="2" />
+                                    <rect x="9" y="9" width="6" height="6" />
+                                    <line x1="9" y1="1" x2="9" y2="4" />
+                                    <line x1="15" y1="1" x2="15" y2="4" />
+                                    <line x1="9" y1="20" x2="9" y2="23" />
+                                    <line x1="15" y1="20" x2="15" y2="23" />
+                                    <line x1="20" y1="9" x2="23" y2="9" />
+                                    <line x1="20" y1="14" x2="23" y2="14" />
+                                    <line x1="1" y1="9" x2="4" y2="9" />
+                                    <line x1="1" y1="14" x2="4" y2="14" />
+                                </svg>
+                            </div>
+                            <h3 style="font-size:1rem;font-weight:700;color:white;">Urva Shah</h3>
+                            <p
+                                style="font-size:0.75rem;line-height:1.625;color:hsl(0 0% 100% / 0.8);margin-top:16px;font-style:italic;">
+                                Loves turning data into insights. Building intelligent features that make Campus Connect
+                                smarter every day.</p>
+                            <div style="display:flex;gap:12px;margin-top:24px;">
+                                <a href="https://www.linkedin.com/in/urva-shah-2b289a30b/" target="_blank"
+                                    rel="noopener" onclick="event.stopPropagation()"
+                                    style="display:flex;align-items:center;gap:8px;border-radius:8px;background:hsl(0 0% 100% / 0.15);padding:8px 14px;font-size:0.75rem;font-weight:600;color:white;text-decoration:none;"
+                                    onmouseover="this.style.background='hsl(0 0% 100% / 0.25)'"
+                                    onmouseout="this.style.background='hsl(0 0% 100% / 0.15)'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <path
+                                            d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                                        <rect x="2" y="9" width="4" height="12" />
+                                        <circle cx="4" cy="4" r="2" />
+                                    </svg>
+                                    LinkedIn
+                                </a>
+                                <a href="https://github.com/urvashah05" target="_blank" rel="noopener"
+                                    onclick="event.stopPropagation()"
+                                    style="display:flex;align-items:center;gap:8px;border-radius:8px;background:hsl(0 0% 100% / 0.15);padding:8px 14px;font-size:0.75rem;font-weight:600;color:white;text-decoration:none;"
+                                    onmouseover="this.style.background='hsl(0 0% 100% / 0.25)'"
+                                    onmouseout="this.style.background='hsl(0 0% 100% / 0.15)'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <path
+                                            d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                                    </svg>
+                                    GitHub
+                                </a>
+                            </div>
+                            <p
+                                style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:hsl(0 0% 100% / 0.4);margin-top:20px;">
+                                Click to flip back</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Twisha -->
+                <div class="flip-card reveal reveal-delay-2" onclick="this.classList.toggle('flipped')"
+                    style="width:260px;">
+                    <div class="flip-inner">
+                        <div class="flip-front flex flex-col items-center justify-center p-6 text-center shadow-sm"
+                            style="border:1px solid var(--border);background:var(--card);">
+                            <div class="mx-auto mb-4 flex items-center justify-center rounded-full"
+                                style="width:80px;height:80px;border:2px solid hsl(221 68% 28% / 0.25);background:hsl(221 68% 28% / 0.1);box-shadow:0 4px 12px hsl(0 0% 0% / 0.1);overflow:hidden;">
+                                <img src="{{ url_for('static', filename='images/team/Twisha.jpeg') }}"
+                                    alt="Twisha Agrawal" style="width:100%;height:100%;object-fit:cover;">
+                            </div>
+                            <h3 style="font-size:1rem;font-weight:700;">Twisha Agrawal</h3>
+                            <div
+                                style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--muted-fg);margin-top:8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                                </svg>
+                                Information Technology
+                            </div>
+                            <p
+                                style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:hsl(220,14%,46%,0.5);margin-top:20px;">
+                                Click to flip</p>
+                        </div>
+                        <div class="flip-back flex flex-col items-center justify-center p-6 text-center shadow-lg"
+                            style="border:1px solid hsl(221 68% 28% / 0.2);background:var(--primary);">
+                            <div
+                                style="margin-bottom:16px;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:hsl(0 0% 100% / 0.15);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="white" stroke-width="1.5">
+                                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                                    <line x1="7" y1="2" x2="7" y2="22" />
+                                </svg>
+                            </div>
+                            <h3 style="font-size:1rem;font-weight:700;color:white;">Twisha Agrawal</h3>
+                            <p
+                                style="font-size:0.75rem;line-height:1.625;color:hsl(0 0% 100% / 0.8);margin-top:16px;font-style:italic;">
+                                Designs with empathy, codes with precision. Ensures every pixel of Campus Connect feels
+                                right for students.</p>
+                            <div style="display:flex;gap:12px;margin-top:24px;justify-content:center;">
+                                <span
+                                    style="font-size:0.75rem;font-weight:600;color:hsl(0 0% 100% / 0.6);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;height:30px;">
+                                    Campus Connect Team
+                                </span>
+                            </div>
+                            <p
+                                style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:hsl(0 0% 100% / 0.4);margin-top:20px;">
+                                Click to flip back</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer id="site-footer" class="py-14 px-6 lg:px-8"
+        style="border-top:1px solid var(--border);background:var(--card);">
+        <div class="mx-auto" style="max-width:72rem;">
+            <div id="footer-grid" class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-10">
+                <div style="max-width:20rem;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            style="color:var(--primary)">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                        </svg>
+                        <span
+                            style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.125rem;font-weight:700;">Campus<span
+                                style="color:var(--primary)">Connect</span></span>
+                    </div>
+                    <p class="text-muted-fg" style="font-size:0.875rem;line-height:1.625;">A secure, verified network
+                        built exclusively for students. Connecting the campus community through events, discussions, and
+                        collaboration.</p>
+                </div>
+                <div>
+                    <h4
+                        style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;">
+                        Platform</h4>
+                    <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+                        <li><a href="#features" onclick="smoothScroll('#features');return false;" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Features</a></li>
+                        <li><a href="#how-it-works" onclick="smoothScroll('#how-it-works');return false;"
+                                class="text-muted-fg" style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">How it Works</a></li>
+                        <li><a href="#about" onclick="smoothScroll('#about');return false;" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">About</a></li>
+                        <li><a href="#team" onclick="smoothScroll('#team');return false;" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Team</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4
+                        style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;">
+                        Support</h4>
+                    <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+                        <li><a href="{{ url_for('support.help_center') }}" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Help Center</a></li>
+                        <li><a href="{{ url_for('support.contact_support') }}" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Contact Support</a></li>
+                        <li><a href="{{ url_for('support.report_issue') }}" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Report Issue</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4
+                        style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;">
+                        Trust</h4>
+                    <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+                        <li><a href="{{ url_for('trust.security') }}" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Security</a></li>
+                        <li><a href="{{ url_for('trust.verification_policy') }}" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Verification Policy</a></li>
+                        <li><a href="{{ url_for('trust.data_protection') }}" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Data Protection</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4
+                        style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:16px;">
+                        Legal</h4>
+                    <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+                        <li><a href="{{ url_for('legal.community_guidelines') }}" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Community Guidelines</a></li>
+                        <li><a href="{{ url_for('legal.privacy_policy') }}" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Privacy Policy</a></li>
+                        <li><a href="{{ url_for('legal.terms_of_service') }}" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Terms of Service</a></li>
+                        <li><a href="{{ url_for('legal.terms_of_use') }}" class="text-muted-fg"
+                                style="font-size:0.875rem;text-decoration:none;"
+                                onmouseover="this.style.color='var(--foreground)'"
+                                onmouseout="this.style.color='var(--muted-fg)'">Terms of Use</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-fg"
+                style="border-top:1px solid var(--border);">
+                <p>&copy; 2026 Campus Connect. Verified Student Network.</p>
+                <div style="display:flex;gap:20px;align-items:center;">
+                    <a href="https://github.com/dhyeydaftary/Campus-Connect/blob/dev/README.md" target="_blank"
+                        rel="noopener" style="color:var(--muted-fg);transition:color 0.2s;font-size:1.1rem;"
+                        onmouseover="this.style.color='var(--foreground)'"
+                        onmouseout="this.style.color='var(--muted-fg)'" aria-label="GitHub Repository">
+                        <i class="fa-brands fa-github"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/dhyey-daftary/" target="_blank" rel="noopener"
+                        style="color:var(--muted-fg);transition:color 0.2s;font-size:1.1rem;"
+                        onmouseover="this.style.color='#0a66c2'" onmouseout="this.style.color='var(--muted-fg)'"
+                        aria-label="Dhyey Daftary LinkedIn">
+                        <i class="fa-brands fa-linkedin"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/urva-shah-2b289a30b/" target="_blank" rel="noopener"
+                        style="color:var(--muted-fg);transition:color 0.2s;font-size:1.1rem;"
+                        onmouseover="this.style.color='#0a66c2'" onmouseout="this.style.color='var(--muted-fg)'"
+                        aria-label="Urva Shah LinkedIn">
+                        <i class="fa-brands fa-linkedin"></i>
+                    </a>
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=network.campusconnect@gmail.com"
+                        target="_blank" rel="noopener"
+                        style="color:var(--muted-fg);transition:color 0.2s;font-size:1.1rem;"
+                        onmouseover="this.style.color='#ea4335'" onmouseout="this.style.color='var(--muted-fg)'"
+                        aria-label="Email Us">
+                        <i class="fa-solid fa-envelope"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- BACK TO TOP -->
+    <button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5" />
+            <polyline points="5 12 12 5 19 12" />
+        </svg>
+    </button>
+
+    <script src="{{ url_for('static', filename='js/pages/landing.js') }}"></script>
+</body>
+
+</html>

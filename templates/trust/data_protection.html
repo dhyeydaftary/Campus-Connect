@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Protection - Campus Connect</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 1.25rem;
+            left: 1.25rem;
+            z-index: 100;
+            width: 2.75rem;
+            height: 2.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            background: hsl(0 0% 100% / 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid hsl(0 0% 100% / 0.15);
+            color: white;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+
+        .back-btn:hover {
+            background: hsl(0 0% 100% / 0.22);
+            transform: translateX(-2px);
+        }
+
+        .back-btn.scrolled {
+            background: white;
+            color: #334155;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px hsl(221 30% 50% / 0.1);
+        }
+
+        .back-btn.scrolled:hover {
+            background: #f1f5f9;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1.visible {
+            transition-delay: 0.1s;
+        }
+
+        .reveal-delay-2.visible {
+            transition-delay: 0.2s;
+        }
+
+        .reveal-delay-3.visible {
+            transition-delay: 0.3s;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, hsl(160, 55%, 10%) 0%, hsl(160, 50%, 22%) 50%, hsl(221, 47%, 25%) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 50% at 50% -10%, hsl(160 50% 40% / 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-section .dot-grid {
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            opacity: 0.04;
+            background-image: radial-gradient(circle, hsl(0, 0%, 100%) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .sidebar-link:hover {
+            background: hsl(160 50% 95%);
+            color: hsl(160, 50%, 30%);
+        }
+
+        .sidebar-link.active {
+            background: hsl(160 50% 95%);
+            color: hsl(160, 50%, 30%);
+            font-weight: 600;
+        }
+
+        .sidebar-link::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            border-radius: 2px;
+            background: transparent;
+            transition: background 0.2s ease;
+        }
+
+        .sidebar-link.active::before,
+        .sidebar-link:hover::before {
+            background: hsl(160, 50%, 40%);
+        }
+
+        .rights-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .rights-card:hover {
+            border-color: hsl(160 50% 80%);
+            box-shadow: 0 8px 24px -6px hsl(160 50% 30% / 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: hsl(160, 50%, 40%);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            background: hsl(160 50% 95%);
+            border: 1px solid hsl(160 50% 85%);
+        }
+
+        .cta-card {
+            background: linear-gradient(135deg, hsl(221, 55%, 13%) 0%, hsl(221, 68%, 28%) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 60% at 80% 20%, hsl(221 68% 50% / 0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        :focus-visible {
+            outline: 2px solid hsl(160, 50%, 40%);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Back Button -->
+    <a href="{{ url_for('main.home') }}#site-footer" class="back-btn" id="back-btn" title="Back to Footer">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+    </a>
+
+    <!-- Hero -->
+    <section class="hero-section text-white py-24 sm:py-28 px-4 sm:px-6 lg:px-8">
+        <div class="dot-grid"></div>
+        <div class="relative z-10 max-w-3xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-widest mb-8"
+                style="border:1px solid hsl(0 0% 100% / 0.1);background:hsl(0 0% 100% / 0.05);">
+                <span class="animate-pulse"
+                    style="background:#34d399;width:7px;height:7px;border-radius:50%;display:inline-block;box-shadow:0 0 8px #34d399"></span>
+                Privacy First
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5"
+                style="letter-spacing:-0.025em;line-height:1.1;">
+                Data <span style="color:hsl(160, 50%, 55%);">Protection</span>
+            </h1>
+            <p class="text-base md:text-lg max-w-xl mx-auto font-medium" style="color:hsl(217, 19%, 72%);">
+                Transparency in how we collect, use, and protect your information. Your data belongs to you.
+            </p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex flex-col md:flex-row gap-12">
+
+        <!-- Sidebar -->
+        <aside class="hidden md:block w-56 flex-shrink-0">
+            <div class="sticky top-24 space-y-1" id="sidebar-nav">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 px-3">Contents</p>
+                <a href="#collection" class="sidebar-link active" data-target="collection">Information Collection</a>
+                <a href="#usage" class="sidebar-link" data-target="usage">How We Use Data</a>
+                <a href="#sharing" class="sidebar-link" data-target="sharing">Information Sharing</a>
+                <a href="#protection" class="sidebar-link" data-target="protection">Data Security</a>
+                <a href="#rights" class="sidebar-link" data-target="rights">Your Rights</a>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <div class="flex-1 max-w-3xl">
+
+            <div class="reveal bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 md:p-10 mb-8"
+                style="box-shadow:0 1px 3px 0 hsl(221 30% 50% / 0.06);">
+                <p class="text-lg text-slate-600 leading-relaxed">
+                    At Campus Connect, we believe that a safe network starts with respecting your privacy. We strictly
+                    limit the data we collect to what is absolutely necessary to verify your identity and power your
+                    campus experience. <strong class="text-slate-800">We do not sell your personal data to
+                        advertisers.</strong>
+                </p>
+            </div>
+
+            <!-- Section 1 -->
+            <section id="collection" class="reveal mb-10 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-5">
+                    <div
+                        class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-lg flex-shrink-0">
+                        <i class="fa-solid fa-database"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">1. Information Collection</h2>
+                </div>
+                <p class="text-slate-600 mb-5 leading-relaxed">We collect information directly from you when you
+                    register and interact with the platform:</p>
+                <div class="space-y-3">
+                    <div
+                        class="flex gap-3 p-4 bg-white rounded-xl border border-slate-100 hover:border-emerald-200 transition-colors">
+                        <i class="fa-solid fa-id-card text-emerald-500 mt-0.5"></i>
+                        <div><strong class="text-slate-800 text-sm">Identity Data:</strong> <span
+                                class="text-slate-600 text-sm">Full name, institutional email address, graduation year,
+                                and academic major.</span></div>
+                    </div>
+                    <div
+                        class="flex gap-3 p-4 bg-white rounded-xl border border-slate-100 hover:border-emerald-200 transition-colors">
+                        <i class="fa-solid fa-user-circle text-emerald-500 mt-0.5"></i>
+                        <div><strong class="text-slate-800 text-sm">Profile Data:</strong> <span
+                                class="text-slate-600 text-sm">Avatar images, bio, skills, and links you voluntarily add
+                                to your public profile.</span></div>
+                    </div>
+                    <div
+                        class="flex gap-3 p-4 bg-white rounded-xl border border-slate-100 hover:border-emerald-200 transition-colors">
+                        <i class="fa-solid fa-pen-nib text-emerald-500 mt-0.5"></i>
+                        <div><strong class="text-slate-800 text-sm">Content Data:</strong> <span
+                                class="text-slate-600 text-sm">Posts, comments, messages, and event RSVPs generated by
+                                your activity.</span></div>
+                    </div>
+                    <div
+                        class="flex gap-3 p-4 bg-white rounded-xl border border-slate-100 hover:border-emerald-200 transition-colors">
+                        <i class="fa-solid fa-microchip text-emerald-500 mt-0.5"></i>
+                        <div><strong class="text-slate-800 text-sm">Technical Data:</strong> <span
+                                class="text-slate-600 text-sm">IP address, browser type, and operating system used for
+                                security auditing and session management.</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2 -->
+            <section id="usage" class="reveal mb-10 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-5">
+                    <div
+                        class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-lg flex-shrink-0">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">2. How We Use Your Data</h2>
+                </div>
+                <p class="text-slate-600 mb-5 leading-relaxed">Your information is used strictly to provide, maintain,
+                    and improve the Campus Connect service:</p>
+                <ul class="space-y-3 text-slate-600 text-sm">
+                    <li class="flex items-start gap-3"><i class="fa-solid fa-check-circle text-blue-500 mt-0.5"></i>To
+                        verify your eligibility to access the institutional network.</li>
+                    <li class="flex items-start gap-3"><i class="fa-solid fa-check-circle text-blue-500 mt-0.5"></i>To
+                        display your profile to other verified members of your specific campus.</li>
+                    <li class="flex items-start gap-3"><i class="fa-solid fa-check-circle text-blue-500 mt-0.5"></i>To
+                        deliver notifications regarding events, mentions, or administrative alerts.</li>
+                    <li class="flex items-start gap-3"><i class="fa-solid fa-check-circle text-blue-500 mt-0.5"></i>To
+                        prevent fraud, abuse, and enforce our Community Guidelines.</li>
+                </ul>
+            </section>
+
+            <!-- Section 3 -->
+            <section id="sharing" class="reveal mb-10 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-5">
+                    <div
+                        class="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center text-lg flex-shrink-0">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">3. Information Sharing</h2>
+                </div>
+                <p class="text-slate-600 mb-5 leading-relaxed">We operate on a principle of least privilege regarding
+                    external sharing. <strong class="text-slate-800">We do not sell personal information to third
+                        parties.</strong></p>
+                <div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-5">
+                    <div class="flex items-start gap-3">
+                        <i class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5"></i>
+                        <div>
+                            <h4 class="font-bold text-red-900 text-sm mb-1">Law Enforcement / Institutional
+                                Administration</h4>
+                            <p class="text-sm text-red-800 leading-relaxed">We may disclose information if legally
+                                required by a subpoena, court order, or formal request from your University's
+                                disciplinary board evaluating severe breaches of conduct (e.g., threats of violence).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-slate-600 text-sm leading-relaxed">Aside from legal compliance, your data is visible only
+                    to other verified members of your isolated campus network.</p>
+            </section>
+
+            <!-- Section 4 -->
+            <section id="protection" class="reveal mb-10 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-5">
+                    <div
+                        class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-lg flex-shrink-0">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">4. Data Security</h2>
+                </div>
+                <p class="text-slate-600 leading-relaxed">We employ administrative, technical, and physical safeguards
+                    to protect your data. All traffic is encrypted via <strong>HTTPS/TLS</strong>. Passwords are
+                    cryptographically hashed using <strong>bcrypt</strong>. Production databases are isolated behind
+                    strict firewalls, accessible only by core engineering staff on a need-to-know basis.</p>
+            </section>
+
+            <!-- Section 5 -->
+            <section id="rights" class="reveal mb-10 scroll-mt-24">
+                <div class="flex items-center gap-3 mb-5">
+                    <div
+                        class="w-10 h-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-lg flex-shrink-0">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">5. Your Data Rights</h2>
+                </div>
+                <p class="text-slate-600 mb-5 leading-relaxed">You maintain control over your personal information:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="rights-card">
+                        <div
+                            class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-pen-to-square"></i></div>
+                        <h4 class="font-bold text-slate-900 text-sm mb-1.5">Right to Rectification</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">Edit your profile information, posts, and
+                            comments at any time through the platform.</p>
+                    </div>
+                    <div class="rights-card">
+                        <div class="w-10 h-10 bg-red-100 text-red-500 rounded-lg flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-trash-can"></i></div>
+                        <h4 class="font-bold text-slate-900 text-sm mb-1.5">Right to Erasure</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">Request account and associated
+                            data deletion by contacting the site administrator. Deletions are processed within 30 days.</p>
+                    </div>
+                    <div class="rights-card">
+                        <div
+                            class="w-10 h-10 bg-blue-100 text-blue-500 rounded-lg flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-download"></i></div>
+                        <h4 class="font-bold text-slate-900 text-sm mb-1.5">Right to Access</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">Request a summary of personal data tied to
+                            your account by contacting the site administrator.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer Note -->
+            <div class="reveal border-t border-slate-200 pt-6 mt-6">
+                <p class="text-sm text-slate-400 italic">
+                    <strong>Portfolio Disclaimer:</strong> Campus Connect is a demonstration project. Policies described here illustrate typical platform practices.<br><br>
+                    Last Updated: March 2026<br>
+                    For data protection inquiries, please contact the project administrator.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <section class="max-w-3xl mx-auto px-4 sm:px-6 pb-16 sm:pb-20">
+        <div class="reveal cta-card rounded-2xl p-8 sm:p-10 text-center text-white relative z-10">
+            <div class="relative z-10">
+                <h2 class="text-xl sm:text-2xl font-bold mb-3">Have questions about your data?</h2>
+                <p class="mb-7 max-w-md mx-auto text-sm" style="color:hsl(217, 19%, 72%);">The site administrators can help
+                    with data access requests, account deletion, or privacy concerns.</p>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <a href="{{ url_for('support.contact_support') }}"
+                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
+                        style="background:white;color:hsl(221, 68%, 28%);text-decoration:none;box-shadow:0 4px 12px hsl(221 68% 28% / 0.3);">
+                        <i class="fa-solid fa-envelope text-xs"></i> Contact Us
+                    </a>
+                    <a href="{{ url_for('trust.security') }}"
+                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
+                        style="border:1px solid hsl(0 0% 100% / 0.2);background:hsl(0 0% 100% / 0.08);color:white;text-decoration:none;">
+                        <i class="fa-solid fa-shield-halved text-xs"></i> Security Center
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Back button scroll behavior
+        const backBtn = document.getElementById('back-btn');
+        const heroSection = document.querySelector('.hero-section');
+        if (backBtn && heroSection) {
+            const observer = new IntersectionObserver(([entry]) => {
+                backBtn.classList.toggle('scrolled', !entry.isIntersecting);
+            }, { threshold: 0.1 });
+            observer.observe(heroSection);
+        }
+
+        // Scroll reveal
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // Active sidebar link on scroll
+        const sections = document.querySelectorAll('section[id]');
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    sidebarLinks.forEach(link => link.classList.remove('active'));
+                    const activeLink = document.querySelector(`.sidebar-link[data-target="${entry.target.id}"]`);
+                    if (activeLink) activeLink.classList.add('active');
+                }
+            });
+        }, { threshold: 0.3, rootMargin: '-80px 0px -50% 0px' });
+        sections.forEach(section => sectionObserver.observe(section));
+    </script>
+    
+</body>
+
+</html>

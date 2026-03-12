@@ -1,0 +1,93 @@
+{% extends "layouts/admin_base.html" %}
+{% block title %}Dashboard | Admin{% endblock %}
+{% block header_title %}Dashboard{% endblock %}
+{% block content %}
+
+<!-- Content Area -->
+<div class="content-area">
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6" id="kpi-cards">
+        <div class="kpi-card">
+            <div class="kpi-icon blue">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="kpi-value" id="active-users">--</div>
+            <div class="kpi-label">Active Users</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon orange">
+                <i class="fa-solid fa-user-clock"></i>
+            </div>
+            <div class="kpi-value" id="pending-users">--</div>
+            <div class="kpi-label">Pending Users</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon red">
+                <i class="fa-solid fa-ban"></i>
+            </div>
+            <div class="kpi-value" id="blocked-users">--</div>
+            <div class="kpi-label">Blocked Users</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon purple">
+                <i class="fa-solid fa-message"></i>
+            </div>
+            <div class="kpi-value" id="total-posts">--</div>
+            <div class="kpi-label">Total Posts</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon green">
+                <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <div class="kpi-value" id="active-events">--</div>
+            <div class="kpi-label">Active Events</div>
+        </div>
+    </div>
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">User Growth</h2>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="userGrowthChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">User Role Distribution</h2>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="roleDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Content Activity & Top Accounts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Content Activity</h2>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="contentActivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+
+<!-- Chart.js (dependency) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Admin dashboard logic -->
+<script src="{{ url_for('static', filename='js/admin/admin_dashboard_chart.js') }}"></script>
+
+{% endblock %}

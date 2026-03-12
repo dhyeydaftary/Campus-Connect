@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security - Campus Connect</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 1.25rem;
+            left: 1.25rem;
+            z-index: 100;
+            width: 2.75rem;
+            height: 2.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            background: hsl(0 0% 100% / 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid hsl(0 0% 100% / 0.15);
+            color: white;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+
+        .back-btn:hover {
+            background: hsl(0 0% 100% / 0.22);
+            transform: translateX(-2px);
+        }
+
+        .back-btn.scrolled {
+            background: white;
+            color: #334155;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px hsl(221 30% 50% / 0.1);
+        }
+
+        .back-btn.scrolled:hover {
+            background: #f1f5f9;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1.visible {
+            transition-delay: 0.1s;
+        }
+
+        .reveal-delay-2.visible {
+            transition-delay: 0.15s;
+        }
+
+        .reveal-delay-3.visible {
+            transition-delay: 0.2s;
+        }
+
+        .reveal-delay-4.visible {
+            transition-delay: 0.25s;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, hsl(221, 55%, 13%) 0%, hsl(221, 68%, 28%) 50%, hsl(262, 47%, 30%) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 50% at 50% -10%, hsl(221 68% 50% / 0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-section .dot-grid {
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            opacity: 0.04;
+            background-image: radial-gradient(circle, hsl(0, 0%, 100%) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .feature-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.75rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px 0 hsl(221 30% 50% / 0.06);
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 12px 28px -8px hsl(221 50% 30% / 0.14);
+            border-color: hsl(221 68% 80%);
+            transform: translateY(-4px);
+        }
+
+        .feature-card .card-icon {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover .card-icon {
+            transform: scale(1.15) rotate(-5deg);
+        }
+
+        .practice-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            display: flex;
+            gap: 1.25rem;
+            align-items: flex-start;
+        }
+
+        .practice-card:hover {
+            border-color: hsl(221 68% 80%);
+            box-shadow: 0 4px 12px -2px hsl(221 50% 30% / 0.08);
+        }
+
+        .cta-card {
+            background: linear-gradient(135deg, hsl(239, 70%, 55%) 0%, hsl(221, 68%, 40%) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 60% at 80% 20%, hsl(0 0% 100% / 0.08) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: hsl(221, 68%, 50%);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            background: hsl(221 68% 96%);
+            border: 1px solid hsl(221 68% 90%);
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        :focus-visible {
+            outline: 2px solid #6366f1;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Back Button -->
+    <a href="{{ url_for('main.home') }}#site-footer" class="back-btn" id="back-btn" title="Back to Footer">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+    </a>
+
+    <!-- Hero -->
+    <section class="hero-section text-white py-24 sm:py-32 px-4 sm:px-6 lg:px-8">
+        <div class="dot-grid"></div>
+        <div class="relative z-10 max-w-3xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-widest mb-8"
+                style="border:1px solid hsl(0 0% 100% / 0.1);background:hsl(0 0% 100% / 0.05);">
+                <i class="fa-solid fa-shield-halved text-indigo-300"></i>
+                Trust Center
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6"
+                style="letter-spacing:-0.025em;line-height:1.1;">
+                Your Safety is Our <span
+                    class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400">Priority</span>
+            </h1>
+            <p class="text-base md:text-lg max-w-2xl mx-auto font-medium" style="color:hsl(217, 19%, 72%);">
+                We implement industry-leading security measures to protect your account, your data, and your campus
+                experience.
+            </p>
+        </div>
+    </section>
+
+    <!-- Security Features -->
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+        <div class="reveal text-center max-w-xl mx-auto mb-12">
+            <span class="section-label mb-4"><i class="fa-solid fa-lock text-[10px]"></i> Security</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mt-3 mb-3" style="letter-spacing:-0.025em;">Core
+                Security Features</h2>
+            <p class="text-slate-500 text-sm sm:text-base">Enterprise-grade protection to keep unauthorized users out
+                and your data safe.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="feature-card reveal">
+                <div
+                    class="card-icon w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl mb-5">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Strong Authentication</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-4">We enforce strict password policies requiring a
+                    mix of uppercase, lowercase, numbers, and special characters. Bcrypt hashing ensures your password
+                    is never stored in plain text.</p>
+                <div class="flex flex-wrap gap-2">
+                    <span
+                        class="text-xs font-medium px-2.5 py-1 bg-green-50 text-green-700 rounded-full border border-green-200"><i
+                            class="fa-solid fa-check mr-1"></i>Bcrypt Hashing</span>
+                    <span
+                        class="text-xs font-medium px-2.5 py-1 bg-green-50 text-green-700 rounded-full border border-green-200"><i
+                            class="fa-solid fa-check mr-1"></i>Min 8 Characters</span>
+                </div>
+            </div>
+
+            <div class="feature-card reveal reveal-delay-1">
+                <div
+                    class="card-icon w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl mb-5">
+                    <i class="fa-solid fa-envelope-circle-check"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Institutional Verification</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-4">Strict email verification tied to ".edu" or
+                    recognized institutional domains guarantees only active students and faculty can access the network.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span
+                        class="text-xs font-medium px-2.5 py-1 bg-green-50 text-green-700 rounded-full border border-green-200"><i
+                            class="fa-solid fa-check mr-1"></i>Domain Restriction</span>
+                    <span
+                        class="text-xs font-medium px-2.5 py-1 bg-green-50 text-green-700 rounded-full border border-green-200"><i
+                            class="fa-solid fa-check mr-1"></i>Magic Link</span>
+                </div>
+            </div>
+
+            <div class="feature-card reveal reveal-delay-2">
+                <div
+                    class="card-icon w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl mb-5">
+                    <i class="fa-solid fa-shield-virus"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">CSRF & XSS Protection</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-4">Every form submission is protected by CSRF
+                    tokens. Rigorous input sanitization prevents Cross-Site Scripting attacks.</p>
+                <div class="flex flex-wrap gap-2">
+                    <span
+                        class="text-xs font-medium px-2.5 py-1 bg-green-50 text-green-700 rounded-full border border-green-200"><i
+                            class="fa-solid fa-check mr-1"></i>Token Validation</span>
+                    <span
+                        class="text-xs font-medium px-2.5 py-1 bg-green-50 text-green-700 rounded-full border border-green-200"><i
+                            class="fa-solid fa-check mr-1"></i>Auto-Escaping</span>
+                </div>
+            </div>
+
+            <div class="feature-card reveal reveal-delay-3">
+                <div
+                    class="card-icon w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl mb-5">
+                    <i class="fa-solid fa-user-clock"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Session Security</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-4">Sessions are encrypted and tied to your
+                    authenticated state. They expire automatically after prolonged inactivity.</p>
+                <div class="flex flex-wrap gap-2">
+                    <span
+                        class="text-xs font-medium px-2.5 py-1 bg-green-50 text-green-700 rounded-full border border-green-200"><i
+                            class="fa-solid fa-check mr-1"></i>Secure Cookies</span>
+                    <span
+                        class="text-xs font-medium px-2.5 py-1 bg-green-50 text-green-700 rounded-full border border-green-200"><i
+                            class="fa-solid fa-check mr-1"></i>Session Timeouts</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Best Practices -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="reveal text-center max-w-xl mx-auto mb-10">
+            <span class="section-label mb-4"><i class="fa-solid fa-lightbulb text-[10px]"></i> Tips</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mt-3 mb-3" style="letter-spacing:-0.025em;">
+                Security Best Practices</h2>
+        </div>
+
+        <div class="space-y-4">
+            <div class="practice-card reveal">
+                <div
+                    class="flex-shrink-0 w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-1.5">Use Unique Passwords</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">Never reuse the password you use for your primary
+                        email, banking, or other critical services. Using a password manager to generate and store a 16+
+                        character random password is highly recommended.</p>
+                </div>
+            </div>
+
+            <div class="practice-card reveal reveal-delay-1">
+                <div
+                    class="flex-shrink-0 w-12 h-12 bg-sky-100 text-sky-600 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-laptop-house"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-1.5">Public Devices & Networks</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">Always log out when using library computers, lab
+                        workstations, or borrowed devices. Avoid sensitive actions over unsecured public Wi-Fi without a
+                        VPN.</p>
+                </div>
+            </div>
+
+            <div class="practice-card reveal reveal-delay-2">
+                <div
+                    class="flex-shrink-0 w-12 h-12 bg-red-100 text-red-500 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-user-secret"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-1.5">Beware of Phishing</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">Campus Connect administration will
+                        <strong>NEVER</strong> email you asking for your password. If you receive a suspicious email, do
+                        not click the links. Report it immediately.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vulnerability CTA -->
+    <section class="max-w-3xl mx-auto px-4 sm:px-6 pb-16 sm:pb-20">
+        <div class="reveal cta-card rounded-2xl p-8 sm:p-10 text-white relative z-10">
+            <div class="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 opacity-10 animate-float">
+                <i class="fa-solid fa-bug" style="font-size:8rem;"></i>
+            </div>
+            <div class="relative z-10">
+                <h2 class="text-xl sm:text-2xl font-bold mb-3">Found a Vulnerability?</h2>
+                <p class="mb-7 max-w-lg text-sm leading-relaxed" style="color:hsl(217, 19%, 78%);">We take all reports
+                    regarding security seriously. If you've discovered a security flaw, please let us know immediately.
+                </p>
+                <div class="flex flex-col sm:flex-row items-start gap-3">
+                    <a href="{{ url_for('support.report_issue') }}"
+                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
+                        style="background:white;color:hsl(221, 68%, 28%);text-decoration:none;box-shadow:0 4px 12px hsl(221 68% 28% / 0.3);">
+                        <i class="fa-solid fa-flag text-xs"></i> Report Security Issue
+                    </a>
+                    <a href="{{ url_for('trust.data_protection') }}"
+                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
+                        style="border:1px solid hsl(0 0% 100% / 0.2);background:hsl(0 0% 100% / 0.08);color:white;text-decoration:none;">
+                        <i class="fa-solid fa-eye text-xs"></i> Data Protection
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Back button scroll behavior
+        const backBtn = document.getElementById('back-btn');
+        const heroSection = document.querySelector('.hero-section');
+        if (backBtn && heroSection) {
+            const observer = new IntersectionObserver(([entry]) => {
+                backBtn.classList.toggle('scrolled', !entry.isIntersecting);
+            }, { threshold: 0.1 });
+            observer.observe(heroSection);
+        }
+
+        // Scroll reveal
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        revealElements.forEach(el => revealObserver.observe(el));
+    </script>
+</body>
+
+</html>

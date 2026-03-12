@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Messages - Campus Connect</title>
+
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+
+    <!-- Google Fonts: Plus Jakarta Sans (headings/names) + Inter (body text) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Stylesheets: Tailwind base, Font Awesome icons, page-specific styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/messages.css') }}">
+
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+
+<body class="page-has-back" data-user-id="{{ user.id }}" style="margin:0;overflow:hidden;background:#f8fafc;">
+
+    <!-- ============================================================================
+         NAVBAR
+         Shared partial with search, notifications, and profile dropdown.
+    ============================================================================= -->
+    {% include 'partials/_navbar.html' %}
+
+    <!-- ============================================================================
+         MAIN LAYOUT
+         Two-column flex row: sidebar + chat panel.
+         Fills viewport height below the 64px navbar.
+    ============================================================================= -->
+    <div class="msgs-layout">
+
+        <!-- ============================================================================
+             SIDEBAR
+             Left panel: title, search bar, and conversation list.
+        ============================================================================= -->
+        <aside class="msgs-sidebar" id="sidebar-panel">
+
+            <!-- Sidebar title and compose (new message) button -->
+            <div class="sidebar-header">
+                <h1 class="sidebar-title">Messages</h1>
+                <button class="sidebar-compose-btn" id="compose-btn" title="New message" aria-label="New message">
+                    <i class="fas fa-edit" style="font-size:.85rem;"></i>
+                </button>
+            </div>
+
+            <!-- Filter conversations by partner name (client-side) -->
+            <div class="sidebar-search-wrap">
+                <div class="sidebar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="search" id="conversation-search" placeholder="Search conversations…"
+                        autocomplete="off">
+                </div>
+            </div>
+
+            <!-- Populated by renderConversations() in messages.js -->
+            <div class="conv-list msg-scrollbar" id="conversation-list">
+                <!-- Shimmer placeholders shown during initial API fetch -->
+                <div id="conv-skeletons">
+                    {% for _ in range(5) %}
+                    <div class="conv-skeleton">
+                        <div class="skeleton skel-avatar"></div>
+                        <div class="skel-lines">
+                            <div class="skeleton skel-line" style="width:55%;"></div>
+                            <div class="skeleton skel-line" style="width:80%;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- ============================================================================
+             CHAT PANEL
+             Right side: empty state, header, message thread, input bar.
+             Hidden on mobile until a conversation is selected.
+        ============================================================================= -->
+        <main class="msgs-chat-panel" id="chat-panel">
+
+            <!-- Empty state: visible until the user opens a conversation -->
+            <div class="chat-empty-state" id="empty-state">
+                <div class="chat-empty-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="chat-empty-content">
+                    <p class="chat-empty-title">Your Messages</p>
+                    <p class="chat-empty-sub">
+                        Select a conversation or start a new one
+                    </p>
+                </div>
+                <button onclick="document.getElementById('compose-btn').click()" class="chat-empty-btn">
+                    <i class="fas fa-plus-circle" style="font-size: 0.9rem;"></i>New message
+                </button>
+            </div>
+
+            <!-- Active chat container: shown by selectConversation() in messages.js -->
+            <div id="active-chat-container" class="hidden"
+                style="display:none;flex-direction:column;height:100%;width:100%;">
+
+                <!-- ============================================================================
+                     CHAT HEADER
+                     Avatar, partner name, back button (mobile), and options menu.
+                ============================================================================= -->
+                <div class="chat-header" id="chat-header">
+                    <!-- Returns to the sidebar on mobile viewports -->
+                    <button class="chat-back-btn" id="back-button" aria-label="Back to conversations">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+
+                    <!-- Partner avatar -->
+                    <div class="chat-header-avatar-wrap">
+                        <img id="chat-header-avatar" src="" alt="" class="chat-header-avatar">
+                    </div>
+
+                    <!-- Partner name and profile sub-link -->
+                    <div class="chat-header-meta">
+                        <p class="chat-header-name" id="chat-header-name">—</p>
+                        <p class="chat-header-sub" id="chat-header-info" style="display:none;">View profile</p>
+                    </div>
+
+                    <!-- Header action buttons -->
+                    <div class="chat-header-actions">
+                        <button class="chat-header-btn" title="More options" aria-label="More options">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============================================================================
+                     MESSAGE THREAD
+                     Scrollable bubble list. Populated by renderMessages() and appendMessage().
+                ============================================================================= -->
+                <div class="chat-messages-area msg-scrollbar" id="messages-area"></div>
+
+                <!-- Typing indicator: shown by showTypingIndicator(), auto-hides after 3 s -->
+                <div id="typing-indicator" style="display:none;" class="typing-indicator">
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                    <span id="typing-name">Someone</span> is typing…
+                </div>
+
+                <!-- Preview strip shown when a file is selected before sending -->
+                <div id="attachment-preview" style="display:none;" class="attachment-preview-wrap"></div>
+
+                <!-- ============================================================================
+                     INPUT BAR
+                     Attach button, auto-resizing textarea, and send button.
+                ============================================================================= -->
+                <div class="chat-input-area">
+                    <div class="chat-input-row">
+                        <input type="file" id="chat-file-input" style="display:none;" accept="image/*,.pdf">
+                        <button class="chat-attach-btn" id="attach-btn" aria-label="Attach file" title="Attach file">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+
+                        <div class="chat-input-wrap">
+                            <textarea id="message-input" class="chat-textarea" rows="1" placeholder="Type a message…"
+                                aria-label="Message input"></textarea>
+                        </div>
+
+                        <button class="chat-send-btn" id="send-button" aria-label="Send message">
+                            <i class="fas fa-paper-plane" style="transform:translateX(1px);"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div><!-- /active-chat-container -->
+        </main><!-- /chat-panel -->
+
+    </div><!-- /msgs-layout -->
+
+
+    <!-- ============================================================================
+         COMPOSE MODAL
+         New message overlay. Searches /api/users/search;
+         starts or reopens a conversation on selection.
+    ============================================================================= -->
+    <div id="compose-modal" style="display:none;" class="compose-backdrop" role="dialog" aria-modal="true"
+        aria-label="New message">
+        <div class="compose-modal" onclick="event.stopPropagation()">
+
+            <div class="compose-modal-header">
+                <h2 class="compose-modal-title">
+                    <i class="fas fa-edit" style="color:#6366f1;font-size:.85rem;margin-right:8px;"></i>
+                    New Message
+                </h2>
+                <button class="compose-close-btn" id="close-compose" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="compose-search-wrap">
+                <div class="compose-search-input">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="compose-search" placeholder="Search people…" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="compose-results msg-scrollbar" id="compose-results">
+                <div class="msg-empty" style="padding:32px 20px;">
+                    <div class="msg-empty-icon"><i class="fas fa-user-friends"></i></div>
+                    <p>Search to find people</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Page controller: Socket.IO events, API calls, and all render logic -->
+    <script src="{{ url_for('static', filename='js/features/messages.js') }}"></script>
+
+</body>
+
+</html>

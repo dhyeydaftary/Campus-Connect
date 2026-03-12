@@ -1,14 +1,94 @@
-# Virtual environment
+# ==============================
+# VIRTUAL ENVIRONMENTS
+# ==============================
 .venv/
 venv/
 env/
 
-# Python cache
+# ==============================
+# PYTHON CACHE
+# ==============================
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
 
-# Environment variables
+# ==============================
+# SECRETS
+# ==============================
 .env
 
-# OS junk
+# ==============================
+# FLASK INSTANCE FOLDER
+# ==============================
+instance/
+
+# ==============================
+# OS CLUTTER
+# ==============================
 .DS_Store
+
+# ==============================
+# IDE CONFIG
+# ==============================
+.vscode/
+.idea/
+
+# ==============================
+# NODE MODULES
+# ==============================
+node_modules/
+
+# ==============================
+# LOGS & LOCAL DATABASES
+# ==============================
+logs/*
+!logs/.gitkeep
+*.log
+*.sqlite3
+*.sqlite
+*.db
+
+# ==============================
+# BUILD ARTIFACTS
+# ==============================
+build/
+dist/
+*.egg-info/
+
+# ==============================
+# USER UPLOADS
+# ==============================
+static/uploads/**
+
+!static/uploads/
+!static/uploads/chat/
+!static/uploads/chat/chat_docs/
+!static/uploads/chat/chat_images/
+!static/uploads/post/
+!static/uploads/post/post_docs/
+!static/uploads/post/post_images/
+!static/uploads/profile_photos/
+!static/uploads/**/.gitkeep
+
+# ==============================
+# STATIC IMAGES
+# ==============================
+static/images/team/*
+!static/images/team/.gitkeep
+
+# ==============================
+# INSTANCE FOLDER STRUCTURE
+# ==============================
+instance/*
+!instance/.gitkeep
+
+# ==============================
+# LOCAL DATA FILES
+# ==============================
+data/students.csv
+
+# ==============================
+# TAILWIND BINARY
+# ==============================
+tailwindcss.exe

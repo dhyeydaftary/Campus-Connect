@@ -1,0 +1,1718 @@
+/* Profile Page Custom Styles
+ * Built on top of Tailwind CSS utilities
+ */
+
+/* ============================================================
+   FONTS
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+    --cc-blue: #1e40af;
+    /* indigo-800  */
+    --cc-blue-mid: #3730a3;
+    /* indigo-700  */
+    --cc-blue-light: #4f46e5;
+    /* indigo-600  */
+    --cc-accent: #6366f1;
+    /* indigo-500  */
+    --cc-ink: #111827;
+    /* gray-900    */
+    --cc-ink-2: #374151;
+    /* gray-700    */
+    --cc-muted: #6b7280;
+    /* gray-500    */
+    --cc-muted-2: #9ca3af;
+    /* gray-400    */
+    --cc-border: #e5e7eb;
+    /* gray-200    */
+    --cc-border-2: #f3f4f6;
+    /* gray-100    */
+    --cc-surface: #ffffff;
+    --cc-bg: #f8fafc;
+    /* slate-50 ish */
+    --cc-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .04), 0 1px 3px 0 rgb(0 0 0 / .06);
+    --cc-shadow: 0 2px 8px -2px rgb(30 64 175 / .08), 0 1px 3px 0 rgb(0 0 0 / .05);
+    --cc-shadow-md: 0 6px 20px -4px rgb(30 64 175 / .12), 0 2px 6px -2px rgb(0 0 0 / .06);
+    --cc-radius: 0.875rem;
+    --cc-radius-sm: 0.5rem;
+}
+
+/* ============================================================
+   BASE TYPOGRAPHY AND COLORS
+   ============================================================ */
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--cc-bg);
+    color: var(--cc-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   HEADINGS
+   ============================================================ */
+h1,
+h2,
+h3,
+h4,
+.font-display {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+}
+
+/* ============================================================
+   PROFILE HEADER CARD
+   ============================================================ */
+.pf-header-card {
+    background: var(--cc-surface);
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    box-shadow: var(--cc-shadow);
+    overflow: hidden;
+}
+
+/* Gradient accent bar at top */
+.pf-header-card::before {
+    content: '';
+    display: block;
+    height: 4px;
+    background: linear-gradient(90deg,
+            #1e40af 0%,
+            #4f46e5 45%,
+            #818cf8 100%);
+}
+
+/* ── HEADER CARD POSITION CONTEXT ── */
+.pf-header-card {
+    position: relative;
+}
+
+/* Actions button group — flows naturally in flex header */
+.pf-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── INFO STACK — always left, no centering ── */
+.pf-header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* more breathing room between each row */
+    min-width: 0;
+    flex: 1;
+    padding-top: 2px;
+    /* optical alignment with avatar top */
+}
+
+/* ── AVATAR ── */
+.pf-avatar {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1e3a8a 0%, #4f46e5 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 1.75rem;
+    color: #fff;
+    letter-spacing: -0.02em;
+    box-shadow:
+        0 0 0 3px #fff,
+        0 0 0 5px #c7d2fe,
+        var(--cc-shadow-md);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+    cursor: default;
+}
+
+.pf-avatar.own-profile {
+    cursor: pointer;
+}
+
+.pf-avatar.own-profile:hover {
+    box-shadow:
+        0 0 0 3px #fff,
+        0 0 0 5px #818cf8,
+        0 8px 20px -4px rgb(79 70 229 / .35);
+    transform: scale(1.03);
+}
+
+@media (min-width: 640px) {
+    .pf-avatar {
+        width: 88px;
+        height: 88px;
+        font-size: 2rem;
+    }
+}
+
+/* Camera overlay */
+.pf-avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.52);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 50%;
+}
+
+.pf-avatar.own-profile:hover .pf-avatar-overlay {
+    opacity: 1;
+}
+
+/* ── NAME ── */
+.pf-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--cc-ink);
+    letter-spacing: -0.028em;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Animate in when data loads */
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.pf-name.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (min-width: 640px) {
+    .pf-name {
+        font-size: 1.65rem;
+    }
+}
+
+/* ── BADGE ROW ── */
+.pf-badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    /* Animate in */
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.35s ease 0.06s, transform 0.35s ease 0.06s;
+}
+
+.pf-badge-row.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ── BADGES ── */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.badge-major {
+    background: #eef2ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+}
+
+.badge-batch {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Branch badge — shown when branch field exists */
+.badge-branch {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+/* Year badge — compact graduation year e.g. '28 */
+.badge-year {
+    background: #f5f3ff;
+    color: #6d28d9;
+    border: 1px solid #ddd6fe;
+    font-variant-numeric: tabular-nums;
+}
+
+.badge-skill {
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+    transition: background 0.18s ease, transform 0.18s ease;
+    cursor: default;
+}
+
+.badge-skill:hover {
+    background: #e0e7ff;
+    transform: translateY(-1px);
+}
+
+/* ── LOCATION ── */
+.pf-location {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--cc-muted);
+    /* Animate in */
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity 0.35s ease 0.10s, transform 0.35s ease 0.10s;
+}
+
+.pf-location.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pf-location-icon {
+    color: #6366f1;
+    font-size: 0.62rem;
+    flex-shrink: 0;
+}
+
+/* ── STATS ROW ── */
+.pf-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 2px;
+    /* Animate in */
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity 0.35s ease 0.14s, transform 0.35s ease 0.14s;
+}
+
+.pf-stats-row.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pf-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* number + label both centered under each other */
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 20px 4px 0;
+    cursor: default;
+    min-width: 72px;
+    /* consistent width so divider sits truly between */
+}
+
+.pf-stat-item:first-child {
+    padding-left: 0;
+}
+
+.pf-stat-item:last-child {
+    padding-left: 20px;
+    padding-right: 0;
+}
+
+.pf-stat-divider {
+    width: 1px;
+    height: 30px;
+    background: #e5e7eb;
+    flex-shrink: 0;
+    /* No margin — the padding on stat items provides symmetric spacing */
+}
+
+.pf-stat-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--cc-ink);
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+.pf-stat-label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--cc-muted);
+    white-space: nowrap;
+}
+
+/* ── ACTION BUTTONS ── */
+.btn-cc-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 20px;
+    background: #4f46e5;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: var(--cc-radius-sm);
+    border: none;
+    cursor: pointer;
+    transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+    box-shadow: 0 1px 4px rgb(79 70 229 / .35);
+    white-space: nowrap;
+}
+
+.btn-cc-primary:hover {
+    background: #4338ca;
+    box-shadow: 0 4px 14px rgb(79 70 229 / .4);
+    transform: translateY(-1px);
+}
+
+.btn-cc-primary:active {
+    transform: translateY(0);
+}
+
+.btn-cc-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 18px;
+    background: #fff;
+    color: var(--cc-ink-2);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: var(--cc-radius-sm);
+    border: 1px solid var(--cc-border);
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-cc-secondary:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+}
+
+.btn-cc-secondary:active {
+    transform: translateY(0);
+}
+
+/* ── CONNECTED/DISABLED STATE ── */
+.btn-cc-primary:disabled,
+.btn-cc-secondary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ============================================================
+   SECTION CARDS (ABOUT, SKILLS, EXPERIENCE, EDUCATION)
+   ============================================================ */
+.pf-card {
+    background: var(--cc-surface);
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    box-shadow: var(--cc-shadow);
+    overflow: hidden;
+    transition: box-shadow 0.22s ease;
+}
+
+.pf-card:hover {
+    box-shadow: var(--cc-shadow-md);
+}
+
+/* Card header row */
+.pf-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--cc-border-2);
+}
+
+/* Section title */
+.pf-card-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--cc-ink);
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+/* Title icon pill */
+.pf-card-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: #eef2ff;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    flex-shrink: 0;
+}
+
+/* Edit button */
+.pf-edit-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--cc-radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--cc-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pf-edit-btn:hover {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+/* Card body */
+.pf-card-body {
+    padding: 16px 18px;
+}
+
+/* About text */
+.pf-about-text {
+    font-size: 0.875rem;
+    line-height: 1.75;
+    color: var(--cc-muted);
+}
+
+/* ── COMPACT EMPTY STATE ── */
+.pf-empty {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 0;
+    color: var(--cc-muted);
+    font-size: 0.8rem;
+}
+
+.pf-empty-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: var(--cc-muted-2);
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   EXPERIENCE TIMELINE CONTAINER
+   ============================================================ */
+.pf-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.pf-tl-item {
+    position: relative;
+    padding-left: 24px;
+    padding-bottom: 18px;
+}
+
+.pf-tl-item:last-child {
+    padding-bottom: 0;
+}
+
+/* Vertical line */
+.pf-tl-item::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 10px;
+    bottom: 0;
+    width: 1.5px;
+    background: linear-gradient(to bottom, #c7d2fe, transparent);
+}
+
+.pf-tl-item:last-child::before {
+    display: none;
+}
+
+/* Dot */
+.pf-tl-dot {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #4f46e5;
+    border: 2.5px solid #fff;
+    box-shadow: 0 0 0 1.5px #c7d2fe;
+}
+
+.pf-tl-role {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cc-ink);
+    line-height: 1.3;
+}
+
+.pf-tl-company {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #4f46e5;
+    margin-top: 1px;
+}
+
+.pf-tl-meta {
+    font-size: 0.7rem;
+    color: var(--cc-muted);
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.pf-tl-desc {
+    font-size: 0.78rem;
+    color: var(--cc-muted);
+    line-height: 1.6;
+    margin-top: 5px;
+}
+
+/* ============================================================
+   EDUCATION LIST ITEMS
+   ============================================================ */
+.pf-edu-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.pf-edu-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.pf-edu-degree {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cc-ink);
+    line-height: 1.3;
+}
+
+.pf-edu-field {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #4f46e5;
+    margin-top: 1px;
+}
+
+.pf-edu-institution {
+    font-size: 0.78rem;
+    color: var(--cc-muted);
+    margin-top: 1px;
+}
+
+.pf-edu-year {
+    font-size: 0.7rem;
+    color: var(--cc-muted-2);
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+/* ============================================================
+   NAVIGATION TABS
+   ============================================================ */
+.pf-tabs-bar {
+    background: var(--cc-surface);
+    border: 1px solid var(--cc-border);
+    border-radius: var(--cc-radius);
+    box-shadow: var(--cc-shadow);
+}
+
+.tab-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 15px 22px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6b7280;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.18s ease, background 0.18s ease;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    color: var(--cc-ink);
+    background: #fafafa;
+}
+
+.tab-btn.active {
+    color: #4f46e5;
+}
+
+.tab-indicator {
+    display: none;
+    position: absolute;
+    bottom: 0;
+    left: 12px;
+    right: 12px;
+    height: 2.5px;
+    background: linear-gradient(90deg, #4f46e5, #818cf8);
+    border-radius: 2px 2px 0 0;
+}
+
+.tab-btn.active .tab-indicator {
+    display: block;
+}
+
+/* ============================================================
+   CONNECTION SUB-TABS
+   ============================================================ */
+.conn-tab-btn {
+    flex: 1;
+    padding: 7px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.conn-tab-btn.active {
+    background: #fff;
+    color: var(--cc-ink);
+    box-shadow: 0 1px 4px rgb(0 0 0 / .08);
+}
+
+.conn-tab-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--cc-ink);
+}
+
+/* ============================================================
+   CONNECTION CARDS
+   ============================================================ */
+.conn-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 15px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid var(--cc-border);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    gap: 12px;
+}
+
+.conn-card:hover {
+    box-shadow: var(--cc-shadow-md);
+    border-color: #c7d2fe;
+    transform: translateY(-1px);
+}
+
+.conn-card-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--cc-border);
+    flex-shrink: 0;
+    transition: border-color 0.18s ease;
+}
+
+.conn-card:hover .conn-card-avatar {
+    border-color: #a5b4fc;
+}
+
+.conn-card-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cc-ink);
+    transition: color 0.15s ease;
+}
+
+.conn-card:hover .conn-card-name {
+    color: #4f46e5;
+}
+
+.conn-card-meta {
+    font-size: 0.75rem;
+    color: var(--cc-muted);
+    margin-top: 1px;
+}
+
+/* ============================================================
+   POST CARD
+   ============================================================ */
+.post-card {
+    background: #fff;
+    border-radius: var(--cc-radius);
+    border: 1px solid var(--cc-border);
+    box-shadow: var(--cc-shadow);
+    overflow: hidden;
+    transition: box-shadow 0.22s ease, transform 0.18s ease;
+}
+
+.post-card:hover {
+    box-shadow: var(--cc-shadow-md);
+    transform: translateY(-1px);
+}
+
+/* ============================================================
+   EMPTY / LOADING STATES
+   ============================================================ */
+.feed-empty-state {
+    background: #fff;
+    border-radius: var(--cc-radius);
+    border: 1px solid var(--cc-border);
+    box-shadow: var(--cc-shadow);
+    padding: 56px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.feed-empty-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #eef2ff;
+    color: #818cf8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+}
+
+/* ============================================================
+   PROFILE UI/UX REFINEMENT
+   - Centered Card Layout
+   - Premium Spacing System
+   - Refined Header & Stats
+============================================================ */
+
+.pf-centered-layout {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.pf-header-card {
+    position: relative;
+    background: #fff;
+    border-radius: 20px;
+    /* Slightly smoother corners */
+    border: 1px solid #eef2ff;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pf-cover-bar {
+    height: 100px;
+    /* Increased height for better balance */
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse 100% 140% at 10% 50%, hsl(225, 70%, 35%) 0%, transparent 65%),
+        radial-gradient(ellipse 80% 120% at 90% 10%, hsl(255, 65%, 45%) 0%, transparent 60%),
+        linear-gradient(135deg, hsl(225, 70%, 35%) 0%, hsl(240, 65%, 45%) 50%, hsl(255, 60%, 45%) 100%);
+}
+
+.pf-cover-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+}
+
+/* Shimmer effect for banner */
+.pf-cover-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, 0.08) 50%, transparent 60%);
+    animation: banner-shimmer 6s infinite ease-in-out;
+}
+
+@keyframes banner-shimmer {
+    0% {
+        transform: translateX(-150%);
+    }
+
+    50% {
+        transform: translateX(150%);
+    }
+
+    100% {
+        transform: translateX(150%);
+    }
+}
+
+/* Avatar overlap adjustment */
+#profileAvatar {
+    margin-top: -50px;
+    /* Deeper overlap */
+    border: 5px solid #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.pf-header-info {
+    padding-top: 4px;
+    /* Align better with avatar */
+}
+
+.pf-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #1a1e2e;
+    margin-bottom: 2px;
+}
+
+.pf-badge-row {
+    margin: 8px 0 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.pf-location {
+    font-size: 0.8125rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+/* Stats Row Refinement */
+.pf-stats-row {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin: 24px 0 8px;
+    border: 1px solid #f1f5f9;
+}
+
+.pf-stat-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.pf-stat-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #4f46e5;
+    line-height: 1;
+}
+
+.pf-stat-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+}
+
+.pf-stat-divider {
+    width: 1px;
+    height: 32px;
+    background: #e2e8f0;
+    margin: 0 16px;
+}
+
+/* Desktop Actions alignment */
+@media (min-width: 640px) {
+    .pf-header-actions {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        padding-top: 8px;
+    }
+}
+
+/* Tabs Bar Optimization */
+.pf-tabs-bar {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    overflow: hidden;
+}
+
+.tab-btn {
+    padding: 14px 24px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-btn i {
+    font-size: 0.825rem;
+    opacity: 0.7;
+}
+
+.tab-btn:hover {
+    color: #4f46e5;
+    background: #f5f7ff;
+}
+
+.tab-btn.active {
+    color: #4f46e5;
+    background: #f5f7ff;
+}
+
+.tab-indicator {
+    height: 3px;
+    background: #4f46e5;
+    border-radius: 3px 3px 0 0;
+}
+
+/* Responsive Overrides */
+@media (max-width: 639px) {
+    .pf-centered-layout {
+        padding: 0 4px;
+    }
+
+    .pf-cover-bar {
+        height: 110px;
+    }
+
+    .pf-header-card .p-5 {
+        padding: 0 20px 28px !important;
+        text-align: center;
+    }
+
+    .pf-avatar-info-container {
+        flex-direction: column !important;
+        align-items: center !important;
+        width: 100%;
+        gap: 0 !important;
+    }
+
+    #profileAvatar {
+        margin-top: -50px;
+        margin-bottom: 12px;
+        width: 100px;
+        height: 100px;
+        flex-shrink: 0;
+    }
+
+    .pf-header-info {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .pf-stats-row {
+        margin: 24px auto 0;
+        border-radius: 12px;
+        border: 1px solid #f1f5f9;
+        padding: 12px 20px;
+        background: #f8fafc;
+        width: 100%;
+        max-width: 340px;
+        /* Centered plate instead of full width stripe */
+        display: flex;
+        justify-content: center;
+    }
+
+    .pf-header-actions {
+        margin-top: 20px;
+        gap: 10px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .tab-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 12px 10px;
+        font-size: 0.8125rem;
+    }
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.pf-modal-panel {
+    animation: pf-modal-in 0.22s cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+
+@keyframes pf-modal-in {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+.tab-content {
+    animation: pf-fade-up 0.22s ease-out;
+}
+
+@keyframes pf-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: pf-fade-up 0.25s ease-out forwards;
+}
+
+/* Skeleton shimmer */
+.skeleton {
+    background: linear-gradient(90deg, #f3f4f6 25%, #e9ebee 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+@keyframes skeleton-shimmer {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
+}
+
+/* Like pop */
+.like-btn.liked svg {
+    animation: like-pop 0.32s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+
+@keyframes like-pop {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.45);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Form inputs */
+input[type="text"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgb(99 102 241 / .12);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ============================================================
+   MODAL — ENHANCED SYSTEM
+   ============================================================ */
+
+/* Backdrop */
+.pf-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 20, 40, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 49;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.pf-modal-backdrop.visible {
+    opacity: 1;
+}
+
+/* Panel wrapper */
+.pf-modal-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    pointer-events: none;
+}
+
+/* The panel itself */
+.pf-modal-panel {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #f0f0f6;
+    box-shadow:
+        0 24px 48px -12px rgb(30 40 100 / .22),
+        0 4px 16px -4px rgb(0 0 0 / .08);
+    width: 100%;
+    max-width: 520px;
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+    transition:
+        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.32s cubic-bezier(0.34, 1.18, 0.64, 1);
+    overflow: hidden;
+}
+
+.pf-modal-panel.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.pf-modal-panel.closing {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+/* Header */
+.pf-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    flex-shrink: 0;
+}
+
+.pf-modal-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pf-modal-title-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: #eef2ff;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+}
+
+.pf-modal-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.pf-modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* Scrollable body */
+.pf-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 22px;
+    overscroll-behavior: contain;
+}
+
+/* Footer */
+.pf-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 22px;
+    border-top: 1px solid #f3f4f6;
+    background: #fafbff;
+    flex-shrink: 0;
+}
+
+/* ── FORM FIELD SYSTEM ── */
+.pf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.pf-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #6b7280;
+}
+
+.pf-input {
+    width: 100%;
+    padding: 10px 13px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    color: #111827;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    line-height: 1.5;
+}
+
+.pf-input::placeholder {
+    color: #c4c9d4;
+}
+
+.pf-input:focus {
+    background: #fff;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3.5px rgb(99 102 241 / .13);
+}
+
+.pf-input:hover:not(:focus) {
+    border-color: #c7d2fe;
+    background: #fff;
+}
+
+.pf-textarea {
+    width: 100%;
+    padding: 11px 13px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    color: #111827;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    outline: none;
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.6;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.pf-textarea:focus {
+    background: #fff;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3.5px rgb(99 102 241 / .13);
+}
+
+.pf-input-hint {
+    font-size: 0.71rem;
+    color: #9ca3af;
+    margin-top: 1px;
+}
+
+/* Input row (two columns) */
+.pf-input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+@media (max-width: 400px) {
+    .pf-input-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Checkbox */
+.pf-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+}
+
+.pf-checkbox {
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    accent-color: #4f46e5;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.pf-checkbox-label {
+    font-size: 0.82rem;
+    color: #4b5563;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* ── ENTRY CARD (experience / education) ── */
+.pf-entry-card {
+    background: #f9fafb;
+    border: 1.5px solid #e9eaf0;
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.pf-entry-card:focus-within {
+    border-color: #c7d2fe;
+}
+
+.pf-entry-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 14px;
+    background: #fff;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.pf-entry-label {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    letter-spacing: -0.01em;
+}
+
+.pf-entry-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: #eef2ff;
+    color: #4f46e5;
+    font-size: 0.65rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pf-remove-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 7px;
+    border: 1px solid #fecaca;
+    background: #fff5f5;
+    color: #ef4444;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pf-remove-btn:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
+.pf-entry-body {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ── ADD BUTTON ── */
+.pf-add-btn {
+    width: 100%;
+    padding: 11px;
+    border-radius: 12px;
+    border: 2px dashed #c7d2fe;
+    background: transparent;
+    color: #6366f1;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.pf-add-btn:hover {
+    background: #eef2ff;
+    border-color: #818cf8;
+    color: #4f46e5;
+}
+
+/* ── SKILLS in modal ── */
+.pf-skill-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px 5px 12px;
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    transition: background 0.15s;
+}
+
+.pf-skill-remove {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: none;
+    background: #c7d2fe;
+    color: #4338ca;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.6rem;
+    transition: background 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.pf-skill-remove:hover {
+    background: #fecaca;
+    color: #ef4444;
+}
+
+.pf-skills-empty {
+    padding: 12px 14px;
+    background: #f9fafb;
+    border-radius: 10px;
+    border: 1px dashed #e5e7eb;
+    font-size: 0.78rem;
+    color: #9ca3af;
+    text-align: center;
+}
+
+/* Char counter */
+.pf-char-count {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    text-align: right;
+    margin-top: -2px;
+}
+
+.pf-char-count.warn {
+    color: #f59e0b;
+}
+
+.pf-char-count.over {
+    color: #ef4444;
+}
+
+/* Password strength */
+.pf-pw-strength {
+    height: 3px;
+    border-radius: 2px;
+    background: #f3f4f6;
+    overflow: hidden;
+    margin-top: -2px;
+}
+
+.pf-pw-strength-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.35s ease, background 0.35s ease;
+    width: 0%;
+}
+
+/* Section divider label */
+.pf-section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f3f4f6;
+    margin-bottom: 2px;
+}
+
+/* Mobile: full-screen modal on very small screens */
+@media (max-width: 480px) {
+    .pf-modal-wrap {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .pf-modal-panel {
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        max-height: 92vh;
+        transform: translateY(100%);
+    }
+
+    .pf-modal-panel.visible {
+        transform: translateY(0);
+    }
+
+    .pf-modal-panel.closing {
+        transform: translateY(100%);
+    }
+}
+
+/* ============================================================
+   MOBILE ABOUT TAB
+   Desktop (lg+): sidebar always visible as grid column 1.
+   Mobile (<lg):  hidden by default via tab-content,
+                  revealed when switchTab('about') is called.
+============================================================ */
+
+/* Hide the About tab button on desktop — it's not needed there */
+@media (min-width: 1024px) {
+    .pf-about-tab-btn {
+        display: none !important;
+    }
+
+    /* Force the sidebar always visible on desktop,
+       regardless of what tab state JS sets */
+    #aboutTab {
+        display: block !important;
+        opacity: 1 !important;
+        animation: none !important;
+    }
+}
+
+/* Mobile: aboutTab is a standard tab-content panel.
+   It starts hidden (via .hidden class added by switchTab).
+   When active, JS removes .hidden and adds .animate-fade-in. */
+@media (max-width: 1023px) {
+
+    /* postsTab and connectionsTab span full width on mobile */
+    #postsTab,
+    #connectionsTab {
+        grid-column: 1 / -1;
+    }
+}

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - CampusConnect</title>
+
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/login.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <script defer src="{{ url_for('static', filename='js/core/utils.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/pages/login.js') }}"></script>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4 gradient-soft text-slate-900">
+
+    <div class="w-full max-w-md animate-fade-in-up">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-elevated">
+            <div class="p-8">
+
+                <!-- Header -->
+                <div class="text-center mb-8 animate-fade-in delay-100">
+                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 mb-4">
+                        <i class="fa-solid fa-graduation-cap text-2xl text-indigo-600"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-900">Campus Connect</h1>
+                    <p class="text-slate-500 text-sm mt-1" id="login-subtitle">Student Login</p>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="space-y-4">
+
+                    <!-- STUDENT LOGIN FLOW -->
+                    <div id="student-flow" class="space-y-4 animate-fade-in delay-200">
+
+                        <!-- Branch -->
+                        <div>
+                            <label for="branch" class="text-sm font-medium text-slate-700">Branch</label>
+                            <div class="relative mt-1.5">
+                                <i
+                                    class="fa-solid fa-book absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <select id="major" name="major" required
+                                    class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-3 text-sm input-glow appearance-none cursor-pointer transition-all duration-200">
+                                    <option value="" disabled selected>Select your branch</option>
+                                    <option value="AIDS">AIDS</option>
+                                    <option value="AIML">AIML</option>
+                                    <option value="CE">CE</option>
+                                    <option value="CEA">CEA</option>
+                                    <option value="CS&IT">CS & IT</option>
+                                    <option value="CSD">CSD</option>
+                                    <option value="CSE">CSE</option>
+                                    <option value="CSE-CS">CSE-CS</option>
+                                    <option value="CSE-CYBER">CSE-CYBER</option>
+                                    <option value="CSE-DS">CSE-DS</option>
+                                    <option value="CSE-AI">CSE-AI</option>
+                                    <option value="CSE-BIO">CSE-BIO</option>
+                                    <option value="BIOTECH">BIOTECH</option>
+                                    <option value="CST">CST</option>
+                                    <option value="IT">IT</option>
+                                    <option value="MA&CP">MA & CP</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Enrollment -->
+                        <div>
+                            <label for="enrollment" class="text-sm font-medium text-slate-700">Enrollment Number</label>
+                            <div class="relative mt-1.5 z-20" style="overflow:visible;">
+                                <i
+                                    class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input id="enrollment" type="text" required disabled
+                                    class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-3 text-sm input-glow disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                    placeholder="Select branch first" autocomplete="off">
+                                <!-- Suggestions Dropdown -->
+                                <div id="suggestions-box"
+                                    class="absolute z-30 w-full bg-white border border-slate-200 rounded-lg shadow-lg mt-1.5 hidden max-h-48 overflow-y-auto animate-slide-down">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Auto-filled: Name -->
+                        <div>
+                            <label for="student-name" class="text-sm font-medium text-slate-700">Student Name</label>
+                            <div class="relative mt-1.5">
+                                <i
+                                    class="fa-solid fa-id-card absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input id="student-name" type="text" readonly
+                                    class="h-11 w-full rounded-lg border border-slate-200 bg-slate-100 pl-10 pr-3 text-sm text-slate-500 cursor-not-allowed"
+                                    placeholder="Auto-filled">
+                            </div>
+                        </div>
+
+                        <!-- Auto-filled: Email -->
+                        <div>
+                            <label for="college-email" class="text-sm font-medium text-slate-700">College Email</label>
+                            <div class="relative mt-1.5">
+                                <i
+                                    class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input id="college-email" type="text" readonly
+                                    class="h-11 w-full rounded-lg border border-slate-200 bg-slate-100 pl-10 pr-3 text-sm text-slate-500 cursor-not-allowed"
+                                    placeholder="Auto-filled">
+                            </div>
+                        </div>
+
+                        <!-- Password (hidden initially, revealed with animation) -->
+                        <div id="student-password-container" class="field-reveal">
+                            <div>
+                                <div class="flex justify-between items-center">
+                                    <label for="student-password"
+                                        class="text-sm font-medium text-slate-700">Password</label>
+                                    <a href="#" id="forgot-password-link"
+                                        class="text-xs text-indigo-600 hover:text-indigo-800 hover:underline transition-colors duration-200"
+                                        tabindex="-1">Forgot?</a>
+                                </div>
+                                <div class="relative mt-1.5">
+                                    <i
+                                        class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                    <input id="student-password" type="password"
+                                        class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-3 text-sm input-glow transition-all duration-200"
+                                        placeholder="Enter your password">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OTP FLOW (Hidden initially) -->
+                    <div id="otp-flow" class="space-y-4 hidden">
+                        <div
+                            class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-sm text-indigo-700 animate-scale-in">
+                            <i class="fa-solid fa-paper-plane mr-1.5"></i>
+                            OTP sent to <span id="masked-email" class="font-semibold">...</span>
+                        </div>
+
+                        <div>
+                            <label for="otp" class="text-sm font-medium text-slate-700 block text-center mb-2">Enter
+                                6-Digit OTP</label>
+                            <div class="relative max-w-[240px] mx-auto">
+                                <input id="otp" type="text" maxlength="6"
+                                    class="h-14 w-full rounded-xl border-2 border-slate-200 bg-slate-50/50 text-2xl tracking-[0.5em] font-bold text-center transition-all duration-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 outline-none"
+                                    placeholder="••••••" autocomplete="one-time-code">
+                            </div>
+                        </div>
+
+                        <div class="text-center text-xs flex items-center justify-center gap-2">
+                            <span id="otp-timer" class="text-slate-500 font-mono text-sm hidden"></span>
+                            <button type="button" id="resend-btn"
+                                class="text-indigo-600 hover:text-indigo-800 hover:underline disabled:text-slate-400 disabled:no-underline disabled:cursor-not-allowed transition-colors duration-200">
+                                Resend OTP
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="login-btn"
+                        class="w-full h-11 gradient-primary text-white rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50 hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98] transition-all duration-200 mt-2"
+                        disabled>
+                        <i class="fa-solid fa-arrow-right text-sm" id="btn-icon"></i>
+                        <span id="btn-text">Continue</span>
+                    </button>
+
+                </form>
+
+                <div class="relative my-6">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-slate-200"></div>
+                    </div>
+                    <div class="relative flex justify-center text-xs"><span
+                            class="bg-white px-3 text-slate-400">or</span></div>
+                </div>
+
+                <div class="text-center space-y-2" id="login-footer">
+                    <p class="text-slate-500 text-sm">
+                        Having trouble?
+                        <a href="{{ url_for('support.contact_support') }}"
+                            class="text-indigo-600 font-semibold hover:text-indigo-800 hover:underline transition-colors duration-200">Contact
+                            Admin</a>
+                    </p>
+                    <p class="text-slate-500 text-sm">
+                        Are you an administrator?
+                        <a href="{{ url_for('auth.admin_login_page') }}"
+                            class="text-indigo-600 font-semibold hover:text-indigo-800 hover:underline transition-colors duration-200">Admin
+                            login</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgot-password-modal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 mx-4">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-slate-900">Reset Password</h3>
+                <button id="close-forgot-modal"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="forgot-password-form">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Enrollment No. or Email</label>
+                    <input type="text" id="fp-identifier" required
+                        class="w-full h-11 rounded-lg border border-slate-200 px-3 text-sm input-glow transition-all duration-200"
+                        placeholder="Enter your ID">
+                    <p id="fp-status" class="text-xs text-slate-500 mt-2">A link to reset your password will be sent to
+                        your email.</p>
+                </div>
+
+                <button type="submit" id="fp-btn"
+                    class="w-full h-11 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98] transition-all duration-200 mt-5 flex items-center justify-center gap-2">
+                    <span id="fp-btn-text">Send Reset Link</span>
+                    <i id="fp-btn-spinner" class="fas fa-spinner fa-spin" style="display:none;"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+</body>
+
+</html>

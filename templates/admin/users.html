@@ -1,0 +1,661 @@
+{% extends "layouts/admin_base.html" %}
+{% block title %}Users Management | Admin{% endblock %}
+{% block header_title %}Users Management{% endblock %}
+
+{% block head %}
+<style>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    @keyframes rowIn {
+        from {
+            opacity: 0;
+            transform: translateX(-6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes modalIn {
+        from {
+            opacity: 0;
+            transform: scale(0.96) translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .us-page {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        animation: fadeInUp 0.45s ease-out both;
+    }
+
+    /* ── Card ── */
+    .us-card {
+        background: white;
+        border: 1px solid hsl(220, 18%, 90%);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 1px 4px hsl(221 30% 50%/0.07);
+    }
+
+    .us-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid hsl(220, 18%, 92%);
+        flex-wrap: wrap;
+        gap: 0.875rem;
+    }
+
+    .us-card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .us-card-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        background: hsl(221, 68%, 93%);
+        color: hsl(221, 68%, 40%);
+    }
+
+    .us-card-title {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: hsl(221, 39%, 11%);
+    }
+
+    /* ── Filters ── */
+    .us-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.625rem;
+        align-items: center;
+    }
+
+    .us-search {
+        flex: 1;
+        min-width: 200px;
+        padding: 0.5rem 0.875rem;
+        font-size: 0.875rem;
+        border: 1.5px solid hsl(220, 18%, 86%);
+        border-radius: 0.5rem;
+        background: white;
+        color: hsl(221, 39%, 11%);
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .us-search:focus {
+        border-color: hsl(221, 68%, 50%);
+        box-shadow: 0 0 0 3px hsl(221 68% 50%/0.12);
+    }
+
+    .us-select {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        border: 1.5px solid hsl(220, 18%, 86%);
+        border-radius: 0.5rem;
+        background: white;
+        color: hsl(221, 39%, 11%);
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .us-select:focus {
+        border-color: hsl(221, 68%, 50%);
+        box-shadow: 0 0 0 3px hsl(221 68% 50%/0.12);
+    }
+
+    /* ── Table ── */
+    .us-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .us-table thead {
+        background: hsl(221, 68%, 28%);
+    }
+
+    .us-table thead th {
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: rgba(255, 255, 255, 0.85);
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .us-table tbody tr {
+        border-bottom: 1px solid hsl(220, 18%, 94%);
+        transition: background 0.12s;
+        animation: rowIn 0.3s ease-out both;
+    }
+
+    .us-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .us-table tbody tr:hover {
+        background: hsl(221, 68%, 28%, 0.025);
+    }
+
+    .us-table td {
+        padding: 0.875rem 1.25rem;
+    }
+
+    /* ── Avatar ── */
+    .us-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: linear-gradient(135deg, hsl(221, 68%, 40%), hsl(270, 60%, 50%));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 0.875rem;
+    }
+
+    /* ── Badges ── */
+    .us-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .us-badge-active {
+        background: hsl(142, 60%, 90%);
+        color: hsl(142, 60%, 28%);
+    }
+
+    .us-badge-blocked {
+        background: hsl(0, 90%, 93%);
+        color: hsl(0, 65%, 40%);
+    }
+
+    .us-badge-pending {
+        background: hsl(45, 93%, 88%);
+        color: hsl(32, 80%, 33%);
+    }
+
+    .us-badge-inactive {
+        background: hsl(220, 14%, 92%);
+        color: hsl(220, 14%, 44%);
+    }
+
+    .us-badge-student {
+        background: hsl(213, 94%, 93%);
+        color: hsl(213, 68%, 38%);
+    }
+
+    .us-badge-official {
+        background: hsl(221, 68%, 93%);
+        color: hsl(221, 68%, 35%);
+    }
+
+    .us-badge-admin {
+        background: hsl(0, 90%, 93%);
+        color: hsl(0, 65%, 40%);
+    }
+
+    .us-badge-club {
+        background: hsl(270, 60%, 92%);
+        color: hsl(270, 60%, 40%);
+    }
+
+    /* ── Toggle ── */
+    .us-toggle {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        background: hsl(220, 14%, 80%);
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: background 0.2s;
+        flex-shrink: 0;
+        border: none;
+    }
+
+    .us-toggle.active {
+        background: hsl(142, 60%, 40%);
+    }
+
+    .us-toggle::after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        background: white;
+        border-radius: 50%;
+        top: 2px;
+        left: 2px;
+        transition: transform 0.2s;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .us-toggle.active::after {
+        transform: translateX(18px);
+    }
+
+    .us-toggle:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* ── View details btn ── */
+    .us-view-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        border: 1.5px solid hsl(221, 68%, 80%);
+        background: hsl(221, 68%, 95%);
+        color: hsl(221, 68%, 38%);
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .us-view-btn:hover {
+        background: hsl(221, 68%, 88%);
+        border-color: hsl(221, 68%, 60%);
+    }
+
+    /* ── Skeleton ── */
+    .sk-row td {
+        padding: 0.875rem 1.25rem;
+    }
+
+    .sk-block {
+        height: 0.875rem;
+        border-radius: 0.25rem;
+        background: linear-gradient(90deg, hsl(220, 18%, 93%) 25%, hsl(220, 18%, 97%) 50%, hsl(220, 18%, 93%) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s ease-in-out infinite;
+    }
+
+    /* ── Empty ── */
+    .us-empty {
+        padding: 3.5rem 1.5rem;
+        text-align: center;
+    }
+
+    .us-empty-icon {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 50%;
+        background: hsl(220, 18%, 95%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.875rem;
+        color: hsl(220, 14%, 50%);
+        font-size: 1.25rem;
+    }
+
+    .us-empty strong {
+        display: block;
+        font-size: 0.9375rem;
+        color: hsl(221, 39%, 11%);
+        margin-bottom: 0.25rem;
+    }
+
+    .us-empty span {
+        font-size: 0.875rem;
+        color: hsl(220, 14%, 55%);
+    }
+
+    /* ── Modal backdrop ── */
+    .us-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 12, 24, 0.55);
+        backdrop-filter: blur(4px);
+        z-index: 60;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .us-modal {
+        background: white;
+        border-radius: 1rem;
+        width: 100%;
+        max-width: 660px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+        animation: modalIn 0.25s cubic-bezier(0.34, 1.1, 0.64, 1) both;
+    }
+
+    .us-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.125rem 1.5rem;
+        border-bottom: 1px solid hsl(220, 18%, 92%);
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    .us-modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .us-modal-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        background: hsl(221, 68%, 93%);
+        color: hsl(221, 68%, 40%);
+    }
+
+    .us-modal-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: hsl(221, 39%, 11%);
+    }
+
+    .us-modal-close {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        border: none;
+        background: hsl(220, 18%, 94%);
+        color: hsl(220, 14%, 46%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.15s;
+    }
+
+    .us-modal-close:hover {
+        background: hsl(0, 90%, 93%);
+        color: hsl(0, 65%, 45%);
+    }
+
+    .us-modal-body {
+        padding: 1.5rem;
+    }
+
+    /* ── Modal content ── */
+    .us-modal-profile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .us-modal-avatar {
+        width: 5rem;
+        height: 5rem;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid hsl(221, 68%, 90%);
+        margin-bottom: 0.875rem;
+        box-shadow: 0 4px 12px hsl(221 68% 50%/0.15);
+    }
+
+    .us-modal-name {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: hsl(221, 39%, 11%);
+        margin-bottom: 0.25rem;
+    }
+
+    .us-modal-email {
+        font-size: 0.8125rem;
+        color: hsl(220, 14%, 50%);
+        margin-bottom: 0.625rem;
+    }
+
+    .us-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.625rem;
+    }
+
+    @media(max-width:480px) {
+        .us-detail-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .us-detail-cell {
+        background: hsl(220, 20%, 98%);
+        border: 1px solid hsl(220, 18%, 91%);
+        border-radius: 0.625rem;
+        padding: 0.75rem;
+    }
+
+    .us-detail-cell .lbl {
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: hsl(220, 14%, 55%);
+        margin-bottom: 0.25rem;
+    }
+
+    .us-detail-cell .val {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: hsl(221, 39%, 11%);
+    }
+
+    .us-stats-row {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .us-stat-cell {
+        flex: 1;
+        text-align: center;
+        background: hsl(221, 68%, 97%);
+        border: 1px solid hsl(221, 68%, 88%);
+        border-radius: 0.75rem;
+        padding: 1rem;
+    }
+
+    .us-stat-cell .sv {
+        font-size: 1.875rem;
+        font-weight: 800;
+        color: hsl(221, 68%, 35%);
+    }
+
+    .us-stat-cell .sl {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: hsl(221, 68%, 45%);
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="us-page">
+
+        <div class="us-card">
+            <div class="us-card-header">
+                <div class="us-card-header-left">
+                    <div class="us-card-icon"><i class="fa-solid fa-users"></i></div>
+                    <span class="us-card-title">All Users</span>
+                </div>
+                <div class="us-filters">
+                    <input type="text" class="us-search" placeholder="Search by name or email…" id="search-input">
+                    <select class="us-select" id="branch-filter">
+                        <option value="">All Branches</option>
+                    </select>
+                    <select class="us-select" id="status-filter">
+                        <option value="">All Statuses</option>
+                        <option value="active" selected>Active</option>
+                        <option value="pending">Pending</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
+                    <select class="us-select" id="role-filter">
+                        <option value="">All Roles</option>
+                        <option value="student">Student</option>
+                        <option value="official">Official</option>
+                        <option value="admin">Admin</option>
+                        <option value="club">Club</option>
+                    </select>
+                </div>
+            </div>
+            <div style="overflow-x:auto;">
+                <div id="users-loading" style="padding:2rem;text-align:center;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem;color:hsl(221,68%,40%);"></i>
+                </div>
+                <table class="us-table" id="users-table" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Join Date</th>
+                            <th>Active</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══ User Details Modal ══ -->
+<div id="user-details-modal" class="us-modal-backdrop" style="display:none;">
+    <div class="us-modal">
+        <div class="us-modal-header">
+            <div class="us-modal-header-left">
+                <div class="us-modal-icon"><i class="fa-solid fa-user"></i></div>
+                <h3 class="us-modal-title">User Details</h3>
+            </div>
+            <button class="us-modal-close" onclick="closeUserModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="us-modal-body">
+            <div id="modal-loading" style="text-align:center;padding:2rem;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem;color:hsl(221,68%,40%);"></i>
+            </div>
+            <div id="modal-data" style="display:none;">
+                <div class="us-modal-profile">
+                    <img id="modal-avatar" src="" alt="Profile" class="us-modal-avatar">
+                    <p class="us-modal-name" id="modal-name"></p>
+                    <p class="us-modal-email" id="modal-email"></p>
+                    <span id="modal-role" class="us-badge"></span>
+                </div>
+                <div class="us-detail-grid">
+                    <div class="us-detail-cell">
+                        <div class="lbl">Status</div>
+                        <div class="val" id="modal-status"></div>
+                    </div>
+                    <div class="us-detail-cell">
+                        <div class="lbl">Joined</div>
+                        <div class="val" id="modal-joined"></div>
+                    </div>
+                    <div class="us-detail-cell">
+                        <div class="lbl">University</div>
+                        <div class="val" id="modal-university"
+                            style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                    </div>
+                    <div class="us-detail-cell">
+                        <div class="lbl">Major</div>
+                        <div class="val" id="modal-major"></div>
+                    </div>
+                    <div class="us-detail-cell">
+                        <div class="lbl">Batch</div>
+                        <div class="val" id="modal-batch"></div>
+                    </div>
+                    <div class="us-detail-cell">
+                        <div class="lbl">User ID</div>
+                        <div class="val" id="modal-id"></div>
+                    </div>
+                </div>
+                <div class="us-stats-row">
+                    <div class="us-stat-cell">
+                        <div class="sv" id="modal-posts-count">0</div>
+                        <div class="sl">Posts</div>
+                    </div>
+                    <div class="us-stat-cell">
+                        <div class="sv" id="modal-connections-count">0</div>
+                        <div class="sl">Connections</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin/users.js') }}"></script>
+{% endblock %}

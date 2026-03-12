@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Guidelines - Campus Connect</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 1.25rem;
+            left: 1.25rem;
+            z-index: 100;
+            width: 2.75rem;
+            height: 2.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+            background: hsl(0 0% 100% / 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid hsl(0 0% 100% / 0.15);
+            color: white;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+
+        .back-btn:hover {
+            background: hsl(0 0% 100% / 0.22);
+            transform: translateX(-2px);
+        }
+
+        .back-btn.scrolled {
+            background: white;
+            color: #334155;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px hsl(221 30% 50% / 0.1);
+        }
+
+        .back-btn.scrolled:hover {
+            background: #f1f5f9;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1.visible {
+            transition-delay: 0.1s;
+        }
+
+        .reveal-delay-2.visible {
+            transition-delay: 0.2s;
+        }
+
+        .reveal-delay-3.visible {
+            transition-delay: 0.3s;
+        }
+
+        .reveal-delay-4.visible {
+            transition-delay: 0.4s;
+        }
+
+        .page-hero {
+            background: linear-gradient(135deg, hsl(270, 50%, 20%) 0%, hsl(270, 60%, 35%) 50%, hsl(250, 55%, 40%) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 50% at 50% -10%, hsl(270 60% 55% / 0.25) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .page-hero .dot-grid {
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            opacity: 0.04;
+            background-image: radial-gradient(circle, hsl(0, 0%, 100%) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .value-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 2rem;
+            transition: box-shadow 0.35s ease, border-color 0.35s ease, transform 0.35s ease;
+            box-shadow: 0 1px 3px 0 hsl(221 30% 50% / 0.06);
+        }
+
+        .value-card:hover {
+            box-shadow: 0 12px 28px -8px hsl(270 50% 30% / 0.15);
+            border-color: hsl(270 60% 50% / 0.25);
+            transform: translateY(-4px);
+        }
+
+        .value-card .card-icon {
+            transition: transform 0.35s ease;
+        }
+
+        .value-card:hover .card-icon {
+            transform: scale(1.12) rotate(-3deg);
+        }
+
+        .do-item,
+        .dont-item {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .do-item:hover,
+        .dont-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px -2px hsl(0 0% 0% / 0.06);
+        }
+
+        .example-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .example-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px -6px hsl(0 0% 0% / 0.1);
+        }
+
+        .section-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: hsl(270, 60%, 50%);
+        }
+
+        .cta-card {
+            background: linear-gradient(135deg, hsl(270, 50%, 20%) 0%, hsl(270, 60%, 35%) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 60% 60% at 80% 20%, hsl(270 60% 55% / 0.2) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .action-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .action-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px -6px hsl(0 0% 0% / 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Back Button -->
+    <a href="{{ url_for('main.home') }}#site-footer" class="back-btn" id="back-btn" title="Back to Footer">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+    </a>
+
+    <!-- HERO -->
+    <section class="page-hero text-white py-24 sm:py-28 px-4 sm:px-6 lg:px-8">
+        <div class="dot-grid"></div>
+        <div class="relative z-10 max-w-3xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-widest mb-8"
+                style="border:1px solid hsl(0 0% 100% / 0.1);background:hsl(0 0% 100% / 0.05);">
+                <span
+                    style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px #a78bfa;"></span>
+                Community Standards
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5"
+                style="letter-spacing:-0.025em;line-height:1.1;">
+                Community <span style="color:hsl(270, 60%, 70%);">Guidelines</span>
+            </h1>
+            <p class="text-base md:text-lg mb-6 max-w-xl mx-auto font-medium" style="color:hsl(270, 20%, 75%);">
+                Building a respectful, inclusive community together — one interaction at a time.
+            </p>
+        </div>
+    </section>
+
+    <!-- Welcome Card -->
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20">
+        <div class="reveal bg-white rounded-2xl p-8 md:p-12 border border-slate-200"
+            style="box-shadow:0 20px 40px -12px hsl(270 50% 20% / 0.12);">
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-5 text-center" style="letter-spacing:-0.025em;">
+                Welcome to Campus Connect</h2>
+            <div class="max-w-3xl mx-auto text-center space-y-4 text-slate-600 text-base sm:text-lg leading-relaxed">
+                <p>
+                    Campus Connect is a safe, verified network built exclusively for students and staff
+                    at accredited institutions. These Community Guidelines help us maintain a respectful,
+                    inclusive space where everyone can connect, collaborate, and thrive.
+                </p>
+                <p class="font-semibold" style="color:hsl(270, 60%, 45%);">
+                    We're not just about rules — we're about building community values that make Campus
+                    Connect a better place for everyone.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Values -->
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+        <div class="reveal text-center max-w-xl mx-auto mb-12">
+            <span class="section-label">Foundation</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3" style="letter-spacing:-0.025em;">Our Core
+                Values</h2>
+            <p class="text-slate-500 text-sm sm:text-base">Everything we do is guided by these four principles.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="value-card reveal" style="border-left:4px solid hsl(217, 91%, 60%);">
+                <div class="card-icon w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center text-3xl mb-5">
+                    <i class="fa-solid fa-handshake"></i></div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Respect</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">We treat each other with dignity and kindness.
+                    Respectful disagreement is welcome; personal attacks are not.</p>
+            </div>
+            <div class="value-card reveal reveal-delay-1" style="border-left:4px solid hsl(45, 93%, 47%);">
+                <div
+                    class="card-icon w-14 h-14 bg-yellow-50 text-yellow-500 rounded-2xl flex items-center justify-center text-3xl mb-5">
+                    <i class="fa-solid fa-star"></i></div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Authenticity</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">Be yourself and be genuine. Campus Connect is about
+                    building real community with real people.</p>
+            </div>
+            <div class="value-card reveal reveal-delay-2" style="border-left:4px solid hsl(330, 81%, 60%);">
+                <div class="card-icon w-14 h-14 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center text-3xl mb-5">
+                    <i class="fa-solid fa-heart"></i></div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Inclusion</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">Everyone belongs here. We celebrate diversity and
+                    create space for all backgrounds, identities, and experiences.</p>
+            </div>
+            <div class="value-card reveal reveal-delay-3" style="border-left:4px solid hsl(142, 71%, 45%);">
+                <div class="card-icon w-14 h-14 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center text-3xl mb-5">
+                    <i class="fa-solid fa-shield-halved"></i></div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Safety</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">Everyone deserves to feel safe online. Zero tolerance
+                    for harassment, threats, or harmful behavior.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Do's and Don'ts -->
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+            <!-- DOs -->
+            <div class="reveal">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold"
+                        style="background:hsl(142 76% 94%);color:hsl(142 71% 35%);">✓</div>
+                    <div>
+                        <span class="section-label"
+                            style="color:hsl(142, 71%, 40%);margin-bottom:0.25rem;">Expected</span>
+                        <h2 class="text-xl font-bold text-slate-900">Behavior We Encourage</h2>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="do-item bg-green-50/70 border border-green-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(142, 71%, 45%);"></div>
+                        <h4 class="font-bold text-green-900 mb-1.5 pl-3">Be Kind and Supportive</h4>
+                        <p class="text-sm text-green-800 pl-3 leading-relaxed">Uplift others. Celebrate achievements,
+                            offer encouragement, and provide support.</p>
+                    </div>
+                    <div class="do-item bg-green-50/70 border border-green-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(142, 71%, 45%);"></div>
+                        <h4 class="font-bold text-green-900 mb-1.5 pl-3">Listen and Learn</h4>
+                        <p class="text-sm text-green-800 pl-3 leading-relaxed">Be open to different perspectives. Listen
+                            to understand, not to respond.</p>
+                    </div>
+                    <div class="do-item bg-green-50/70 border border-green-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(142, 71%, 45%);"></div>
+                        <h4 class="font-bold text-green-900 mb-1.5 pl-3">Share Constructively</h4>
+                        <p class="text-sm text-green-800 pl-3 leading-relaxed">Post content that adds value — helpful
+                            info, thoughtful questions, or genuine conversation.</p>
+                    </div>
+                    <div class="do-item bg-green-50/70 border border-green-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(142, 71%, 45%);"></div>
+                        <h4 class="font-bold text-green-900 mb-1.5 pl-3">Respect Privacy</h4>
+                        <p class="text-sm text-green-800 pl-3 leading-relaxed">Ask before sharing someone's story,
+                            information, or photo.</p>
+                    </div>
+                    <div class="do-item bg-green-50/70 border border-green-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(142, 71%, 45%);"></div>
+                        <h4 class="font-bold text-green-900 mb-1.5 pl-3">Look Out for Each Other</h4>
+                        <p class="text-sm text-green-800 pl-3 leading-relaxed">See something concerning? Report it. We
+                            all keep Campus Connect safe together.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DONTs -->
+            <div class="reveal reveal-delay-1">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold"
+                        style="background:hsl(0 86% 94%);color:hsl(0 72% 45%);">✗</div>
+                    <div>
+                        <span class="section-label"
+                            style="color:hsl(0, 72%, 50%);margin-bottom:0.25rem;">Prohibited</span>
+                        <h2 class="text-xl font-bold text-slate-900">Behavior That Harms</h2>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="dont-item bg-red-50/70 border border-red-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(0, 72%, 50%);"></div>
+                        <h4 class="font-bold text-red-900 mb-1.5 pl-3">Harassment or Bullying</h4>
+                        <p class="text-sm text-red-800 pl-3 leading-relaxed">No targeting, insulting, or threatening.
+                            Including cyberbullying and coordinated attacks.</p>
+                    </div>
+                    <div class="dont-item bg-red-50/70 border border-red-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(0, 72%, 50%);"></div>
+                        <h4 class="font-bold text-red-900 mb-1.5 pl-3">Hate Speech or Discrimination</h4>
+                        <p class="text-sm text-red-800 pl-3 leading-relaxed">Zero tolerance for attacks based on
+                            identity — race, gender, orientation, religion, disability.</p>
+                    </div>
+                    <div class="dont-item bg-red-50/70 border border-red-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(0, 72%, 50%);"></div>
+                        <h4 class="font-bold text-red-900 mb-1.5 pl-3">Impersonation or Deception</h4>
+                        <p class="text-sm text-red-800 pl-3 leading-relaxed">One authentic identity per person. Fake
+                            accounts will be removed.</p>
+                    </div>
+                    <div class="dont-item bg-red-50/70 border border-red-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(0, 72%, 50%);"></div>
+                        <h4 class="font-bold text-red-900 mb-1.5 pl-3">Unwanted Sexual Content</h4>
+                        <p class="text-sm text-red-800 pl-3 leading-relaxed">No sexually explicit content,
+                            non-consensual images, or sexual harassment.</p>
+                    </div>
+                    <div class="dont-item bg-red-50/70 border border-red-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(0, 72%, 50%);"></div>
+                        <h4 class="font-bold text-red-900 mb-1.5 pl-3">Privacy Violations</h4>
+                        <p class="text-sm text-red-800 pl-3 leading-relaxed">No doxxing or sharing others' private
+                            information without consent.</p>
+                    </div>
+                    <div class="dont-item bg-red-50/70 border border-red-200 p-5 rounded-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full" style="background:hsl(0, 72%, 50%);"></div>
+                        <h4 class="font-bold text-red-900 mb-1.5 pl-3">Spam or Manipulation</h4>
+                        <p class="text-sm text-red-800 pl-3 leading-relaxed">No excessive posting, fake engagement, or
+                            coordinated inauthentic behavior.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Example Posts -->
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="reveal text-center max-w-xl mx-auto mb-10">
+            <span class="section-label">Inspiration</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3" style="letter-spacing:-0.025em;">Great
+                Community Posts</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="example-card reveal bg-white p-6 rounded-xl border border-slate-200"
+                style="border-left:3px solid hsl(142, 71%, 45%);">
+                <div class="text-2xl mb-3 text-indigo-500"><i class="fa-solid fa-graduation-cap"></i></div>
+                <h4 class="font-bold text-slate-900 mb-2 text-sm">Asking for Study Help</h4>
+                <p class="text-slate-500 text-sm italic leading-relaxed">"I'm struggling with the calculus midterm.
+                    Anyone want to form a study group?"</p>
+            </div>
+            <div class="example-card reveal reveal-delay-1 bg-white p-6 rounded-xl border border-slate-200"
+                style="border-left:3px solid hsl(142, 71%, 45%);">
+                <div class="text-2xl mb-3 text-slate-500"><i class="fa-solid fa-briefcase"></i></div>
+                <h4 class="font-bold text-slate-900 mb-2 text-sm">Sharing Opportunities</h4>
+                <p class="text-slate-500 text-sm italic leading-relaxed">"The library is hiring student workers! Check
+                    the job board if interested."</p>
+            </div>
+            <div class="example-card reveal reveal-delay-2 bg-white p-6 rounded-xl border border-slate-200"
+                style="border-left:3px solid hsl(142, 71%, 45%);">
+                <div class="text-2xl mb-3 text-yellow-500"><i class="fa-solid fa-champagne-glasses"></i></div>
+                <h4 class="font-bold text-slate-900 mb-2 text-sm">Celebrating Achievement</h4>
+                <p class="text-slate-500 text-sm italic leading-relaxed">"Congrats to everyone who got internships! You
+                    all deserve it!"</p>
+            </div>
+            <div class="example-card reveal reveal-delay-3 bg-white p-6 rounded-xl border border-slate-200"
+                style="border-left:3px solid hsl(142, 71%, 45%);">
+                <div class="text-2xl mb-3 text-blue-500"><i class="fa-solid fa-circle-question"></i></div>
+                <h4 class="font-bold text-slate-900 mb-2 text-sm">Starting Thoughtful Discussion</h4>
+                <p class="text-slate-500 text-sm italic leading-relaxed">"What's your favorite campus spot? I'd love to
+                    explore some new places!"</p>
+            </div>
+            <div class="example-card reveal reveal-delay-4 bg-white p-6 rounded-xl border border-slate-200"
+                style="border-left:3px solid hsl(142, 71%, 45%);">
+                <div class="text-2xl mb-3 text-red-500"><i class="fa-solid fa-life-ring"></i></div>
+                <h4 class="font-bold text-slate-900 mb-2 text-sm">Seeking Genuine Support</h4>
+                <p class="text-slate-500 text-sm italic leading-relaxed">"Going through a tough time. Anyone know good
+                    campus counseling resources?"</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reporting, Support, Appeals -->
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div class="action-card reveal bg-white p-7 rounded-xl border border-slate-200 flex flex-col h-full">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg mb-4"
+                    style="background:hsl(270 80% 95%);color:hsl(270 60% 50%);">
+                    <i class="fa-solid fa-flag"></i>
+                </div>
+                <h3 class="text-base font-bold text-slate-900 mb-2">Report Violations</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-5 flex-grow">Saw something that violates these
+                    guidelines? Report it. We review all reports within 24 hours.</p>
+                <a href="{{ url_for('support.report_issue') }}"
+                    class="text-sm font-semibold flex items-center gap-2 transition-colors"
+                    style="color:hsl(270, 60%, 50%);">
+                    Report now <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+            </div>
+            <div
+                class="action-card reveal reveal-delay-1 bg-white p-7 rounded-xl border border-slate-200 flex flex-col h-full">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg mb-4"
+                    style="background:hsl(270 80% 95%);color:hsl(270 60% 50%);">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <h3 class="text-base font-bold text-slate-900 mb-2">Need Support?</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-5 flex-grow">Being harassed? Need help? We're here
+                    for you. We respond within 24 hours.</p>
+                <a href="{{ url_for('support.contact_support') }}"
+                    class="text-sm font-semibold flex items-center gap-2 transition-colors"
+                    style="color:hsl(270, 60%, 50%);">
+                    Contact us <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+            </div>
+            <div class="action-card reveal reveal-delay-2 p-7 rounded-xl border flex flex-col h-full"
+                style="background:hsl(45 100% 97%);border-color:hsl(45 90% 80%);">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg mb-4"
+                    style="background:hsl(45 90% 88%);color:hsl(45 80% 35%);">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <h3 class="text-base font-bold mb-2" style="color:hsl(35 80% 25%);">Appeals Process</h3>
+                <p class="text-sm leading-relaxed mb-4" style="color:hsl(35 50% 35%);">Think we made a mistake? We have
+                    a fair appeals process.</p>
+                <ul class="text-sm space-y-1.5 mt-auto" style="color:hsl(35 50% 35%);">
+                    <li><strong>1.</strong> You'll receive an explanation.</li>
+                    <li><strong>2.</strong> Appeal within 30 days via email.</li>
+                    <li><strong>3.</strong> Moderation team review.</li>
+                    <li><strong>4.</strong> Final decision within 30 days.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Our Commitment -->
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="reveal bg-white p-8 md:p-10 rounded-xl border border-slate-200"
+            style="box-shadow:0 1px 3px 0 hsl(221 30% 50% / 0.06);">
+            <div class="text-center mb-8">
+                <span class="section-label">Promise</span>
+                <h2 class="text-2xl font-bold text-slate-900">Our Commitment to You</h2>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                <div class="text-center">
+                    <div class="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-lg mb-3"
+                        style="background:hsl(270 80% 95%);color:hsl(270 60% 50%);">
+                        <i class="fa-solid fa-scale-balanced text-sm"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-900 text-sm mb-1">Fairness</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Applied consistently to everyone.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-lg mb-3"
+                        style="background:hsl(270 80% 95%);color:hsl(270 60% 50%);">
+                        <i class="fa-solid fa-eye text-sm"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-900 text-sm mb-1">Transparency</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">We explain our decisions clearly.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-lg mb-3"
+                        style="background:hsl(270 80% 95%);color:hsl(270 60% 50%);">
+                        <i class="fa-solid fa-bolt text-sm"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-900 text-sm mb-1">Speed</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Reports reviewed within 24 hours.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-lg mb-3"
+                        style="background:hsl(270 80% 95%);color:hsl(270 60% 50%);">
+                        <i class="fa-solid fa-heart text-sm"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-900 text-sm mb-1">Respect</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Dignity even when enforcing rules.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-lg mb-3"
+                        style="background:hsl(270 80% 95%);color:hsl(270 60% 50%);">
+                        <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-900 text-sm mb-1">Improvement</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">Constantly improving with feedback.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+        <div class="reveal cta-card rounded-2xl p-10 md:p-14 text-center text-white">
+            <div class="relative z-10">
+                <div class="text-5xl mb-6 text-amber-400"><i class="fa-solid fa-star"></i></div>
+                <h2 class="text-3xl md:text-4xl font-bold mb-5" style="letter-spacing:-0.025em;">Let's Build This
+                    Together</h2>
+                <p class="text-lg md:text-xl max-w-3xl mx-auto mb-8 leading-relaxed" style="color:hsl(270 30% 85%);">
+                    These guidelines aren't about what we say "no" to — they're about what we say "yes" to.
+                    A community built on respect, authenticity, inclusion, and safety.
+                </p>
+                <p class="font-bold text-lg">Thank you for being part of Campus Connect. <i class="fa-solid fa-heart text-purple-400"></i></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div class="text-center text-sm text-slate-400 pb-12">
+        <p class="font-semibold text-slate-500 mb-1">Last Updated: March 7, 2026 · Version 1.0</p>
+        <p>These guidelines may be updated. We'll notify you of major changes.</p>
+    </div>
+
+    <script>
+        // Back button scroll behavior
+        const backBtn = document.getElementById('back-btn');
+        if (backBtn) {
+            window.addEventListener('scroll', () => {
+                backBtn.classList.toggle('scrolled', window.scrollY > 80);
+            }, { passive: true });
+        }
+
+        // Scroll reveal
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+    </script>
+
+</body>
+
+</html>

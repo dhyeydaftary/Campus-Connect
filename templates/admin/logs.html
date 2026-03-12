@@ -1,0 +1,332 @@
+{% extends "layouts/admin_base.html" %}
+{% block title %}Activity Logs | Admin{% endblock %}
+{% block header_title %}Activity Logs{% endblock %}
+
+{% block head %}
+<style>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    @keyframes rowIn {
+        from {
+            opacity: 0;
+            transform: translateX(-6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .lg-page {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        animation: fadeInUp 0.45s ease-out both;
+    }
+
+    /* ── Card ── */
+    .lg-card {
+        background: white;
+        border: 1px solid hsl(220, 18%, 90%);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 1px 4px hsl(221 30% 50%/0.07);
+    }
+
+    .lg-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid hsl(220, 18%, 92%);
+        flex-wrap: wrap;
+        gap: 0.875rem;
+    }
+
+    .lg-card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .lg-card-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        background: hsl(221, 68%, 93%);
+        color: hsl(221, 68%, 40%);
+    }
+
+    .lg-card-title {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: hsl(221, 39%, 11%);
+    }
+
+    /* ── Filters ── */
+    .lg-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.625rem;
+        align-items: center;
+    }
+
+    .lg-search {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.875rem;
+        border: 1.5px solid hsl(220, 18%, 86%);
+        border-radius: 0.5rem;
+        background: white;
+        color: hsl(221, 39%, 11%);
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        width: 220px;
+    }
+
+    .lg-search:focus {
+        border-color: hsl(221, 68%, 50%);
+        box-shadow: 0 0 0 3px hsl(221 68% 50%/0.12);
+    }
+
+    .lg-select {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        border: 1.5px solid hsl(220, 18%, 86%);
+        border-radius: 0.5rem;
+        background: white;
+        color: hsl(221, 39%, 11%);
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        width: 200px;
+    }
+
+    .lg-select:focus {
+        border-color: hsl(221, 68%, 50%);
+        box-shadow: 0 0 0 3px hsl(221 68% 50%/0.12);
+    }
+
+    .lg-download-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        border: 1.5px solid hsl(220, 18%, 86%);
+        background: white;
+        color: hsl(220, 14%, 35%);
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+
+    .lg-download-btn:hover {
+        background: hsl(221, 68%, 95%);
+        border-color: hsl(221, 68%, 70%);
+        color: hsl(221, 68%, 35%);
+    }
+
+    /* ── Table ── */
+    .lg-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .lg-table thead {
+        background: hsl(221, 68%, 28%);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .lg-table thead th {
+        padding: 0.75rem 1.25rem;
+        font-weight: 600;
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: rgba(255, 255, 255, 0.85);
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .lg-table tbody tr {
+        border-bottom: 1px solid hsl(220, 18%, 94%);
+        transition: background 0.12s;
+        animation: rowIn 0.3s ease-out both;
+    }
+
+    .lg-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .lg-table tbody tr:hover {
+        background: hsl(221, 68%, 28%, 0.025);
+    }
+
+    .lg-table td {
+        padding: 0.875rem 1.25rem;
+    }
+
+    .lg-table-wrap {
+        overflow-x: auto;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    /* ── Action badges ── */
+    .lg-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .lg-badge-create {
+        background: hsl(142, 60%, 90%);
+        color: hsl(142, 60%, 28%);
+    }
+
+    .lg-badge-toggle {
+        background: hsl(45, 93%, 88%);
+        color: hsl(32, 80%, 33%);
+    }
+
+    .lg-badge-delete {
+        background: hsl(0, 90%, 93%);
+        color: hsl(0, 65%, 40%);
+    }
+
+    .lg-badge-other {
+        background: hsl(220, 14%, 92%);
+        color: hsl(220, 14%, 44%);
+    }
+
+    /* ── Skeleton ── */
+    .sk-row td {
+        padding: 0.875rem 1.25rem;
+    }
+
+    .sk-block {
+        height: 0.875rem;
+        border-radius: 0.25rem;
+        background: linear-gradient(90deg, hsl(220, 18%, 93%) 25%, hsl(220, 18%, 97%) 50%, hsl(220, 18%, 93%) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s ease-in-out infinite;
+    }
+
+    /* ── Empty ── */
+    .lg-empty {
+        padding: 3.5rem 1.5rem;
+        text-align: center;
+    }
+
+    .lg-empty-icon {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 50%;
+        background: hsl(220, 18%, 95%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.875rem;
+        color: hsl(220, 14%, 50%);
+        font-size: 1.25rem;
+    }
+
+    .lg-empty strong {
+        display: block;
+        font-size: 0.9375rem;
+        color: hsl(221, 39%, 11%);
+        margin-bottom: 0.25rem;
+    }
+
+    .lg-empty span {
+        font-size: 0.875rem;
+        color: hsl(220, 14%, 55%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="lg-page">
+
+        <div class="lg-card">
+            <div class="lg-card-header">
+                <div class="lg-card-header-left">
+                    <div class="lg-card-icon"><i class="fa-solid fa-file-lines"></i></div>
+                    <span class="lg-card-title">Activity Logs</span>
+                </div>
+                <div class="lg-filters">
+                    <input type="text" class="lg-search" placeholder="Search logs…" id="search-input">
+                    <select class="lg-select" id="action-filter">
+                        <option value="">All Actions</option>
+                        <option value="Toggle User">User Status Changed</option>
+                        <option value="Create Event">Event Created</option>
+                        <option value="Create Announcement">Announcement Created</option>
+                    </select>
+                    <button class="lg-download-btn" onclick="downloadLogs()">
+                        <i class="fa-solid fa-download" style="font-size:0.75rem;"></i> Download
+                    </button>
+                </div>
+            </div>
+            <div class="lg-table-wrap">
+                <div id="logs-loading" style="padding:2rem;text-align:center;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size:1.5rem;color:hsl(221,68%,40%);"></i>
+                </div>
+                <table class="lg-table" id="logs-table" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Action</th>
+                            <th>Target</th>
+                            <th>Admin</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin/logs.js') }}"></script>
+{% endblock %}
