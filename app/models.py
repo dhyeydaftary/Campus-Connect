@@ -519,7 +519,7 @@ class Event(db.Model):
     @classmethod
     def get_active_count(cls):
         """Count of upcoming, non-cancelled events"""
-        return cls.query.filter(cls.event_date >= datetime.now(timezone.utc), cls.is_cancelled == False).count()
+        return cls.query.filter(cls.event_date >= datetime.now(timezone.utc), cls.is_cancelled is False).count()
 
     __table_args__ = (
         # For "upcoming events" query
@@ -904,7 +904,7 @@ class Message(db.Model):
             "idx_messages_unread",
             "receiver_id",
             "is_read",
-            postgresql_where=(db.Column("is_read") == False)
+            postgresql_where=(db.Column("is_read") is False)
         ),
         # Optimization for fetching last message in conversation
         Index("idx_messages_conversation_id_id", "conversation_id", "id"),

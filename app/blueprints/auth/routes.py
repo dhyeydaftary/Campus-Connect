@@ -2,7 +2,7 @@
 Auth Blueprint — Page routes and API routes for authentication.
 """
 
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, abort, current_app
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, current_app
 from sqlalchemy import or_
 from datetime import datetime, timezone, timedelta
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
@@ -246,7 +246,7 @@ def verify_otp():
 
     otp_record = OTPVerification.query.filter(
         OTPVerification.enrollment_no.ilike(enrollment_no),
-        OTPVerification.is_used == False,
+        OTPVerification.is_used is False,
         OTPVerification.expiry_time > datetime.now(timezone.utc)
     ).order_by(OTPVerification.created_at.desc()).with_for_update().first()
 

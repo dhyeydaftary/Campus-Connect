@@ -1,5 +1,5 @@
 from flask import Blueprint
 
-trust = Blueprint('trust', __name__)
+trust_bp = Blueprint('trust', __name__)
 
-from . import routes
+from . import routes  # noqa: E402, F401

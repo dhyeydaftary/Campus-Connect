@@ -4,24 +4,17 @@ Main Blueprint - All non-auth, non-admin page and API routes.
 
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, abort, current_app
 from sqlalchemy import func, or_, and_
-from werkzeug.utils import secure_filename
 import os
-from datetime import datetime, timezone, timedelta
 import time
-from app.extensions import db, limiter
+from app.extensions import db
 from app.models import (
-    User, Post, Like, Comment, Event, EventRegistration,
-    Connection, ConnectionRequest, Notification, Announcement,
+    User, Post, Like, Comment, Connection, ConnectionRequest, Announcement,
     Skill, Experience, Education
 )
 
 from app.utils.helpers import (
-    get_clean_filename, _get_user_avatar, save_uploaded_file,
-    _format_post_for_api, get_content_activity
+    _get_user_avatar, _format_post_for_api
 )
-from app.services.email_service import send_welcome_email
-from app.services.comment_queue import comment_queue_service
-from sqlalchemy.orm import joinedload
 
 main_bp = Blueprint('main', __name__)
 

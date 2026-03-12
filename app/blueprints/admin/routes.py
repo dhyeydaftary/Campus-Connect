@@ -3,7 +3,7 @@ Admin Blueprint - All /admin/* page and API routes.
 """
 
 from flask import Blueprint, render_template, request, jsonify, session, abort, current_app, send_file
-from sqlalchemy import func, or_, and_
+from sqlalchemy import func, or_
 from datetime import datetime, timezone
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
@@ -17,7 +17,6 @@ from app.models import (
 )
 from app.utils.decorators import admin_required
 from app.utils.helpers import _get_user_avatar, get_content_activity, _format_admin_event
-from app.services.seeder import seed_admin
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -458,10 +457,14 @@ def admin_update_event(event_id):
         
     data = request.json
     
-    if "title" in data: event.title = data["title"]
-    if "description" in data: event.description = data["description"]
-    if "location" in data: event.location = data["location"]
-    if "total_seats" in data: event.total_seats = int(data["total_seats"])
+    if "title" in data:
+        event.title = data["title"]
+    if "description" in data:
+        event.description = data["description"]
+    if "location" in data:
+        event.location = data["location"]
+    if "total_seats" in data:
+        event.total_seats = int(data["total_seats"])
     
     if "event_date" in data:
         try:
@@ -664,7 +667,7 @@ def admin_update_ticket_status(ticket_id):
         admin_id=session["user_id"],
         action_type="update_ticket",
         details=f"Ticket #{ticket.id} status changed from {old_status} to {new_status}"
-        + (f" | Admin reply sent" if admin_reply else "")
+        + (" | Admin reply sent" if admin_reply else "")
     )
     db.session.add(log)
     db.session.commit()

@@ -20,7 +20,7 @@ def health_check():
             "database": "ok"
         }), 200
         
-    except Exception as e:
+    except Exception:
         return jsonify({
             "status": "error",
             "service": "Campus Connect",

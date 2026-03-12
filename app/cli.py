@@ -24,7 +24,7 @@ def prune_otps():
         OTPVerification.query
         .filter(
             (OTPVerification.expiry_time < now) |
-            (OTPVerification.is_used == True)
+            (OTPVerification.is_used is True)
         )
         .delete(synchronize_session=False)
     )

@@ -5,9 +5,8 @@ Support Blueprint — Routes for legal, support, and trust pages.
 import os
 import uuid
 import re
-import json
 import logging
-from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app, jsonify, session
+from flask import Blueprint, render_template, request, current_app, jsonify, session
 from werkzeug.utils import secure_filename
 
 from app.extensions import db, limiter

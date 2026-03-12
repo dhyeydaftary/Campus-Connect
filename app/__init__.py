@@ -2,18 +2,18 @@
 Campus Connect — Application Factory
 """
 
+import os
+from datetime import datetime, timezone
+
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-import os
+from werkzeug.middleware.proxy_fix import ProxyFix  # noqa: E402
+from flask import Flask, redirect, url_for, session, request, flash, jsonify, render_template  # noqa: E402
+from sqlalchemy import event as sa_event  # noqa: E402
 
-from werkzeug.middleware.proxy_fix import ProxyFix
-from flask import Flask, redirect, url_for, session, request, flash, jsonify, render_template
-from datetime import datetime, timezone
-from sqlalchemy import event as sa_event
-
-from app.extensions import db, bcrypt, mail, socketio, limiter, csrf, migrate
-from app.config import Config
+from app.extensions import db, bcrypt, mail, socketio, limiter, csrf, migrate  # noqa: E402
+from app.config import Config  # noqa: E402
 
 
 def create_app(test_config=None):

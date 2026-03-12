@@ -1,9 +1,9 @@
 import os
 import json
 from flask import Blueprint, request, jsonify, session, current_app
-from app.models import db, User, Conversation, Message, Connection
+from app.models import db, User, Conversation, Message
 from werkzeug.utils import secure_filename
-from sqlalchemy import or_, and_, func, case, desc
+from sqlalchemy import or_, and_, func
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timezone
 from app.extensions import limiter
@@ -22,7 +22,7 @@ def get_chats():
         func.count(Message.id).label('unread_count')
     ).filter(
         Message.receiver_id == user_id,
-        Message.is_read == False
+        Message.is_read is False
     ).group_by(Message.conversation_id).subquery()
 
     # 2. Subquery for the last message content per conversation
@@ -60,7 +60,7 @@ def get_chats():
     ).outerjoin(
         last_msg_details, Conversation.id == last_msg_details.c.conversation_id
     ).filter(
-        last_msg_details.c.content != None,
+        last_msg_details.c.content is not None,
         User.account_type != 'admin',
         or_(Conversation.user1_id == user_id, Conversation.user2_id == user_id)
     ).order_by(Conversation.updated_at.desc()).all()
@@ -77,14 +77,14 @@ def get_chats():
                     display_message = data.get('caption')
                 else:
                     display_message = 'Sent a photo' if data.get('type') == 'image' else 'Sent a document'
-            except:
+            except Exception:
                 display_message = 'Sent an attachment'
         elif display_message and display_message.startswith('[POST_SHARE]'):
             try:
                 data = json.loads(display_message[12:])
                 author = data.get('authorName', 'someone')
                 display_message = f"Shared a post by {author}"
-            except:
+            except Exception:
                 display_message = "Shared a post"
 
         chats_data.append({
@@ -233,7 +233,7 @@ def get_total_unread_count():
         func.count(Message.id)
     ).filter(
         Message.receiver_id == user_id,
-        Message.is_read == False
+        Message.is_read is False
     ).group_by(Message.conversation_id).all()
     
     counts = {chat_id: count for chat_id, count in results}

@@ -1,24 +1,13 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, abort, current_app, send_file
-from sqlalchemy import func, or_, and_
-from werkzeug.utils import secure_filename
-import os
-from datetime import datetime, timezone, timedelta
-import time
+from flask import jsonify, session
 from app.extensions import db, limiter
 from app.models import (
-    User, Post, Like, Comment, Event, EventRegistration,
-    Connection, ConnectionRequest, Notification, Announcement,
-    Skill, Experience, Education
+    User, Notification
 )
 from app.utils.decorators import login_required
 
 from app.utils.helpers import (
-    get_clean_filename, _get_user_avatar, save_uploaded_file,
-    _format_post_for_api, get_content_activity
+    _get_user_avatar
 )
-from app.services.email_service import send_welcome_email
-from app.services.comment_queue import comment_queue_service
-from sqlalchemy.orm import joinedload
 
 from . import notifications_bp
 

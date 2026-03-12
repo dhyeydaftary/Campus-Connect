@@ -2,4 +2,4 @@ from flask import Blueprint
 
 events_bp = Blueprint('events', __name__)
 
-from . import routes
+from . import routes  # noqa: E402, F401

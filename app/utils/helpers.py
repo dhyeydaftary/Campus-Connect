@@ -43,7 +43,7 @@ def save_uploaded_file(file, file_type):
     if not file or file.filename == '':
         return None
     
-    ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+    file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f"{session['user_id']}_{timestamp}_{secure_filename(file.filename)}"
     
