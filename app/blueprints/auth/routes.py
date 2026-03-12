@@ -112,7 +112,7 @@ def register():
     if "@" not in email or "." not in email:
         return jsonify({"error": "Invalid email format"}), 400
 
-    if User.query.filter((User.email == email) | (User.enrollment_no == enrollment_no)).first():
+    if User.query.filter((User.email.ilike(email)) | (User.enrollment_no.ilike(enrollment_no))).first():
         return jsonify({"error": "Email or enrollment number already exists"}), 409
 
     try:
@@ -166,7 +166,7 @@ def get_student_details():
     if not enrollment_no:
         return jsonify({"error": "Enrollment number is required"}), 400
 
-    user = User.query.filter_by(enrollment_no=enrollment_no).first()
+    user = User.query.filter(User.enrollment_no.ilike(enrollment_no)).first()
 
     if not user:
         return jsonify({"error": "Student not found"}), 404
@@ -189,7 +189,7 @@ def request_otp():
     if not enrollment_no or not major:
         return jsonify({"error": "Enrollment number and major are required"}), 400
 
-    user = User.query.filter_by(enrollment_no=enrollment_no).first()
+    user = User.query.filter(User.enrollment_no.ilike(enrollment_no)).first()
 
     if not user:
         return jsonify({"error": "Student not found. Please contact administration."}), 404
@@ -232,10 +232,9 @@ def verify_otp():
     enrollment_no = data.get("enrollment_no", "").strip()
     otp_code = data.get("otp", "").strip()
 
-    otp_record = OTPVerification.query.filter_by(
-        enrollment_no=enrollment_no,
-        is_used=False
-    ).filter(
+    otp_record = OTPVerification.query.filter(
+        OTPVerification.enrollment_no.ilike(enrollment_no),
+        OTPVerification.is_used == False,
         OTPVerification.expiry_time > datetime.now(timezone.utc)
     ).order_by(OTPVerification.created_at.desc()).with_for_update().first()
 
@@ -252,7 +251,7 @@ def verify_otp():
 
     otp_record.is_used = True
     
-    user = User.query.filter_by(enrollment_no=enrollment_no).first()
+    user = User.query.filter(User.enrollment_no.ilike(enrollment_no)).first()
     
     if not user.is_verified:
         user.is_verified = True
@@ -290,7 +289,7 @@ def login_with_password():
         return jsonify({"error": "Administrators must use the dedicated /admin/login page."}), 403
     elif role == "student":
         enrollment = data.get("enrollment_no", "").strip()
-        user = User.query.filter_by(enrollment_no=enrollment, account_type="student").first()
+        user = User.query.filter(User.enrollment_no.ilike(enrollment), User.account_type == "student").first()
     
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials"}), 401
@@ -330,7 +329,7 @@ def forgot_password_request():
         return jsonify({"message": "If an account with that email or enrollment number exists, a password reset link has been sent."}), 200
         
     user = User.query.filter(
-        or_(User.enrollment_no == identifier, User.email == identifier)
+        or_(User.enrollment_no.ilike(identifier), User.email.ilike(identifier))
     ).first()
     
     if user and user.status == 'ACTIVE':

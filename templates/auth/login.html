@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - CampusConnect</title>
-    
+
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main_tailwind.css') }}">
@@ -20,7 +20,7 @@
 <body class="min-h-screen flex items-center justify-center p-4 gradient-soft text-slate-900">
 
     <div class="w-full max-w-md animate-fade-in-up">
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-elevated overflow-hidden">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-elevated">
             <div class="p-8">
 
                 <!-- Header -->
@@ -70,7 +70,7 @@
                         <!-- Enrollment -->
                         <div>
                             <label for="enrollment" class="text-sm font-medium text-slate-700">Enrollment Number</label>
-                            <div class="relative mt-1.5 z-20">
+                            <div class="relative mt-1.5 z-20" style="overflow:visible;">
                                 <i
                                     class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
                                 <input id="enrollment" type="text" required disabled
@@ -137,7 +137,8 @@
                         </div>
 
                         <div>
-                            <label for="otp" class="text-sm font-medium text-slate-700 block text-center mb-2">Enter 6-Digit OTP</label>
+                            <label for="otp" class="text-sm font-medium text-slate-700 block text-center mb-2">Enter
+                                6-Digit OTP</label>
                             <div class="relative max-w-[240px] mx-auto">
                                 <input id="otp" type="text" maxlength="6"
                                     class="h-14 w-full rounded-xl border-2 border-slate-200 bg-slate-50/50 text-2xl tracking-[0.5em] font-bold text-center transition-all duration-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 outline-none"
@@ -161,30 +162,30 @@
                         <span id="btn-text">Continue</span>
                     </button>
 
-                    <div class="relative my-6">
-                        <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-slate-200"></div>
-                        </div>
-                        <div class="relative flex justify-center text-xs"><span
-                                class="bg-white px-3 text-slate-400">or</span></div>
-                    </div>
-
-                    <div class="text-center space-y-2" id="login-footer">
-                        <p class="text-slate-500 text-sm">
-                            Having trouble?
-                            <a href="{{ url_for('support.contact_support') }}"
-                                class="text-indigo-600 font-semibold hover:text-indigo-800 hover:underline transition-colors duration-200">Contact
-                                Admin</a>
-                        </p>
-                        <p class="text-slate-500 text-sm">
-                            Are you an administrator?
-                            <a href="{{ url_for('auth.admin_login_page') }}"
-                                class="text-indigo-600 font-semibold hover:text-indigo-800 hover:underline transition-colors duration-200">Admin
-                                login</a>
-                        </p>
-                    </div>
-
                 </form>
+
+                <div class="relative my-6">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-slate-200"></div>
+                    </div>
+                    <div class="relative flex justify-center text-xs"><span
+                            class="bg-white px-3 text-slate-400">or</span></div>
+                </div>
+
+                <div class="text-center space-y-2" id="login-footer">
+                    <p class="text-slate-500 text-sm">
+                        Having trouble?
+                        <a href="{{ url_for('support.contact_support') }}"
+                            class="text-indigo-600 font-semibold hover:text-indigo-800 hover:underline transition-colors duration-200">Contact
+                            Admin</a>
+                    </p>
+                    <p class="text-slate-500 text-sm">
+                        Are you an administrator?
+                        <a href="{{ url_for('auth.admin_login_page') }}"
+                            class="text-indigo-600 font-semibold hover:text-indigo-800 hover:underline transition-colors duration-200">Admin
+                            login</a>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -215,7 +216,7 @@
                 <button type="submit" id="fp-btn"
                     class="w-full h-11 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98] transition-all duration-200 mt-5 flex items-center justify-center gap-2">
                     <span id="fp-btn-text">Send Reset Link</span>
-                    <i id="fp-btn-spinner" class="fas fa-spinner fa-spin hidden"></i>
+                    <i id="fp-btn-spinner" class="fas fa-spinner fa-spin" style="display:none;"></i>
                 </button>
             </form>
         </div>

@@ -9,6 +9,20 @@ document.addEventListener('DOMContentLoaded', function () {
     var statusFilter = document.getElementById('status-filter');
     var currentView = 'tickets';
 
+    // ─── MODAL STATE ─────────────────────────────────────────────
+    var tdBackdrop = document.getElementById('td-backdrop');
+    var tdBody = document.getElementById('td-body');
+    var tdSkeleton = document.getElementById('td-skeleton');
+    var tdContent = document.getElementById('td-content');
+    var tdTitle = document.getElementById('td-title');
+    var tdSubtitle = document.getElementById('td-subtitle');
+    var tdStatusSelect = document.getElementById('td-status-select');
+    var tdSubmitBtn = document.getElementById('td-submit-btn');
+    var tdCancelBtn = document.getElementById('td-cancel-btn');
+    var tdCloseBtn = document.getElementById('td-close-btn');
+    var tdCurrentId = null;
+    var tdOriginalStatus = null;
+
     // ─── BADGE HELPERS ───────────────────────────────────────────
     function getStatusBadge(status) {
         var map = {
@@ -106,6 +120,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     var options = ['open', 'in_progress', 'resolved', 'closed'].map(function (opt) {
                         return '<option value="' + opt + '"' + (ticket.status === opt ? ' selected' : '') + '>' + opt.replace('_', ' ').toUpperCase() + '</option>';
                     }).join('');
+                    tr.className = 'tk-clickable';
+                    tr.setAttribute('data-ticket-id', ticket.id);
                     tr.innerHTML =
                         '<td><span class="tk-id">TKT-' + ticket.id + '</span></td>' +
                         '<td><p class="tk-name">' + ticket.name + '</p><p class="tk-email">' + ticket.email + '</p></td>' +
@@ -178,8 +194,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ─── STATUS LISTENERS ────────────────────────────────────────
     function attachStatusListeners() {
+        // Inline status-select (still present in row for quick glance; click stops propagation)
         document.querySelectorAll('.status-select').forEach(function (select) {
+            select.addEventListener('click', function (e) { e.stopPropagation(); });
             select.addEventListener('change', function (e) {
+                e.stopPropagation();
                 var id = e.target.getAttribute('data-id');
                 var newStatus = e.target.value;
                 var original = e.target.getAttribute('data-original') || e.target.value;
@@ -198,7 +217,138 @@ document.addEventListener('DOMContentLoaded', function () {
                     .catch(function () { e.target.value = original; e.target.disabled = false; showToast('Error', 'Network error. Please try again.', 'error'); });
             });
         });
+
+        // Row click → open detail modal
+        document.querySelectorAll('.tk-clickable').forEach(function (row) {
+            row.addEventListener('click', function () {
+                openTicketModal(row.getAttribute('data-ticket-id'));
+            });
+        });
     }
+
+    // ─── MODAL ───────────────────────────────────────────────────
+    function openTicketModal(id) {
+        tdCurrentId = id;
+        tdOriginalStatus = null;
+
+        // Reset modal state
+        tdSkeleton.style.display = '';
+        tdContent.style.display = 'none';
+        tdContent.innerHTML = '';
+        tdTitle.textContent = 'Ticket Details';
+        tdSubtitle.textContent = 'Loading…';
+        tdStatusSelect.value = 'open';
+        tdSubmitBtn.disabled = true;
+
+        tdBackdrop.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        fetch('/admin/api/tickets/' + id)
+            .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+            .then(function (t) {
+                tdOriginalStatus = t.status;
+                tdTitle.textContent = 'TKT-' + t.id + ' — ' + t.subject;
+                tdSubtitle.textContent = t.email + ' · ' + t.created_at;
+                tdStatusSelect.value = t.status;
+                tdSubmitBtn.disabled = false;
+
+                // Build content
+                var priorityHtml = t.priority
+                    ? '<span style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:' +
+                    ({ low: 'hsl(220,14%,46%)', normal: 'hsl(221,68%,40%)', high: 'hsl(25,95%,45%)', critical: 'hsl(0,72%,48%)' }[t.priority] || 'inherit') +
+                    '">' + t.priority.toUpperCase() + '</span>'
+                    : '<span style="color:hsl(220,14%,60%);">—</span>';
+
+                tdContent.innerHTML =
+                    '<div>' +
+                    '  <p class="td-section-label">Ticket Information</p>' +
+                    '  <div class="td-meta-grid">' +
+                    '    <div><p class="td-meta-label">From</p><p class="td-meta-value">' + escHtml(t.name) + '</p></div>' +
+                    '    <div><p class="td-meta-label">Email</p><p class="td-meta-value">' + escHtml(t.email) + '</p></div>' +
+                    '    <div><p class="td-meta-label">Category</p><p class="td-meta-value" style="text-transform:capitalize;">' + escHtml(t.category || '—') + '</p></div>' +
+                    '    <div><p class="td-meta-label">Priority</p><p class="td-meta-value">' + priorityHtml + '</p></div>' +
+                    '  </div>' +
+                    '</div>' +
+                    '<div>' +
+                    '  <p class="td-section-label">Message from User</p>' +
+                    '  <div class="td-message-box">' + escHtml(t.message || 'No message body.') + '</div>' +
+                    '</div>' +
+                    '<div>' +
+                    '  <p class="td-section-label">Admin Reply <span style="font-weight:400;text-transform:none;letter-spacing:0;color:hsl(220,14%,65%);font-size:0.6875rem;">(optional — sent to user via email)</span></p>' +
+                    '  <textarea id="td-reply-textarea" class="td-reply-area" placeholder="Write a response to the user… e.g. We have resolved your issue by updating your account permissions."></textarea>' +
+                    '</div>';
+
+                tdSkeleton.style.display = 'none';
+                tdContent.style.display = 'flex';
+            })
+            .catch(function () {
+                tdSkeleton.style.display = 'none';
+                tdContent.style.display = 'flex';
+                tdContent.innerHTML = '<p style="color:hsl(0,65%,45%);font-size:0.875rem;">Failed to load ticket details. Please try again.</p>';
+            });
+    }
+
+    function closeTicketModal() {
+        tdBackdrop.style.display = 'none';
+        document.body.style.overflow = '';
+        tdCurrentId = null;
+        tdOriginalStatus = null;
+    }
+
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // Submit from modal
+    tdSubmitBtn.addEventListener('click', function () {
+        if (!tdCurrentId) return;
+        var newStatus = tdStatusSelect.value;
+        var replyEl = document.getElementById('td-reply-textarea');
+        var adminReply = replyEl ? replyEl.value.trim() : '';
+
+        tdSubmitBtn.disabled = true;
+        tdSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size:0.7rem;"></i> Sending…';
+
+        fetch('/admin/api/tickets/' + tdCurrentId + '/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus, admin_reply: adminReply })
+        })
+            .then(function (res) { if (!res.ok) throw new Error(); return res.json(); })
+            .then(function (res) {
+                if (res && res.success) {
+                    var msg = 'Ticket updated to ' + newStatus.replace('_', ' ');
+                    if (adminReply) msg += ' · Reply sent to user';
+                    showToast('Updated', msg, 'success');
+                    closeTicketModal();
+                    loadTickets();
+                } else {
+                    showToast('Error', 'Failed to update ticket.', 'error');
+                    tdSubmitBtn.disabled = false;
+                    tdSubmitBtn.innerHTML = '<i class="fa-solid fa-paper-plane" style="font-size:0.7rem;"></i> Send &amp; Update';
+                }
+            })
+            .catch(function () {
+                showToast('Error', 'Network error. Please try again.', 'error');
+                tdSubmitBtn.disabled = false;
+                tdSubmitBtn.innerHTML = '<i class="fa-solid fa-paper-plane" style="font-size:0.7rem;"></i> Send &amp; Update';
+            });
+    });
+
+    // Close handlers
+    tdCloseBtn.addEventListener('click', closeTicketModal);
+    tdCancelBtn.addEventListener('click', closeTicketModal);
+    tdBackdrop.addEventListener('click', function (e) {
+        if (e.target === tdBackdrop) closeTicketModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && tdBackdrop.style.display !== 'none') closeTicketModal();
+    });
 
     // ─── TAB SWITCHING ───────────────────────────────────────────
     tabTickets.addEventListener('click', function () {

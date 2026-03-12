@@ -618,9 +618,31 @@ def admin_get_tickets():
         "has_attachment": bool(t.attachment)
     } for t in tickets]), 200
 
+@admin_bp.route("/admin/api/tickets/<int:ticket_id>", methods=["GET"])
+def admin_get_ticket_detail(ticket_id):
+    """Fetches full details of a single support ticket, including the message body."""
+    admin_required()
+    ticket = db.session.get(SupportTicket, ticket_id)
+    if not ticket:
+        abort(404)
+
+    return jsonify({
+        "id": ticket.id,
+        "name": ticket.name,
+        "email": ticket.email,
+        "subject": ticket.subject,
+        "category": ticket.category,
+        "priority": ticket.priority,
+        "status": ticket.status,
+        "message": ticket.message,
+        "created_at": ticket.created_at.strftime('%d %b %Y, %I:%M %p'),
+        "has_attachment": bool(ticket.attachment)
+    }), 200
+
+
 @admin_bp.route("/admin/api/tickets/<int:ticket_id>/status", methods=["POST"])
 def admin_update_ticket_status(ticket_id):
-    """Updates the status of a support ticket."""
+    """Updates the status of a support ticket, with an optional admin reply sent to the user."""
     admin_required()
     ticket = db.session.get(SupportTicket, ticket_id)
     if not ticket:
@@ -628,7 +650,8 @@ def admin_update_ticket_status(ticket_id):
         
     data = request.json
     new_status = data.get('status')
-    
+    admin_reply = (data.get('admin_reply') or '').strip()
+
     if new_status not in ['open', 'in_progress', 'resolved', 'closed']:
         return jsonify({"error": "Invalid status"}), 400
         
@@ -641,14 +664,19 @@ def admin_update_ticket_status(ticket_id):
         admin_id=session["user_id"],
         action_type="update_ticket",
         details=f"Ticket #{ticket.id} status changed from {old_status} to {new_status}"
+        + (f" | Admin reply sent" if admin_reply else "")
     )
     db.session.add(log)
     db.session.commit()
     
-    # TODO: Send email notification to user about status change if resolved
-    if new_status in ['resolved', 'closed'] and old_status not in ['resolved', 'closed']:
-        from app.services.email_service import send_status_update_email
-        send_status_update_email(ticket)
+    # Send email notification whenever status changes (not just on resolve),
+    # passing admin_reply so it can be included in the email body.
+    if new_status != old_status:
+        try:
+            from app.services.email_service import send_status_update_email
+            send_status_update_email(ticket, admin_reply=admin_reply if admin_reply else None)
+        except Exception as e:
+            current_app.logger.error(f"Failed to send status update email for ticket {ticket_id}: {e}")
     
     return jsonify({"success": True, "message": f"Status updated to {new_status}"})
 
