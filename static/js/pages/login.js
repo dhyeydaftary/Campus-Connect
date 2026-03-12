@@ -31,6 +31,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let debounceTimer;
 
 
+    let lastCheckedEnrollment = null;
+
     // ========== 1. BRANCH SELECTION ==========
     majorSelect.addEventListener("change", () => {
         if (majorSelect.value) {
@@ -43,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
             studentPassContainer.classList.remove("open");
             studentPassInput.value = "";
             btn.disabled = true;
+            lastCheckedEnrollment = null;
         }
     });
 
@@ -56,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
         studentPassContainer.classList.remove("open");
         studentPassInput.value = "";
         btn.disabled = true;
+        lastCheckedEnrollment = null;
 
         clearTimeout(debounceTimer);
         suggestionsBox.classList.add("hidden");
@@ -90,7 +94,13 @@ document.addEventListener("DOMContentLoaded", () => {
             button.type = "button";
             button.className = "suggestion-item w-full text-left px-4 py-2.5 cursor-pointer text-sm text-slate-700";
             button.textContent = enrollment;
+            // Prevent input from losing focus immediately on click/touch
             button.addEventListener("mousedown", (e) => e.preventDefault());
+            button.addEventListener("touchstart", (e) => {
+                e.preventDefault();
+                // On mobile, immediately select on touchstart for better responsiveness
+                selectEnrollment(enrollment);
+            }, { passive: false });
             button.addEventListener("click", () => selectEnrollment(enrollment));
             suggestionsBox.appendChild(button);
         });
@@ -102,10 +112,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function selectEnrollment(enrollment) {
         enrollmentInput.value = enrollment;
         suggestionsBox.classList.add("hidden");
+        enrollmentInput.blur(); // Dismiss mobile keyboard
         checkStudentDetails(enrollment);
     }
 
     async function checkStudentDetails(enrollment) {
+        if (!enrollment || enrollment === lastCheckedEnrollment) return;
+        lastCheckedEnrollment = enrollment;
+
         try {
             const response = await fetch("/api/auth/student_details", {
                 method: "POST",
@@ -131,11 +145,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 btn.disabled = false;
             } else {
+                lastCheckedEnrollment = null; // allow retrying
                 const errorData = await response.json().catch(() => ({ error: "An unknown error occurred." }));
                 showToast("Error", errorData.error || "Student details not found.", "error");
                 btn.disabled = true;
             }
         } catch (error) {
+            lastCheckedEnrollment = null; // allow retrying
             showToast("Network Error", "Failed to fetch student details.", "error");
         }
     }
@@ -328,8 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fpStatus.textContent = "A link to reset your password will be sent to your email.";
         fpStatus.className = "text-xs text-slate-500 mt-2";
         fpBtn.disabled = false;
-        fpBtnText.classList.remove("hidden");
-        fpBtnSpinner.classList.add("hidden");
+        fpBtnSpinner.style.display = "none";
         fpBtnText.textContent = "Send Reset Link";
         setTimeout(() => fpIdentifier.focus(), 200);
     };
@@ -362,8 +377,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         fpBtn.disabled = true;
-        fpBtnText.classList.add("hidden");
-        fpBtnSpinner.classList.remove("hidden");
+        fpBtnText.textContent = "Sending...";
+        fpBtnSpinner.style.display = "inline-block";
         fpStatus.textContent = "Sending request...";
         fpStatus.className = "text-xs text-slate-500 mt-2";
 
@@ -380,9 +395,8 @@ document.addEventListener("DOMContentLoaded", () => {
             fpStatus.textContent = "If an account exists, an email has been sent.";
             fpStatus.className = "text-xs text-green-600 mt-2";
         } finally {
+            fpBtnSpinner.style.display = "none";
             fpBtnText.textContent = "Link Sent ✓";
-            fpBtnText.classList.remove("hidden");
-            fpBtnSpinner.classList.add("hidden");
         }
     });
 });

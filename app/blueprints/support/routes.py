@@ -76,7 +76,6 @@ def help_center():
 
 
 @support_bp.route("/contact-support", methods=['GET', 'POST'])
-@login_required
 @limiter.limit("5 per hour")
 def contact_support():
     """Renders and handles the contact support form."""
@@ -103,7 +102,7 @@ def contact_support():
                         return jsonify({'error': msg}), 400
 
             ticket = SupportTicket(
-                user_id=session.get('user_id'),
+                user_id=session.get('user_id'), # None for anonymous users
                 name=name,
                 email=email,
                 subject=subject,

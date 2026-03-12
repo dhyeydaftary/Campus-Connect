@@ -86,7 +86,7 @@ function showToast(title, message, type = 'info', duration = 5000) {
                     <div class="flex-shrink-0">
                         ${icons[type] || icons.info}
                     </div>
-                    <div class="ml-3 w-0 flex-1 pt-0.5">
+                    <div class="ml-3 flex-1 pt-0.5" style="min-width:0;overflow:hidden;">
                         <p class="text-sm font-medium text-gray-900">${title}</p>
                         <p class="mt-1 text-sm text-gray-500">${message}</p>
                     </div>

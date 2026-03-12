@@ -117,7 +117,8 @@ def create_app(test_config=None):
         exempt_endpoints = [
             'main.home', 'auth.login_page', 'auth.logout', 'static', 'main.favicon',
             'auth.set_password_page', 'auth.update_password',
-            'auth.reset_password_page', 'auth.reset_password_with_token'
+            'auth.reset_password_page', 'auth.reset_password_with_token',
+            'support.contact_support', 'support.ticket_success'
         ]
         if request.endpoint in exempt_endpoints or (request.path and request.path.startswith('/api/auth/')):
             return

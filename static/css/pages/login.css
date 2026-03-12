@@ -1,30 +1,497 @@
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN.CSS  —  Campus Connect Auth Pages
+   Refined, professional aesthetic matching admin panel design
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Google Font import ───────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ── CSS Variables ────────────────────────────────────────────── */
 :root {
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --border: #e2e8f0;
+    --primary: hsl(221, 68%, 28%);
+    /* indigo-800 — matches admin */
+    --primary-mid: hsl(221, 68%, 40%);
+    --primary-light: hsl(221, 68%, 52%);
+    /* indigo-600 */
+    --primary-hover: hsl(221, 68%, 22%);
+    --accent: hsl(240, 58%, 58%);
+    /* indigo-500 */
+
+    --bg-page: hsl(220, 20%, 96%);
+    --bg-card: #ffffff;
+    --bg-input: hsl(220, 18%, 98%);
+    --bg-muted: hsl(220, 16%, 96%);
+
+    --text-ink: hsl(220, 20%, 12%);
+    --text-body: hsl(220, 14%, 32%);
+    --text-muted: hsl(220, 10%, 56%);
+    --text-placeholder: hsl(220, 10%, 68%);
+
+    --border: hsl(220, 16%, 90%);
+    --border-focus: hsl(221, 68%, 52%);
+    --border-input: hsl(220, 16%, 86%);
+
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06), 0 24px 48px rgba(0, 0, 0, 0.04);
+    --shadow-input: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-btn: 0 4px 14px rgba(30, 58, 138, 0.28);
+    --shadow-btn-hover: 0 6px 20px rgba(30, 58, 138, 0.38);
+
+    --radius-card: 16px;
+    --radius-input: 8px;
+    --radius-btn: 8px;
+
+    --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Backgrounds */
-.gradient-primary {
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+/* ── Base Reset ───────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
+body {
+    font-family: var(--font);
+    background-color: var(--bg-page);
+    color: var(--text-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Page Background ──────────────────────────────────────────── */
 .gradient-soft {
-    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #e2e8f0 100%);
+    background-color: var(--bg-page);
+    background-image:
+        radial-gradient(ellipse 80% 60% at 20% 10%, hsla(221, 68%, 28%, 0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 90%, hsla(240, 58%, 58%, 0.06) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 40% at 60% 40%, hsla(221, 68%, 52%, 0.04) 0%, transparent 50%);
 }
 
-/* Shadows */
+/* ── Card ─────────────────────────────────────────────────────── */
+.auth-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+/* Override Tailwind's shadow-elevated and rounded-2xl when used on the card */
 .shadow-elevated {
-    box-shadow:
-        0 20px 25px -5px rgba(0, 0, 0, 0.08),
-        0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-card) !important;
 }
 
-/* Animations */
+/* ── Card Header accent bar ───────────────────────────────────── */
+.auth-card-header-bar {
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+/* ── Logo icon ────────────────────────────────────────────────── */
+.auth-logo-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: hsl(221, 68%, 28%);
+    box-shadow: 0 4px 14px rgba(30, 58, 138, 0.22);
+    margin-bottom: 14px;
+}
+
+.auth-logo-wrap i {
+    color: #ffffff !important;
+    font-size: 1.375rem;
+}
+
+/* ── Page title ───────────────────────────────────────────────── */
+.auth-title {
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: var(--text-ink);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    font-family: var(--font);
+}
+
+.auth-subtitle {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-family: var(--font);
+    font-weight: 500;
+}
+
+/* ── Labels ───────────────────────────────────────────────────── */
+label.auth-label,
+.text-sm.font-medium.text-slate-700 {
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
+    color: var(--text-body) !important;
+    letter-spacing: 0.01em;
+    font-family: var(--font);
+}
+
+/* ── Inputs & Selects ─────────────────────────────────────────── */
+input.h-11.w-full,
+select.h-11.w-full,
+input[type="text"],
+input[type="password"],
+input[type="email"],
+select {
+    font-family: var(--font) !important;
+    font-size: 0.875rem !important;
+    color: var(--text-ink) !important;
+    background-color: var(--bg-input) !important;
+    border: 1.5px solid var(--border-input) !important;
+    border-radius: var(--radius-input) !important;
+    box-shadow: var(--shadow-input) !important;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease !important;
+    height: 42px !important;
+}
+
+input::placeholder {
+    color: var(--text-placeholder) !important;
+    font-weight: 400;
+}
+
+input[readonly],
+input[disabled] {
+    background-color: hsl(220, 16%, 96%) !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed !important;
+    border-color: var(--border) !important;
+    box-shadow: none !important;
+}
+
+select option {
+    font-family: var(--font);
+    font-size: 0.875rem;
+    color: var(--text-ink);
+}
+
+/* ── Input focus glow ─────────────────────────────────────────── */
+.input-glow:focus,
+input:not([readonly]):not([disabled]):focus,
+select:focus {
+    border-color: var(--border-focus) !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 3px hsla(221, 68%, 52%, 0.14), var(--shadow-input) !important;
+    outline: none !important;
+}
+
+/* ── Input icon color ─────────────────────────────────────────── */
+.fa-solid.fa-book,
+.fa-solid.fa-user,
+.fa-solid.fa-id-card,
+.fa-solid.fa-envelope,
+.fa-solid.fa-lock,
+.fa-solid.fa-key {
+    color: var(--text-muted) !important;
+    font-size: 0.8125rem !important;
+}
+
+/* ── Primary Button ───────────────────────────────────────────── */
+.gradient-primary {
+    background: var(--primary) !important;
+    box-shadow: var(--shadow-btn);
+    transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease !important;
+    font-family: var(--font) !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em;
+    border-radius: var(--radius-btn) !important;
+    height: 42px !important;
+}
+
+.gradient-primary:hover:not(:disabled) {
+    background: var(--primary-hover) !important;
+    box-shadow: var(--shadow-btn-hover) !important;
+}
+
+.gradient-primary:active:not(:disabled) {
+    transform: scale(0.985) !important;
+}
+
+.gradient-primary:disabled {
+    opacity: 0.5 !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+}
+
+/* ── Button loading shimmer ───────────────────────────────────── */
+.btn-loading {
+    background: linear-gradient(90deg,
+            var(--primary) 25%,
+            var(--primary-light) 50%,
+            var(--primary) 75%) !important;
+    background-size: 200% 100% !important;
+    animation: shimmer 1.5s infinite !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+}
+
+/* ── Forgot password link ─────────────────────────────────────── */
+#forgot-password-link,
+.text-indigo-600 {
+    color: var(--primary-light) !important;
+    font-weight: 600;
+    transition: color 0.15s ease !important;
+}
+
+#forgot-password-link:hover,
+.text-indigo-600:hover {
+    color: var(--primary) !important;
+}
+
+/* ── OTP Banner ───────────────────────────────────────────────── */
+#otp-flow .bg-indigo-50 {
+    background: hsl(221, 68%, 97%) !important;
+    border: 1.5px solid hsl(221, 68%, 88%) !important;
+    color: var(--primary) !important;
+    border-radius: 8px !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500;
+    font-family: var(--font);
+}
+
+/* ── OTP Input ────────────────────────────────────────────────── */
+#otp {
+    height: 56px !important;
+    border-radius: 10px !important;
+    border: 2px solid var(--border-input) !important;
+    background: var(--bg-input) !important;
+    font-size: 1.75rem !important;
+    font-weight: 700 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    color: var(--primary) !important;
+    letter-spacing: 0.5em !important;
+    text-align: center;
+    box-shadow: var(--shadow-input);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+#otp:focus {
+    border-color: var(--border-focus) !important;
+    background: #fff !important;
+    box-shadow: 0 0 0 3px hsla(221, 68%, 52%, 0.14) !important;
+    outline: none !important;
+}
+
+/* ── OTP Timer ────────────────────────────────────────────────── */
+#otp-timer {
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 0.875rem !important;
+    font-weight: 600;
+    color: var(--text-body) !important;
+}
+
+#resend-btn {
+    font-family: var(--font) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 600;
+    color: var(--primary-light) !important;
+    transition: color 0.15s ease !important;
+}
+
+#resend-btn:hover:not(:disabled) {
+    color: var(--primary) !important;
+}
+
+#resend-btn:disabled {
+    color: var(--text-muted) !important;
+    cursor: not-allowed !important;
+}
+
+/* ── Suggestion Dropdown ──────────────────────────────────────── */
+#suggestions-box {
+    border: 1.5px solid var(--border) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    background: #fff !important;
+}
+
+.suggestion-item {
+    font-family: var(--font) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500;
+    color: var(--text-body) !important;
+    padding: 9px 14px !important;
+    transition: background-color 0.12s ease, padding-left 0.12s ease !important;
+    border-bottom: 1px solid hsl(220, 16%, 95%);
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background-color: hsl(221, 68%, 97%) !important;
+    color: var(--primary) !important;
+    padding-left: 18px !important;
+}
+
+/* ── Divider ──────────────────────────────────────────────────── */
+.relative.my-6 .border-t {
+    border-color: var(--border) !important;
+}
+
+.relative.my-6 span {
+    font-size: 0.75rem !important;
+    color: var(--text-muted) !important;
+    font-family: var(--font);
+    font-weight: 500;
+}
+
+/* ── Footer text ──────────────────────────────────────────────── */
+#login-footer p,
+.text-center p.text-slate-500 {
+    font-size: 0.8125rem !important;
+    color: var(--text-muted) !important;
+    font-family: var(--font);
+}
+
+#login-footer a,
+.text-center a.text-indigo-600 {
+    color: var(--primary-light) !important;
+    font-weight: 600 !important;
+    transition: color 0.15s ease !important;
+}
+
+#login-footer a:hover,
+.text-center a.text-indigo-600:hover {
+    color: var(--primary) !important;
+}
+
+/* ── Forgot Password Modal ────────────────────────────────────── */
+.modal-overlay {
+    background: rgba(0, 0, 0, 0) !important;
+    backdrop-filter: blur(0px);
+    transition: background 0.25s ease, backdrop-filter 0.25s ease !important;
+}
+
+.modal-overlay.active {
+    background: rgba(10, 15, 28, 0.48) !important;
+    backdrop-filter: blur(4px) !important;
+}
+
+.modal-content {
+    background: var(--bg-card) !important;
+    border-radius: 14px !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.14), 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+    transform: scale(0.96) translateY(8px) !important;
+    opacity: 0 !important;
+    transition: transform 0.28s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.28s ease !important;
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1) translateY(0) !important;
+    opacity: 1 !important;
+}
+
+/* Modal title */
+.modal-content h3 {
+    font-family: var(--font) !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: var(--text-ink) !important;
+    letter-spacing: -0.01em;
+}
+
+/* Modal close button */
+#close-forgot-modal {
+    border-radius: 7px !important;
+    width: 30px !important;
+    height: 30px !important;
+    color: var(--text-muted) !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+#close-forgot-modal:hover {
+    background: hsl(220, 16%, 95%) !important;
+    color: var(--text-body) !important;
+}
+
+/* Modal input */
+#fp-identifier {
+    height: 42px !important;
+    border: 1.5px solid var(--border-input) !important;
+    border-radius: var(--radius-input) !important;
+    background: var(--bg-input) !important;
+    font-family: var(--font) !important;
+    font-size: 0.875rem !important;
+    padding: 0 12px !important;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease !important;
+    box-shadow: var(--shadow-input) !important;
+    width: 100%;
+}
+
+#fp-identifier:focus {
+    border-color: var(--border-focus) !important;
+    background: #fff !important;
+    box-shadow: 0 0 0 3px hsla(221, 68%, 52%, 0.14) !important;
+    outline: none !important;
+}
+
+/* Modal send button */
+#fp-btn {
+    background: var(--primary) !important;
+    border-radius: var(--radius-btn) !important;
+    height: 42px !important;
+    font-family: var(--font) !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    box-shadow: var(--shadow-btn) !important;
+    transition: background 0.18s ease, box-shadow 0.18s ease !important;
+    margin-top: 16px !important;
+}
+
+#fp-btn:hover:not(:disabled) {
+    background: var(--primary-hover) !important;
+    box-shadow: var(--shadow-btn-hover) !important;
+}
+
+#fp-status {
+    font-family: var(--font) !important;
+    font-size: 0.8rem !important;
+}
+
+/* ── Smooth field reveal ──────────────────────────────────────── */
+.field-reveal {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.32s ease,
+        margin 0.32s ease;
+    margin-top: 0;
+}
+
+.field-reveal.open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-top: 0.875rem;
+}
+
+.field-reveal>div {
+    overflow: hidden;
+}
+
+/* ── Dark input (admin) ───────────────────────────────────────── */
+.input-dark:focus {
+    border-color: hsl(217, 91%, 60%) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+    outline: none !important;
+}
+
+/* ── Animations ───────────────────────────────────────────────── */
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(18px);
     }
 
     to {
@@ -46,7 +513,7 @@
 @keyframes scaleIn {
     from {
         opacity: 0;
-        transform: scale(0.95);
+        transform: scale(0.96);
     }
 
     to {
@@ -83,24 +550,10 @@
     }
 }
 
-@keyframes pulse-ring {
-    0% {
-        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
-    }
-
-    70% {
-        box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
-    }
-}
-
 @keyframes slideDown {
     from {
         opacity: 0;
-        transform: translateY(-8px);
+        transform: translateY(-6px);
     }
 
     to {
@@ -110,106 +563,33 @@
 }
 
 .animate-fade-in-up {
-    animation: fadeInUp 0.5s ease-out both;
+    animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-fade-in {
-    animation: fadeIn 0.4s ease-out both;
+    animation: fadeIn 0.35s ease-out both;
 }
 
 .animate-scale-in {
-    animation: scaleIn 0.35s ease-out both;
+    animation: scaleIn 0.32s ease-out both;
 }
 
 .animate-shake {
-    animation: shake 0.4s ease-in-out;
+    animation: shake 0.38s ease-in-out;
 }
 
 .animate-slide-down {
-    animation: slideDown 0.3s ease-out both;
+    animation: slideDown 0.28s ease-out both;
 }
 
 .delay-100 {
-    animation-delay: 0.1s;
+    animation-delay: 0.08s;
 }
 
 .delay-200 {
-    animation-delay: 0.2s;
+    animation-delay: 0.16s;
 }
 
 .delay-300 {
-    animation-delay: 0.3s;
-}
-
-/* Input focus glow */
-.input-glow:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-    outline: none;
-}
-
-/* Button loading shimmer */
-.btn-loading {
-    background: linear-gradient(90deg, #6366f1 25%, #818cf8 50%, #6366f1 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    pointer-events: none;
-}
-
-/* Smooth field reveal */
-.field-reveal {
-    display: grid;
-    grid-template-rows: 0fr;
-    opacity: 0;
-    transition: grid-template-rows 0.35s ease, opacity 0.35s ease, margin 0.35s ease;
-    margin-top: 0;
-}
-
-.field-reveal.open {
-    grid-template-rows: 1fr;
-    opacity: 1;
-    margin-top: 1rem;
-}
-
-.field-reveal>div {
-    overflow: hidden;
-}
-
-/* Suggestion dropdown */
-.suggestion-item {
-    transition: background-color 0.15s ease, padding-left 0.15s ease;
-}
-
-.suggestion-item:hover {
-    background-color: #eef2ff;
-    padding-left: 1.25rem;
-}
-
-
-/* Modal overlay */
-.modal-overlay {
-    background: rgba(0, 0, 0, 0);
-    transition: background 0.3s ease;
-}
-
-.modal-overlay.active {
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.modal-content {
-    transform: scale(0.95);
-    opacity: 0;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.modal-overlay.active .modal-content {
-    transform: scale(1);
-    opacity: 1;
-}
-
-/* Dark theme inputs (admin) */
-.input-dark:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    outline: none;
+    animation-delay: 0.24s;
 }
