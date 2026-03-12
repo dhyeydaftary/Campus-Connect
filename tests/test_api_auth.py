@@ -152,7 +152,9 @@ class TestAuthPasswordReset:
             db.session.commit()
             
             ts = URLSafeTimedSerializer(app.config["SECRET_KEY"])
-            token = ts.dumps(user.email, salt=app.config["SECURITY_PASSWORD_SALT"])
+            hash_anchor = (user.password_hash or "")[-10:]
+            token_payload = f"{user.email}|{hash_anchor}"
+            token = ts.dumps(token_payload, salt=app.config["SECURITY_PASSWORD_SALT"])
 
         resp = client.post("/api/auth/reset-password", json={
             "token": token, "new_password": "newpassword123"
@@ -396,7 +398,7 @@ class TestAuthHelpers:
             "enrollment_no": "DET001"
         })
         assert resp.status_code == 200
-        assert resp.json["email"] == "det@example.com"
+        assert resp.json["email"] == "d*t@example.com"
         assert resp.json["full_name"] == "Detail User"
 
     def test_get_student_details_missing_enrollment(self, client):
