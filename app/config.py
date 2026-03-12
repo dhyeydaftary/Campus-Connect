@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+import warnings
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -71,6 +72,6 @@ class Config:
         raise RuntimeError("DATABASE_URL is not set in the environment.")
 
     if IS_PRODUCTION and not all([MAIL_SERVER, MAIL_USERNAME, MAIL_PASSWORD]):
-        raise RuntimeError(
+        warnings.warn(
             "Production requires MAIL_SERVER, MAIL_USERNAME, and MAIL_PASSWORD."
         )

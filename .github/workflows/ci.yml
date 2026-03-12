@@ -16,6 +16,7 @@ jobs:
       SECURITY_PASSWORD_SALT: "ci-test-salt"
       DATABASE_URL: "sqlite:///test.db"
       FRONTEND_URL: "http://localhost:5000"
+      MAIL_SERVER: "localhost"
       MAIL_USERNAME: "test@example.com"
       MAIL_PASSWORD: "test-password"
       FLASK_DEBUG: "0"
