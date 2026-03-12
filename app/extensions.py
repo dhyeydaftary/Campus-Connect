@@ -12,7 +12,7 @@ bcrypt = Bcrypt()
 mail = Mail()
 csrf = CSRFProtect()
 migrate = Migrate()
-socketio = SocketIO(cors_allowed_origins=[], manage_session=False)
+socketio = SocketIO(async_mode='threading', cors_allowed_origins=[], manage_session=False)
 limiter = Limiter(
     get_remote_address,
     default_limits=["200 per day", "50 per hour"]
