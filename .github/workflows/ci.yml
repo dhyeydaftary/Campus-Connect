@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    env:
+      SECRET_KEY: "ci-test-secret-not-for-production"
+      SECURITY_PASSWORD_SALT: "ci-test-salt"
+      DATABASE_URL: "sqlite:///test.db"
+      FRONTEND_URL: "http://localhost:5000"
+      MAIL_USERNAME: "test@example.com"
+      MAIL_PASSWORD: "test-password"
+      FLASK_DEBUG: "0"
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install flake8 ruff pytest-cov
+
+      - name: Lint with ruff
+        run: ruff check app/
+
+      - name: Lint with flake8
+        run: flake8 app/ --max-line-length=120 --exclude=migrations
+
+      - name: Run tests
+        run: pytest --cov=app --cov-report=term-missing -v
+
+  dependency-audit:
+    name: CVE Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit for CVEs
+        run: pip-audit -r requirements.txt

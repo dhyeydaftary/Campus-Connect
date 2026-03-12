@@ -12,6 +12,17 @@ from app.services.email_service import send_otp_email, send_welcome_email, send_
 
 auth_bp = Blueprint('auth', __name__)
 
+def _mask_email(email: str) -> str:
+    """Returns a privacy-safe masked email: d*****y@college.edu"""
+    try:
+        local, domain = email.split("@", 1)
+        if len(local) <= 2:
+            masked = local[0] + "*" * (len(local) - 1)
+        else:
+            masked = local[0] + "*" * (len(local) - 2) + local[-1]
+        return f"{masked}@{domain}"
+    except Exception:
+        return "your registered email"
 
 # ==============================================================================
 # PAGE RENDERING ROUTES
@@ -158,6 +169,7 @@ def get_enrollment_suggestions():
 
 
 @auth_bp.route("/api/auth/student_details", methods=["POST"])
+@limiter.limit("10 per minute")
 def get_student_details():
     """Fetches student details (name, email) based on enrollment number."""
     data = request.json
@@ -173,7 +185,7 @@ def get_student_details():
 
     return jsonify({
         "full_name": user.full_name.title() if user.full_name else "",
-        "email": user.email,
+        "email": _mask_email(user.email),
         "has_password": user.password_hash is not None
     })
 
@@ -246,7 +258,10 @@ def verify_otp():
 
     if otp_record.otp != otp_code:
         otp_record.attempts += 1
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         return jsonify({"error": "Invalid or expired OTP"}), 400
 
     otp_record.is_used = True
@@ -256,7 +271,12 @@ def verify_otp():
     if not user.is_verified:
         user.is_verified = True
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.error(f"verify_otp commit failed for {enrollment_no}: {exc}")
+        return jsonify({"error": "A database error occurred. Please try again."}), 500
 
     session.clear()
     session["user_id"] = user.id
@@ -334,7 +354,9 @@ def forgot_password_request():
     
     if user and user.status == 'ACTIVE':
         ts = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
-        token = ts.dumps(user.email, salt=current_app.config["SECURITY_PASSWORD_SALT"])
+        hash_anchor = (user.password_hash or "")[-10:]
+        token_payload = f"{user.email}|{hash_anchor}"
+        token = ts.dumps(token_payload, salt=current_app.config["SECURITY_PASSWORD_SALT"])
 
         frontend_url = current_app.config["FRONTEND_URL"]
         reset_link = f"{frontend_url.rstrip('/')}/reset-password?token={token}"
@@ -360,18 +382,33 @@ def reset_password_with_token():
 
     ts = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
     try:
-        email = ts.loads(token, salt=current_app.config["SECURITY_PASSWORD_SALT"], max_age=900)
+        token_payload = ts.loads(token, salt=current_app.config["SECURITY_PASSWORD_SALT"], max_age=900)
     except SignatureExpired:
         return jsonify({"error": "The password reset link has expired."}), 400
     except (BadTimeSignature, Exception):
+        return jsonify({"error": "Invalid password reset link."}), 400
+
+    try:
+        email, hash_anchor = token_payload.rsplit("|", 1)
+    except ValueError:
         return jsonify({"error": "Invalid password reset link."}), 400
 
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({"error": "Invalid user."}), 400
 
+    # If password was already reset, the hash changed → anchor won't match → token is dead.
+    current_anchor = (user.password_hash or "")[-10:]
+    if current_anchor != hash_anchor:
+        return jsonify({"error": "This reset link has already been used."}), 400
+
     user.set_password(new_password)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.error(f"reset_password commit failed for {email}: {exc}")
+        return jsonify({"error": "A database error occurred. Please try again."}), 500
 
     return jsonify({"message": "Password has been reset successfully."}), 200
 
