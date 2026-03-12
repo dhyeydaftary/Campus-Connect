@@ -1,7 +1,3 @@
-"""
-Campus Connect — WSGI Entry Point for Production
-"""
-
 import eventlet
 eventlet.monkey_patch()
 
