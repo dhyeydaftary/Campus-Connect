@@ -7,7 +7,8 @@ load_dotenv(override=True)
 
 import os
 
-from flask import Flask, redirect, url_for, session, request, flash, jsonify
+from werkzeug.middleware.proxy_fix import ProxyFix
+from flask import Flask, redirect, url_for, session, request, flash, jsonify, render_template
 from datetime import datetime, timezone
 from sqlalchemy import event as sa_event
 
@@ -23,6 +24,17 @@ def create_app(test_config=None):
         template_folder='../templates'
     )
     app.config.from_object(Config)
+
+    # ProxyFix: trust one reverse-proxy hop (Heroku/Render router).
+    # Without this, ALL users share the proxy's IP and collectively
+    # trip rate limits, taking down the login page for everyone.
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app,
+        x_for=1,
+        x_proto=1,
+        x_host=1,
+        x_prefix=1,
+    )
 
     if test_config:
         app.config.update(test_config)
@@ -94,11 +106,6 @@ def create_app(test_config=None):
                 target.is_password_set = True
             elif account_type == 'student':
                 target.is_password_set = False
-
-    # Rate limit error handler
-    @app.errorhandler(429)
-    def ratelimit_handler(e):
-        return jsonify(error="ratelimit exceeded", description=str(e.description)), 429
 
     # Context processor
     @app.context_processor
@@ -178,4 +185,44 @@ def create_app(test_config=None):
         """Seeds/Updates the admin user via CLI using .env credentials."""
         seed_admin()
 
+    from .cli import cli_bp
+    app.register_blueprint(cli_bp)
+
+    _register_error_handlers(app)
+
     return app
+
+def _register_error_handlers(app):
+    """JSON-aware handlers for 403, 404, 429, 500."""
+
+    def _wants_json():
+        best = request.accept_mimetypes.best_match(
+            ["application/json", "text/html"]
+        )
+        return best == "application/json" or request.path.startswith("/api/")
+
+    @app.errorhandler(403)
+    def forbidden(error):
+        if _wants_json():
+            return jsonify(error="Forbidden"), 403
+        return render_template("errors/403.html"), 403
+
+    @app.errorhandler(404)
+    def not_found(error):
+        if _wants_json():
+            return jsonify(error="Not found"), 404
+        return render_template("errors/404.html"), 404
+
+    @app.errorhandler(429)
+    def rate_limited(error):
+        if _wants_json():
+            return jsonify(error="Too many requests. Please slow down."), 429
+        return render_template("errors/429.html"), 429
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        from app.extensions import db
+        db.session.rollback()
+        if _wants_json():
+            return jsonify(error="An unexpected error occurred."), 500
+        return render_template("errors/500.html"), 500

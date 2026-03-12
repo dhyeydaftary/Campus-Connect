@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,7 +19,8 @@ class Config:
     # Session Security
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SECURE = IS_PRODUCTION
+    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "true").lower() != "false"
+    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
     # ==================================
     # DATABASE
@@ -33,6 +35,9 @@ class Config:
     # CACHE / RATE LIMITING
     # ==================================
     REDIS_URL = os.environ.get("REDIS_URL")
+    RATELIMIT_STORAGE_URI = os.environ.get("REDIS_URL", "memory://")
+    RATELIMIT_DEFAULT = "200 per day;50 per hour"
+    RATELIMIT_HEADERS_ENABLED = True
 
     # ==================================
     # FILE UPLOADS
