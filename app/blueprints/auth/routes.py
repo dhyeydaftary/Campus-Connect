@@ -249,7 +249,7 @@ def verify_otp():
 
     otp_record = OTPVerification.query.filter(
         OTPVerification.enrollment_no.ilike(enrollment_no),
-        OTPVerification.is_used == False,
+        OTPVerification.is_used == False,  # noqa: E712
         OTPVerification.expiry_time > datetime.now(timezone.utc)
     ).order_by(OTPVerification.created_at.desc()).with_for_update().first()
 
