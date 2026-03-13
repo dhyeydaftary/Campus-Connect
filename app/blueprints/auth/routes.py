@@ -189,8 +189,43 @@ def get_student_details():
     return jsonify({
         "full_name": user.full_name.title() if user.full_name else "",
         "email": _mask_email(user.email),
-        "has_password": user.password_hash is not None
+        "has_password": user.password_hash is not None,
+        "has_personal_email": bool(user.personal_email)
     })
+
+
+@auth_bp.route("/api/auth/set-personal-email", methods=["POST"])
+@limiter.limit("5 per minute")
+def set_personal_email():
+    """Sets the personal email for a user, either during login or via profile."""
+    data = request.json
+    personal_email = data.get("personal_email", "").strip().lower()
+
+    import re
+    if not personal_email or not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", personal_email):
+        return jsonify({"error": "invalid_email", "message": "Invalid email address."}), 400
+
+    user = None
+    if "user_id" in session:
+        user = db.session.get(User, session["user_id"])
+    else:
+        enrollment_no = data.get("enrollment_no", "").strip().upper()
+        if not enrollment_no:
+            return jsonify({"error": "missing_data", "message": "Enrollment number is required."}), 400
+        user = User.query.filter(User.enrollment_no.ilike(enrollment_no)).first()
+
+    if not user:
+        return jsonify({"error": "not_found", "message": "User not found."}), 404
+
+    user.personal_email = personal_email
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Failed to save personal email: {e}")
+        return jsonify({"error": "db_error", "message": "Failed to save. Try again."}), 500
+
+    return jsonify({"message": "Personal email saved successfully."}), 200
 
 
 @auth_bp.route("/api/auth/request-otp", methods=["POST"])
@@ -218,6 +253,12 @@ def request_otp():
     if user.status == "ACTIVE":
         return jsonify({"error": "Password already set. Please login with password."}), 400
 
+    if not user.personal_email:
+        return jsonify({
+            "error": "no_personal_email",
+            "message": "Please set your Gmail address first."
+        }), 400
+
     otp_code = generate_otp()
     expiry = datetime.now(timezone.utc) + timedelta(minutes=5)
 
@@ -229,7 +270,7 @@ def request_otp():
     db.session.add(otp_entry)
     db.session.commit()
 
-    if not send_otp_email(user.email, otp_code):
+    if not send_otp_email(user.personal_email, otp_code):
         return jsonify({"error": "Failed to send OTP. Please try again."}), 500
 
     return jsonify({

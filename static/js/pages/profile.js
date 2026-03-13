@@ -1624,3 +1624,98 @@ async function submitComment() {
     showToast('Error', 'Failed to post comment.', 'error');
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// PERSONAL EMAIL (OTP) SETTINGS
+// ═══════════════════════════════════════════════════════════════
+
+function populatePersonalEmail() {
+    const peText = document.getElementById('peText');
+    const peInput = document.getElementById('peInput');
+    const peEditBtn = document.getElementById('peEditBtn');
+
+    if (!peText) return; // Not own profile (element absent)
+
+    if (profileData.user && profileData.user.personal_email) {
+        peText.textContent = profileData.user.personal_email;
+        if(peInput) peInput.value = profileData.user.personal_email;
+        if(peEditBtn) peEditBtn.innerHTML = '<i class="fas fa-pen"></i>';
+    } else {
+        peText.innerHTML = '<span class="text-gray-400 italic">Not set</span>';
+        if(peInput) peInput.value = '';
+        if(peEditBtn) peEditBtn.innerHTML = '<i class="fas fa-plus"></i> Add';
+    }
+}
+
+function togglePersonalEmailEdit() {
+    const displayMode = document.getElementById('peDisplayMode');
+    const editMode = document.getElementById('peEditMode');
+    const peError = document.getElementById('peError');
+    const peSuccess = document.getElementById('peSuccess');
+
+    peError.classList.add('hidden');
+    peSuccess.classList.add('hidden');
+
+    if (editMode.classList.contains('hidden')) {
+        displayMode.classList.add('hidden');
+        editMode.classList.remove('hidden');
+    } else {
+        displayMode.classList.remove('hidden');
+        editMode.classList.add('hidden');
+        populatePersonalEmail(); // Reset input on cancel
+    }
+}
+
+async function savePersonalEmail() {
+    const btn = document.getElementById('peSaveBtn');
+    const input = document.getElementById('peInput');
+    const errorEl = document.getElementById('peError');
+    const successEl = document.getElementById('peSuccess');
+
+    const email = input.value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errorEl.textContent = "Please enter a valid email address.";
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
+    errorEl.classList.add('hidden');
+    successEl.classList.add('hidden');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const response = await fetch('/api/auth/set-personal-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ personal_email: email })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            profileData.user.personal_email = email;
+            successEl.textContent = "Saved successfully!";
+            successEl.classList.remove('hidden');
+            setTimeout(() => {
+                togglePersonalEmailEdit();
+            }, 1000);
+        } else {
+            errorEl.textContent = data.message || "Failed to save. Try again.";
+            errorEl.classList.remove('hidden');
+        }
+    } catch (e) {
+        errorEl.textContent = "An unknown network error occurred.";
+        errorEl.classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Save";
+    }
+}
+
+// Ensure the personal email gets populated when profileData is available
+const peSyncInterval = setInterval(() => {
+    if (Object.keys(profileData).length > 0 && profileData.user) {
+        populatePersonalEmail();
+        clearInterval(peSyncInterval);
+    }
+}, 500);

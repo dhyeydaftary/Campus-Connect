@@ -107,6 +107,21 @@
                             </div>
                         </div>
 
+                        <!-- Personal Email Entry (for OTP flow) -->
+                        <div id="personal-email-container" class="hidden animate-fade-in-up">
+                            <div>
+                                <label for="personal-gmail" class="text-sm font-medium text-slate-700">Enter your Gmail to receive OTPs</label>
+                                <div class="relative mt-1.5 z-10">
+                                    <i class="fa-solid fa-at absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                    <input id="personal-gmail" type="email"
+                                        class="h-11 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-3 text-sm input-glow transition-all duration-200"
+                                        placeholder="your.name@gmail.com" autocomplete="email">
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1.5">You only need to do this once. You can update it later from your profile.</p>
+                                <p id="personal-email-error" class="text-xs text-red-500 mt-1 hidden"></p>
+                            </div>
+                        </div>
+
                         <!-- Password (hidden initially, revealed with animation) -->
                         <div id="student-password-container" class="field-reveal">
                             <div>

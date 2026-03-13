@@ -511,6 +511,7 @@ def get_profile_data(user_id):
             'bio': getattr(profile_user, 'bio', None),
             'profile_picture': _get_user_avatar(profile_user),
             'has_password': profile_user.password_hash is not None,
+            'personal_email': profile_user.personal_email if is_own_profile else None,
             'member_since': profile_user.created_at.strftime('%B %Y')
         },
         'is_own_profile': is_own_profile,
