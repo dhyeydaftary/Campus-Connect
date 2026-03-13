@@ -146,6 +146,39 @@
                     </div>
                 </div>
 
+                <!-- Personal Email (Only for own profile) -->
+                {% if is_own_profile %}
+                <div class="pf-card">
+                    <div class="pf-card-head">
+                        <span class="pf-card-title">
+                            <span class="pf-card-icon"><i class="fas fa-envelope"></i></span>
+                            Personal Email <span class="text-xs font-normal text-slate-400 ml-1">(for OTP)</span>
+                        </span>
+                        <div>
+                            <button onclick="togglePersonalEmailEdit()" class="pf-edit-btn" title="Edit personal email" id="peEditBtn">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="pf-card-body">
+                        <!-- Display mode -->
+                        <div id="peDisplayMode" class="flex items-center justify-between">
+                            <span id="peText" class="text-sm text-gray-700">Loading…</span>
+                        </div>
+                        <!-- Edit mode -->
+                        <div id="peEditMode" class="hidden mt-2">
+                            <input type="email" id="peInput" class="pf-input text-sm w-full mb-2" placeholder="e.g. you@gmail.com">
+                            <div class="flex gap-2">
+                                <button onclick="savePersonalEmail()" id="peSaveBtn" class="btn-cc-primary text-xs w-full py-1.5 flex justify-center items-center">Save</button>
+                                <button onclick="togglePersonalEmailEdit()" class="btn-cc-secondary text-xs w-full py-1.5">Cancel</button>
+                            </div>
+                            <p id="peError" class="text-xs text-red-500 mt-1 hidden"></p>
+                            <p id="peSuccess" class="text-xs text-green-500 mt-1 hidden"></p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Skills -->
                 <div class="pf-card">
                     <div class="pf-card-head">

@@ -1,7 +1,3 @@
-"""
-Campus Connect — WSGI Entry Point for Production
-"""
-
 from app import create_app
 from app.extensions import socketio
 

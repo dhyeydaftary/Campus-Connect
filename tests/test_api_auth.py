@@ -193,6 +193,7 @@ class TestAuthOTPFlow:
         with app.app_context():
             user = User(
                 first_name="OTP", last_name="User", email="otp@example.com",
+                personal_email="otp_personal@gmail.com",
                 enrollment_no="OTP001", university="U", major="CS", batch="B",
                 status="PENDING"
             )
