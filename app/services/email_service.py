@@ -3,22 +3,22 @@ Email Service for Campus Connect.
 Handles all outgoing email functionality.
 """
 
+import os
+import re
 import secrets
 import string
 from flask import render_template, current_app
-from flask_mail import Message as EmailMessage
-from app.extensions import mail
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 
 def send_email(subject, recipients, html_body):
     """
-    Sends an HTML email using Flask-Mail.
+    Sends an HTML email using SendGrid HTTP API.
 
     Returns:
         bool: True if email was sent successfully, False otherwise.
     """
-    # Validate recipients: must be a non-empty list of valid-looking emails
-    import re
     if (
         not recipients
         or not isinstance(recipients, (list, tuple))
@@ -30,9 +30,16 @@ def send_email(subject, recipients, html_body):
         current_app.logger.error(f"Invalid recipient(s) for email: {recipients}")
         return False
     try:
-        msg = EmailMessage(subject, recipients=recipients)
-        msg.html = html_body
-        mail.send(msg)
+        sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+        sg = SendGridAPIClient(api_key=os.environ.get('MAIL_PASSWORD'))
+        for recipient in recipients:
+            message = Mail(
+                from_email=sender,
+                to_emails=recipient,
+                subject=subject,
+                html_content=html_body
+            )
+            sg.send(message)
         return True
     except Exception as e:
         current_app.logger.error(f"Email sending failed to {recipients}: {e}")
