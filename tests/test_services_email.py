@@ -3,32 +3,28 @@ def test_send_email_invalid_recipient(app, sample_email_data):
     bad_data = dict(sample_email_data)
     bad_data["recipients"] = [None]
     with app.app_context():
-        with patch("app.services.email_service.mail.send") as mock_send:
+        with patch("app.services.email_service.SendGridAPIClient") as mock_sg:
             result = email_service.send_email(**bad_data)
             assert result is False
-            mock_send.assert_not_called()
+            mock_sg.return_value.send.assert_not_called()
 
 def test_send_email_html_and_plaintext_parts(app, sample_email_data):
-    # Patch EmailMessage to inspect both html and body
-    from flask_mail import Message as EmailMessage
     with app.app_context():
-        with patch("app.services.email_service.mail.send") as mock_send:
-            # Add plain text part
+        with patch("app.services.email_service.SendGridAPIClient") as mock_sg:
             data = dict(sample_email_data)
             data["html_body"] = "<b>Hello</b>"
             result = email_service.send_email(**data)
-            mock_send.assert_called_once()
-            msg = mock_send.call_args[0][0]
-            assert hasattr(msg, "html")
-            assert msg.html == data["html_body"]
-            # Optionally, check for .body (plain text) if your service sets it
+            mock_sg.return_value.send.assert_called_once()
+            msg = mock_sg.return_value.send.call_args[0][0]
+            msg_dict = msg.get()
+            assert any(c.get("value") == data["html_body"] for c in msg_dict.get("content", []))
 
 def test_send_email_send_exception_logs_error(app, sample_email_data):
     with app.app_context():
-        with patch("app.services.email_service.mail.send") as mock_send:
-            mock_send.side_effect = Exception("SMTP error")
+        with patch("app.services.email_service.SendGridAPIClient") as mock_sg:
+            mock_sg.return_value.send.side_effect = Exception("SMTP error")
             result = email_service.send_email(**sample_email_data)
-            mock_send.assert_called_once()
+            mock_sg.return_value.send.assert_called_once()
             assert result is False
 """
 Tests for app.services.email_service
@@ -47,25 +43,24 @@ def sample_email_data():
 
 def test_send_email_success(app, sample_email_data):
     with app.app_context():
-        with patch("app.services.email_service.mail.send") as mock_send:
+        with patch("app.services.email_service.SendGridAPIClient") as mock_sg:
             result = email_service.send_email(**sample_email_data)
-            mock_send.assert_called_once()
-            args, kwargs = mock_send.call_args
-            assert sample_email_data["recipients"][0] in str(args[0])
-            assert sample_email_data["subject"] in str(args[0])
-            assert sample_email_data["html_body"] in str(args[0])
+            mock_sg.return_value.send.assert_called_once()
+            msg = mock_sg.return_value.send.call_args[0][0]
+            assert sample_email_data["recipients"][0] == msg.personalizations[0].tos[0]["email"]
+            assert sample_email_data["subject"] == msg.subject.subject
             assert result is True
 
 def test_send_email_send_failure(app, sample_email_data):
     with app.app_context():
-        with patch("app.services.email_service.mail.send") as mock_send:
-            mock_send.side_effect = Exception("SMTP error")
+        with patch("app.services.email_service.SendGridAPIClient") as mock_sg:
+            mock_sg.return_value.send.side_effect = Exception("SMTP error")
             result = email_service.send_email(**sample_email_data)
-            mock_send.assert_called_once()
+            mock_sg.return_value.send.assert_called_once()
             assert result is False
 
 def test_send_email_missing_fields():
-    with patch("app.services.email_service.mail.send") as mock_send:
+    with patch("app.services.email_service.SendGridAPIClient") as mock_sg:
         with pytest.raises(TypeError):
             email_service.send_email(subject="No body")
-        mock_send.assert_not_called()
+        mock_sg.return_value.send.assert_not_called()
