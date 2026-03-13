@@ -21,6 +21,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const studentPassContainer = document.getElementById("student-password-container");
     const studentPassInput = document.getElementById("student-password");
 
+    const pEmailContainer = document.getElementById("personal-email-container");
+    const pEmailInput = document.getElementById("personal-gmail");
+    const pEmailError = document.getElementById("personal-email-error");
+
     const maskedEmailSpan = document.getElementById("masked-email");
     const loginFooter = document.getElementById("login-footer");
     const resendBtn = document.getElementById("resend-btn");
@@ -28,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let currentStep = "credentials";
     let studentHasPassword = false;
+    let studentHasPersonalEmail = false;
     let debounceTimer;
 
 
@@ -44,6 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
             emailInput.value = "";
             studentPassContainer.classList.remove("open");
             studentPassInput.value = "";
+            pEmailContainer.classList.add("hidden");
+            pEmailInput.value = "";
+            pEmailError.classList.add("hidden");
             btn.disabled = true;
             lastCheckedEnrollment = null;
         }
@@ -58,6 +66,9 @@ document.addEventListener("DOMContentLoaded", () => {
         emailInput.value = "";
         studentPassContainer.classList.remove("open");
         studentPassInput.value = "";
+        pEmailContainer.classList.add("hidden");
+        pEmailInput.value = "";
+        pEmailError.classList.add("hidden");
         btn.disabled = true;
         lastCheckedEnrollment = null;
 
@@ -132,16 +143,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 nameInput.value = data.full_name;
                 emailInput.value = data.email;
                 studentHasPassword = data.has_password;
+                studentHasPersonalEmail = data.has_personal_email;
 
                 if (studentHasPassword) {
                     studentPassContainer.classList.add("open");
+                    pEmailContainer.classList.add("hidden");
                     btnText.textContent = "Login";
                     currentStep = "password";
                     setTimeout(() => studentPassInput.focus(), 150);
                 } else {
                     studentPassContainer.classList.remove("open");
-                    btnText.textContent = "Send OTP";
-                    currentStep = "credentials";
+                    if (!studentHasPersonalEmail) {
+                        pEmailContainer.classList.remove("hidden");
+                        currentStep = "set_personal_email";
+                        btnText.textContent = "Save & Continue";
+                    } else {
+                        pEmailContainer.classList.add("hidden");
+                        btnText.textContent = "Send OTP";
+                        currentStep = "credentials";
+                    }
                 }
                 btn.disabled = false;
             } else {
@@ -276,6 +296,37 @@ document.addEventListener("DOMContentLoaded", () => {
                     setTimeout(() => studentPassInput.parentElement.classList.remove("animate-shake"), 400);
                 }
             }
+            // --- SET PERSONAL EMAIL ---
+            else if (currentStep === "set_personal_email") {
+                const enrollment = enrollmentInput.value.trim();
+                const personalEmail = pEmailInput.value.trim();
+
+                if (!personalEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalEmail)) {
+                    pEmailError.textContent = "Please enter a valid email address.";
+                    pEmailError.classList.remove("hidden");
+                    throw new Error("Validation failed");
+                }
+                pEmailError.classList.add("hidden");
+
+                btnText.textContent = "Saving...";
+                const response = await fetch("/api/auth/set-personal-email", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ enrollment_no: enrollment, personal_email: personalEmail })
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    studentHasPersonalEmail = true;
+                    pEmailContainer.classList.add("hidden");
+                    currentStep = "credentials";
+                    await sendOtp();
+                } else {
+                    pEmailError.textContent = result.message || "Failed to save email.";
+                    pEmailError.classList.remove("hidden");
+                    throw new Error("API failed");
+                }
+            }
             // --- OTP REQUEST ---
             else if (currentStep === "credentials") {
                 if (!enrollmentInput.value || !majorSelect.value || !nameInput.value) {
@@ -321,6 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (currentStep === "password") btnText.textContent = "Login";
             else if (currentStep === "credentials") btnText.textContent = "Send OTP";
+            else if (currentStep === "set_personal_email") btnText.textContent = "Save & Continue";
             else if (currentStep === "otp") btnText.textContent = "Verify & Login";
         }
     });

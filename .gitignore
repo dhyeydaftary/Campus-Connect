@@ -72,12 +72,6 @@ static/uploads/**
 !static/uploads/**/.gitkeep
 
 # ==============================
-# STATIC IMAGES
-# ==============================
-static/images/team/*
-!static/images/team/.gitkeep
-
-# ==============================
 # INSTANCE FOLDER STRUCTURE
 # ==============================
 instance/*

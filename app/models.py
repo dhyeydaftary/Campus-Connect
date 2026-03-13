@@ -29,6 +29,7 @@ class User(db.Model):
 
     # Authentication
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    personal_email = db.Column(db.String(120), nullable=True, unique=False)
     password_hash = db.Column(db.String(255), nullable=True)
     is_password_set = db.Column(db.Boolean, default=False, nullable=False)
 
