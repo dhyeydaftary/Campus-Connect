@@ -7,14 +7,13 @@ import os
 import re
 import secrets
 import string
+import resend
 from flask import render_template, current_app
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
 
 
 def send_email(subject, recipients, html_body):
     """
-    Sends an HTML email using SendGrid HTTP API.
+    Sends an HTML email using Resend HTTP API.
 
     Returns:
         bool: True if email was sent successfully, False otherwise.
@@ -30,16 +29,15 @@ def send_email(subject, recipients, html_body):
         current_app.logger.error(f"Invalid recipient(s) for email: {recipients}")
         return False
     try:
+        resend.api_key = os.environ.get('RESEND_API_KEY')
         sender = current_app.config.get('MAIL_DEFAULT_SENDER')
-        sg = SendGridAPIClient(api_key=os.environ.get('MAIL_PASSWORD'))
         for recipient in recipients:
-            message = Mail(
-                from_email=sender,
-                to_emails=recipient,
-                subject=subject,
-                html_content=html_body
-            )
-            sg.send(message)
+            resend.Emails.send({
+                "from": sender,
+                "to": recipient,
+                "subject": subject,
+                "html": html_body,
+            })
         return True
     except Exception as e:
         current_app.logger.error(f"Email sending failed to {recipients}: {e}")
