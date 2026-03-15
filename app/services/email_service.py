@@ -3,17 +3,17 @@ Email Service for Campus Connect.
 Handles all outgoing email functionality.
 """
 
-import os
 import re
 import secrets
 import string
-import resend
 from flask import render_template, current_app
+from flask_mail import Message as EmailMessage
+from app.extensions import mail
 
 
 def send_email(subject, recipients, html_body):
     """
-    Sends an HTML email using Resend HTTP API.
+    Sends an HTML email using Flask-Mail.
 
     Returns:
         bool: True if email was sent successfully, False otherwise.
@@ -29,15 +29,9 @@ def send_email(subject, recipients, html_body):
         current_app.logger.error(f"Invalid recipient(s) for email: {recipients}")
         return False
     try:
-        resend.api_key = os.environ.get('RESEND_API_KEY')
-        sender = current_app.config.get('MAIL_DEFAULT_SENDER')
-        for recipient in recipients:
-            resend.Emails.send({
-                "from": sender,
-                "to": recipient,
-                "subject": subject,
-                "html": html_body,
-            })
+        msg = EmailMessage(subject, recipients=recipients)
+        msg.html = html_body
+        mail.send(msg)
         return True
     except Exception as e:
         current_app.logger.error(f"Email sending failed to {recipients}: {e}")
